@@ -25,9 +25,15 @@ const Toast = ({ toast, onClose }) => (
 const Modal = ({ open, onClose, size = 'max-w-4xl', children }) => (
   <AnimatePresence>
     {open && (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className={`bg-white rounded-xl shadow-lg p-6 w-full ${size} relative`}>
-          <button onClick={onClose} className="absolute top-3 right-3"><X size={20} /></button>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        onClick={onClose} // ⬅️ Cierra al hacer clic en el fondo
+      >
+        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className={`bg-white rounded-xl shadow-lg p-6 w-full ${size} relative`}
+          onClick={(e) => e.stopPropagation()} // ⬅️ Evita que clic dentro cierre
+        >
+          <button onClick={onClose} className="absolute top-3 right-3" >
+            <X size={20} />
+          </button>
           {children}
         </motion.div>
       </motion.div>
@@ -187,7 +193,7 @@ const PrestamoDocumentoTabla = () => {
 
   /* render */
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 rounded-xl shadow-md">
+    <div className="p-6 max-w-7xl mx-auto rounded-xl shadow-md border border-gray-300 p-6 shadow-lg max-w-7xl mx-aut">
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* header y btn nuevo */}

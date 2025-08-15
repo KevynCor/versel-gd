@@ -40,11 +40,13 @@ const ModalDetalleDocumento = ({ doc, onClose }) => (
     className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
+    onClick={onClose} // 🔹 Cierra al hacer clic en el fondo
   >
     <motion.div
       className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-3xl overflow-y-auto max-h-[90vh]"
       initial={{ scale: 0.9 }}
       animate={{ scale: 1 }}
+      onClick={(e) => e.stopPropagation()} // 🔹 Evita que el clic dentro cierre el modal
     >
       <div className="flex justify-between items-center border-b pb-3 mb-4">
         <h3 className="text-xl font-bold text-blue-600">{doc.Descripcion}</h3>
@@ -53,7 +55,7 @@ const ModalDetalleDocumento = ({ doc, onClose }) => (
         </button>
       </div>
       <ul className="space-y-2">
-        {Object.entries(doc).map(([k, v]) => (
+        {Object.entries(doc).map(([k, v]) =>
           v && (
             <li key={k}>
               <strong className="capitalize">{k.replace(/_/g, " ")}:</strong>{" "}
@@ -62,7 +64,7 @@ const ModalDetalleDocumento = ({ doc, onClose }) => (
                 : v.toString()}
             </li>
           )
-        ))}
+        )}
       </ul>
     </motion.div>
   </motion.div>
