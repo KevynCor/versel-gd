@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, BookOpen, FileText } from 'lucide-react';
-import DocumentSearch from './components/BusquedaDocumento';
-import LoanManagement from './components/PrestamoDocumento';
-import VoucherSearch from './components/BusquedaVoucher'; // Nuevo componente
+import BusquedaDocumento from './components/BusquedaDocumento';
+import PrestamoDocumento from './components/PrestamoDocumento';
+import BusquedaVoucher from './components/BusquedaVoucher';
+import InventarioDocumental from './components/InventarioDocumental';
 import Auth from './components/Auth';
 import Navbar from './components/Navbar';
 import Profile from './components/Profile';
@@ -64,7 +65,7 @@ export default function App() {
           path="/busqueda"
           element={
             <ProtectedRoute user={session?.user}>
-              <DocumentSearch />
+              <BusquedaDocumento />
             </ProtectedRoute>
           }
         />
@@ -72,7 +73,15 @@ export default function App() {
           path="/prestamo"
           element={
             <ProtectedRoute user={session?.user}>
-              <LoanManagement />
+              <PrestamoDocumento />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventario"
+          element={
+            <ProtectedRoute user={session?.user}>
+              <InventarioDocumental />
             </ProtectedRoute>
           }
         />
@@ -80,7 +89,7 @@ export default function App() {
           path="/vouchers"
           element={
             <ProtectedRoute user={session?.user}>
-              <VoucherSearch />
+              <BusquedaVoucher />
             </ProtectedRoute>
           }
         />
@@ -118,15 +127,16 @@ const HomeContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12">
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-7xl">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
           <h1 className="text-5xl font-extrabold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-700">
             Bienvenido a DocuFlow
           </h1>
-          <p className="text-center text-gray-700 text-xl mb-8">
+          <p className="text-center text-gray-700 text-xl mb-12">
             Tu solución integral para la gestión de documentos, préstamos y vouchers.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             <HomeCard
               icon={Search}
               title="Busca Documentos"
@@ -150,6 +160,71 @@ const HomeContent = () => {
               color="text-green-500"
               delay={0.5}
               onClick={() => navigate('/vouchers')}
+            />
+            <HomeCard
+              icon={FileText}
+              title="Solicitud de Servicios Archivísticos"
+              description="Solicita servicios de gestión documental de manera rápida y organizada."
+              color="text-orange-500"
+              delay={0.6}
+              onClick={() => navigate('/solicitud')}
+            />
+            <HomeCard
+              icon={BookOpen}
+              title="Inventario Documental"
+              description="Consulta y administra todo tu inventario de documentos archivados."
+              color="text-teal-500"
+              delay={0.7}
+              onClick={() => navigate('/inventario')}
+            />
+            <HomeCard
+              icon={FileText}
+              title="Eliminación Documental"
+              description="Gestiona la eliminación segura y controlada de documentos obsoletos."
+              color="text-red-500"
+              delay={0.8}
+              onClick={() => navigate('/eliminacion')}
+            />
+            <HomeCard
+              icon={BookOpen}
+              title="Transferencia de Documentos"
+              description="Controla la transferencia física y digital de documentos entre dependencias."
+              color="text-indigo-500"
+              delay={0.9}
+              onClick={() => navigate('/transferencia')}
+            />
+            <HomeCard
+              icon={FileText}
+              title="Cuadro de Clasificación de Fondo (CCF)"
+              description="Organiza y clasifica tus documentos según normas archivísticas."
+              color="text-yellow-500"
+              delay={1.0}
+              onClick={() => navigate('/ccf')}
+            />
+            <HomeCard
+              icon={BookOpen}
+              title="Programa de Control de Documentos Archivístico (PCDA)"
+              description="Supervisa la gestión documental y el cumplimiento de normativas internas."
+              color="text-pink-500"
+              delay={1.1}
+              onClick={() => navigate('/pcda')}
+            />
+            {/* Propuestas adicionales */}
+            <HomeCard
+              icon={Search}
+              title="Reporte de Documentos"
+              description="Genera reportes detallados de inventario, préstamos y estado documental."
+              color="text-cyan-500"
+              delay={1.2}
+              onClick={() => navigate('/reportes')}
+            />
+            <HomeCard
+              icon={FileText}
+              title="Control de Acceso a Archivos"
+              description="Gestiona permisos y accesos a documentos confidenciales."
+              color="text-lime-500"
+              delay={1.3}
+              onClick={() => navigate('/accesos')}
             />
           </div>
         </motion.div>

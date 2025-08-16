@@ -59,28 +59,28 @@ const CheckboxList = ({ items, isChecked, isDisabled, onToggle, render }) => (
 
 /* tabla de préstamos compacta */
 const LoanTable = ({ loans, loading, onView, onReturn }) => (
-  <div className="overflow-x-auto">
-    <table className="min-w-full bg-white rounded-xl shadow-lg">
+  <div className="overflow-x-auto w-full">
+    <table className="min-w-full bg-white rounded-lg shadow text-xs sm:text-sm">
       <thead className="bg-blue-100 text-blue-700">
-        <tr>{['Acción', 'Prestatario', 'Fecha Préstamo', 'Fecha Prevista', 'Fecha Devolución', 'Estado', 'Observación Préstamo'].map(h => <th key={h} className="px-4 py-2">{h}</th>)}</tr>
+        <tr>{['Acción','Prestatario','F. Préstamo','F. Prevista','F. Devolución','Estado','Observación'].map(h=><th key={h} className="px-2 sm:px-4 py-2">{h}</th>)}</tr>
       </thead>
       <tbody>
-        {loading ? <tr><td colSpan={8} className="text-center py-4 text-gray-500 italic">Cargando...</td></tr> :
-         loans.length === 0 ? <tr><td colSpan={8} className="text-center py-4 text-gray-500 italic">No hay préstamos</td></tr> :
-         loans.map(loan => (
-          <tr key={loan.id} className="border-b hover:bg-gray-100">
-            <td className="px-4 py-2 flex gap-2">
-              <RowAction title="Ver detalle" onClick={() => onView(loan.id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700"><Eye className="w-5 h-5" /></RowAction>
-              {loan.estado_prestamo === 'prestado' && <RowAction title="Registrar devolución" onClick={() => onReturn(loan.id)} className="bg-blue-100 hover:bg-blue-200 text-blue-700"><RotateCcw className="w-5 h-5" /></RowAction>}
+        {loading ? <tr><td colSpan={7} className="text-center py-4 text-gray-500 italic">Cargando...</td></tr> :
+         loans.length===0 ? <tr><td colSpan={7} className="text-center py-4 text-gray-500 italic">No hay préstamos</td></tr> :
+         loans.map(loan=>(
+          <tr key={loan.id} className="border-b hover:bg-gray-50">
+            <td className="px-2 sm:px-4 py-2 flex gap-1 flex-wrap">
+              <RowAction title="Ver detalle" onClick={()=>onView(loan.id)} className="bg-gray-100 hover:bg-gray-200 text-gray-700"><Eye className="w-4 h-4 sm:w-5 sm:h-5"/></RowAction>
+              {loan.estado_prestamo==='prestado' && <RowAction title="Registrar devolución" onClick={()=>onReturn(loan.id)} className="bg-blue-100 hover:bg-blue-200 text-blue-700"><RotateCcw className="w-4 h-4 sm:w-5 sm:h-5"/></RowAction>}
             </td>
-            <td className="px-4 py-2 font-medium text-gray-700">{loan.nombre_prestatario}</td>
-            <td className="px-4 py-2 text-gray-600">{fmt(loan.fecha_prestamo)}</td>
-            <td className="px-4 py-2 text-gray-600">{fmt(loan.fecha_devolucion_prevista)}</td>
-            <td className="px-4 py-2 text-gray-600">{loan.fecha_devolucion_real ? fmt(loan.fecha_devolucion_real) : ''}</td>
-            <td className="px-4 py-2"><BadgeEstado estado={loan.estado_prestamo} /></td>
-            <td className="px-4 py-2 text-sm italic text-gray-500">{loan.observaciones || ' - '}</td>
+            <td className="px-2 sm:px-4 py-2 font-medium text-gray-700">{loan.nombre_prestatario}</td>
+            <td className="px-2 sm:px-4 py-2 text-gray-600">{fmt(loan.fecha_prestamo)}</td>
+            <td className="px-2 sm:px-4 py-2 text-gray-600">{fmt(loan.fecha_devolucion_prevista)}</td>
+            <td className="px-2 sm:px-4 py-2 text-gray-600">{loan.fecha_devolucion_real?fmt(loan.fecha_devolucion_real):''}</td>
+            <td className="px-2 sm:px-4 py-2"><BadgeEstado estado={loan.estado_prestamo}/></td>
+            <td className="px-2 sm:px-4 py-2 italic text-gray-500">{loan.observaciones||' - '}</td>
           </tr>
-        )) }
+        ))}
       </tbody>
     </table>
   </div>
@@ -219,28 +219,50 @@ const PrestamoDocumentoTabla = () => {
       <LoanTable loans={filteredLoans} loading={loading} onView={id => setUI({ ...ui, viewLoanId: id })} onReturn={id => { setUI({ ...ui, editingLoanId: id }); setForm(p => ({ ...p, selectedDocs: [], returnObservation: '', extendDays: 0 })); }} />
 
       {/* modal ver préstamo */}
-      <Modal open={Boolean(ui.viewLoanId && selectedLoan)} onClose={() => setUI(u => ({ ...u, viewLoanId: null }))} size="max-w-3xl">
+      <Modal 
+        open={Boolean(ui.viewLoanId && selectedLoan)} 
+        onClose={() => setUI(u => ({ ...u, viewLoanId: null }))} 
+        size="max-w-3xl"
+      >
         {selectedLoan && (
-          <div>
-            <h2 className="text-xl font-bold mb-4 text-blue-600">Detalles del préstamo</h2>
-            <div className="space-y-2 text-gray-700">
+          <div className="p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 text-blue-600 text-center sm:text-left">
+              Detalles del préstamo
+            </h2>
+            <div className="space-y-2 text-gray-700 text-sm sm:text-base">
               <p><strong>Prestatario:</strong> {selectedLoan.nombre_prestatario}</p>
               <p><strong>Fecha préstamo:</strong> {fmt(selectedLoan.fecha_prestamo)}</p>
               <p><strong>Fecha prevista devolución:</strong> {fmt(selectedLoan.fecha_devolucion_prevista)}</p>
               <p><strong>Fecha devolución real:</strong> {selectedLoan.fecha_devolucion_real ? fmt(selectedLoan.fecha_devolucion_real) : '-'}</p>
-              <p className="flex items-center gap-2"><strong>Estado:</strong> <BadgeEstado estado={selectedLoan.estado_prestamo} /></p>
+              <p className="flex flex-wrap items-center gap-2">
+                <strong>Estado:</strong> <BadgeEstado estado={selectedLoan.estado_prestamo} />
+              </p>
               <p><strong>Observación préstamo:</strong> {selectedLoan.observaciones || '-'}</p>
               <p><strong>Observación devolución:</strong> {selectedLoan.observacion_devolucion || '-'}</p>
               <div>
                 <strong>Documentos:</strong>
-                <ul className="list-disc list-inside">
+                <ul className="list-disc list-inside space-y-1">
                   {selectedLoan.prestamos_documentos.map(doc => (
-                    <li key={doc.documento_id}>{doc.Descripcion} (ID: {doc.documento_id}) {doc.fecha_devolucion && <span className="px-2 py-1 rounded-full text-xs font-semibold text-green-600">(Devuelto)</span>}</li>
+                    <li key={doc.documento_id} className="break-words">
+                      {doc.Descripcion} (ID: {doc.documento_id}) 
+                      {doc.fecha_devolucion && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold text-green-600 bg-green-100">
+                          Devuelto
+                        </span>
+                      )}
+                    </li>
                   ))}
                 </ul>
               </div>
             </div>
-            <div className="flex justify-end mt-4"><button onClick={() => setUI(u => ({ ...u, viewLoanId: null }))} className="px-4 py-2 rounded-lg bg-gray-300">Cerrar</button></div>
+            <div className="flex justify-center sm:justify-end mt-4">
+              <button 
+                onClick={() => setUI(u => ({ ...u, viewLoanId: null }))} 
+                className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-sm sm:text-base w-full sm:w-auto"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         )}
       </Modal>

@@ -74,11 +74,11 @@ const MensajeFlotante = ({ mensaje, onClose }) => (
         animate={{ opacity: 1, x: 0, y: 0 }}
         exit={{ opacity: 0, x: 50, y: -50 }}
         transition={{ duration: 0.3 }}
-        className="fixed top-3 right-4 max-w-sm bg-blue-50 border border-blue-300 text-blue-800 rounded-lg shadow-lg p-4 flex items-start gap-3 z-50"
+        className="fixed top-3 right-4 max-w-xs sm:max-w-sm md:max-w-md bg-blue-50 border border-blue-300 text-blue-800 rounded-lg shadow-lg p-4 flex items-start gap-3 z-50"
       >
-        <Info className="w-6 h-6" />
+        <Info className="w-6 h-6 flex-shrink-0" />
         <div className="flex-1 text-sm">{mensaje}</div>
-        <button onClick={onClose} className="text-blue-600 hover:text-blue-900">
+        <button onClick={onClose} className="text-blue-600 hover:text-blue-900 flex-shrink-0">
           <X className="w-5 h-5" />
         </button>
       </motion.div>
@@ -88,7 +88,7 @@ const MensajeFlotante = ({ mensaje, onClose }) => (
 
 // --- Fila de la tabla ---
 const FilaResultado = ({ r }) => {
-  const baseClass = "border border-gray-200 px-3 py-2 text-center";
+  const baseClass = "border border-gray-200 px-2 sm:px-3 py-1 sm:py-2 text-center text-xs sm:text-sm";
   const style = r.valido === false ? "text-red-600 font-bold"
     : r.encontrado === false ? "text-yellow-700 font-semibold"
     : "";
@@ -165,27 +165,27 @@ export default function BusquedaVoucher() {
   };
 
   return (
-    <motion.div className="bg-white border border-gray-300 rounded-3xl p-6 shadow-lg max-w-7xl mx-auto">
+    <motion.div className="bg-white border border-gray-300 rounded-3xl p-4 sm:p-6 shadow-lg max-w-full sm:max-w-5xl md:max-w-7xl mx-auto">
       <MensajeFlotante mensaje={state.mensaje} onClose={() => setMensaje(null)} />
-      <motion.div className="p-6 max-w-7xl mx-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <motion.h2 className="text-2xl font-bold flex items-center gap-2 mb-6" initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-          <Search className="w-6 h-6 text-blue-600" /> Búsqueda de Voucher
+      <motion.div className="p-2 sm:p-6 w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2 mb-4 sm:mb-6 flex-wrap" initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+          <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" /> Búsqueda de Voucher
         </motion.h2>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
           <input
             type="text" value={state.voucher} onChange={(e) => setState(s => ({ ...s, voucher: e.target.value }))}
             placeholder="Ej: 001201612694, 3040-2016, 6500000107-2017, 4200000107-2018..."
-            className="border border-gray-300 rounded-xl px-4 py-2 flex-1 focus:ring-2 focus:ring-blue-400 outline-none"
+            className="border border-gray-300 rounded-xl px-3 sm:px-4 py-2 flex-1 focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
             disabled={state.cargando || state.procesandoListado} autoComplete="off"
           />
           <button onClick={buscarVoucher} disabled={state.cargando || state.procesandoListado}
-            className="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50">
+            className="bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-xl hover:bg-blue-700 flex items-center gap-1 sm:gap-2 disabled:opacity-50 w-full sm:w-auto justify-center">
             {state.cargando || state.procesandoListado ? <><Loader2 className="w-5 h-5 animate-spin" /> Buscando...</>
               : <><Search className="w-5 h-5" /> Buscar</>}
           </button>
-          <label htmlFor="file-upload" className="flex items-center gap-2 cursor-pointer text-blue-600 hover:text-blue-700 relative group">
-            <Upload className="w-6 h-6" />
+          <label htmlFor="file-upload" className="flex items-center gap-1 sm:gap-2 cursor-pointer text-blue-600 hover:text-blue-700 relative group w-full sm:w-auto justify-center">
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
             <input id="file-upload" type="file" accept=".xls,.xlsx" onChange={procesarArchivoExcel}
               disabled={state.cargando || state.procesandoListado} className="hidden" ref={fileInputRef} />
             <span className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1">
@@ -198,16 +198,16 @@ export default function BusquedaVoucher() {
           <>
             <motion.div initial={{ y: 11, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               className="overflow-x-auto mb-4 max-h-[400px] overflow-y-auto border border-gray-300 rounded-lg">
-              <table className="w-full border-collapse bg-white shadow-md">
+              <table className="w-full border-collapse bg-white shadow-md text-xs sm:text-sm">
                 <thead className="bg-blue-100 sticky top-0">
                   <tr>{["Voucher Buscado", "ID", "N° Caja", "N° Tomo", "Descripción", "N° Folios", "Desde", "Hasta", "Tomo Faltante", "Ubicación Topografica"]
-                    .map(h => <th key={h} className="px-3 py-2 text-sm font-semibold border border-gray-200 text-left">{h}</th>)}</tr>
+                    .map(h => <th key={h} className="px-2 sm:px-3 py-1 sm:py-2 text-left font-semibold border border-gray-200">{h}</th>)}</tr>
                 </thead>
                 <tbody>{state.resultados.map((r, i) => <FilaResultado key={i} r={r} />)}</tbody>
               </table>
             </motion.div>
-            <button onClick={exportarResultadosExcel} className="bg-green-600 text-white px-5 py-2 rounded-xl hover:bg-green-700 flex items-center gap-2">
-              <Download className="flex-shrink-0" /> Exportar registros
+            <button onClick={exportarResultadosExcel} className="bg-green-600 text-white px-4 sm:px-5 py-2 rounded-xl hover:bg-green-700 flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
+              <Download className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6" /> Exportar registros
             </button>
           </>
         )}
