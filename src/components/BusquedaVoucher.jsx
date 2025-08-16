@@ -176,7 +176,7 @@ export default function BusquedaVoucher() {
           <input
             type="text" value={state.voucher} onChange={(e) => setState(s => ({ ...s, voucher: e.target.value }))}
             placeholder="Ej: 001201612694, 3040-2016, 6500000107-2017, 4200000107-2018..."
-            className="border border-gray-300 rounded-xl px-3 sm:px-4 py-2 flex-1 focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
+            className="border border-gray-400 rounded-xl px-3 sm:px-4 py-2 flex-1 focus:ring-2 focus:ring-blue-400 outline-none w-full sm:w-auto"
             disabled={state.cargando || state.procesandoListado} autoComplete="off"
           />
           <button onClick={buscarVoucher} disabled={state.cargando || state.procesandoListado}

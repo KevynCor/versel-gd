@@ -193,7 +193,7 @@ const PrestamoDocumentoTabla = () => {
 
   /* render */
   return (
-    <div className="p-6 max-w-7xl mx-auto rounded-xl shadow-md border border-gray-300 p-6 shadow-lg max-w-7xl mx-aut">
+    <div className="p-6 max-w-7xl mx-auto rounded-xl shadow-md border border-gray-400 p-6 shadow-lg max-w-7xl mx-aut">
       <Toast toast={toast} onClose={() => setToast(null)} />
 
       {/* header y btn nuevo */}
@@ -208,11 +208,11 @@ const PrestamoDocumentoTabla = () => {
 
       {/* filtros */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <input type="search" placeholder="Buscar por nombre..." className="border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2 flex-1" value={ui.searchTerm} onChange={e => setUI({ ...ui, searchTerm: e.target.value })} />
-        <select className="border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2" value={ui.statusFilter} onChange={e => setUI({ ...ui, statusFilter: e.target.value })}>
+        <input type="search" placeholder="Buscar por nombre..." className="border border-gray-400 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2 flex-1" value={ui.searchTerm} onChange={e => setUI({ ...ui, searchTerm: e.target.value })} />
+        <select className="border border-gray-400 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2" value={ui.statusFilter} onChange={e => setUI({ ...ui, statusFilter: e.target.value })}>
           <option value="">Todos</option><option value="prestado">Prestado</option><option value="devuelto">Devuelto</option>
         </select>
-        <input type="date" className="border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2" value={ui.fechaFilter} onChange={e => setUI({ ...ui, fechaFilter: e.target.value })} />
+        <input type="date" className="border border-gray-400 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none rounded-xl p-2" value={ui.fechaFilter} onChange={e => setUI({ ...ui, fechaFilter: e.target.value })} />
       </div>
 
       {/* tabla */}

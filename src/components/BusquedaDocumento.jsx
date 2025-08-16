@@ -39,7 +39,7 @@ const ModalDetalleDocumento = ({ doc, onClose }) => (
 );
 
 const SelectInput = ({ value, onChange, options, placeholder }) => (
-  <select value={value} onChange={onChange} className="w-full px-3 sm:px-4 py-2 border focus:ring-2 focus:ring-blue-500 rounded-lg text-sm sm:text-base">
+  <select value={value} onChange={onChange} className="w-full px-3 sm:px-4 py-2 border border-gray-400 focus:ring-2 focus:ring-blue-500 rounded-lg text-sm sm:text-base">
     <option value="">{placeholder}</option>
     {options.map(opt=><option key={opt} value={opt}>{opt}</option>)}
   </select>
