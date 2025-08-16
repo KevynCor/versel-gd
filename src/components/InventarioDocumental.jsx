@@ -721,16 +721,7 @@ export default function ModernInventarioDocumental() {
             onDelete={deleteDocument}
           />
         )}
-
-        {/* Footer */}
-        <div className="text-center py-8">
-          <div className="flex items-center justify-center gap-2 text-slate-500">
-            <Sparkles size={16} />
-            <span>Sistema de Inventario Documental v2.0</span>
-            <Sparkles size={16} />
-          </div>
-          <p className="text-slate-400 text-sm mt-2">Desarrollado con tecnología moderna y diseño vanguardista</p>
-        </div>
+        
       </div>
     </div>
   );
