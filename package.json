@@ -11,6 +11,8 @@
             "dayjs": "^1.11.13",
             "file-saver": "^2.0.5",
             "framer-motion": "^12.23.12",
+            "jspdf": "^3.0.1",
+            "jspdf-autotable": "^5.0.2",
             "lucide-react": "^0.537.0",
             "postcss": "^8",
             "react": "^18.0.0",

@@ -208,8 +208,7 @@ const HomeContent = () => {
               color="text-pink-500"
               delay={1.1}
               onClick={() => navigate('/pcda')}
-            />
-            {/* Propuestas adicionales */}
+            />            
             <HomeCard
               icon={Search}
               title="Reporte de Documentos"
