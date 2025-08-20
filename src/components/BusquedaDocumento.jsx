@@ -12,7 +12,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import ModalDetalleDocumento from "../components/form/ModalDetalle";
 
 // Iconos
-import { Search, Eye, Filter, Download, Box, MapPin } from "lucide-react";
+import { Search, Eye, Filter, Download, Box } from "lucide-react";
 
 // ------------------ Select Reutilizable ------------------
 const SelectInput = ({ value, onChange, options, placeholder, label }) => (
@@ -169,8 +169,7 @@ export default function BusquedaDocumento() {
       )
     },
     { label: "Ubicación", key: "ubicacion", render: d => (
-        <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center gap-1">          
           <span>
             {[d.Estante && `E${d.Estante}`, d.Cuerpo && `C${d.Cuerpo}`, d.Balda && `B${d.Balda}`]
               .filter(Boolean)
