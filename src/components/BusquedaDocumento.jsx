@@ -164,7 +164,7 @@ export default function BusquedaDocumento() {
     { label: "Hasta", key: "hasta", render: d => d.Fecha_Final || "—" },
     { label: "Tomo", key: "tomo", render: d => d.Numero_Tomo || "—" },
     { label: "Folios", key: "folios", render: d => d.Numero_Folios || "—" },
-    {label: "Caja", key: "caja", render: d => (
+    { label: "Caja", key: "caja", render: d => (
         <div className="flex items-center gap-1">
           <Box className="w-4 h-4 text-gray-600" />
           <span>{d.Numero_Caja ? d.Numero_Caja : "Sin caja"}</span>
@@ -214,20 +214,22 @@ export default function BusquedaDocumento() {
         </div>
 
         {filters.unidad && (
-          <div className="space-y-4">
-            <SearchBar
-              value={filters.search}
-              onChange={s => {
-                const f = { ...filters, search: s };
-                setFilters(f);
-                setState(st => ({ ...st, page: 0 }));
-                fetchDocuments(0, pageSize, true, f);
-              }}
-              onEnter={() => fetchDocuments(0, pageSize, true, filters)}
-              placeholder="Buscar por descripción u observaciones..."
-            />
-
+          <div className="space-y-4">       
             <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="flex w-full col-span-3">
+                <SearchBar
+                  className="w-full"
+                  value={filters.search}
+                  onChange={s => {
+                    const f = { ...filters, search: s };
+                    setFilters(f);
+                    setState(st => ({ ...st, page: 0 }));
+                    fetchDocuments(0, pageSize, true, f);
+                  }}
+                  onEnter={() => fetchDocuments(0, pageSize, true, filters)}
+                  placeholder="Buscar por descripción u observaciones..."
+                />
+              </div>
               <SelectInput label="Serie Documental" value={filters.serie} onChange={e => { const f = { ...filters, serie: e.target.value }; setFilters(f); fetchDocuments(0, pageSize, true, f); }} options={data.series} placeholder="Todas las series" />
               <SelectInput label="Año" value={filters.anio} onChange={e => { const f = { ...filters, anio: e.target.value }; setFilters(f); fetchDocuments(0, pageSize, true, f); }} options={data.anios} placeholder="Todos los años" />
               <div className="flex flex-col gap-2">
@@ -245,7 +247,7 @@ export default function BusquedaDocumento() {
             {state.loading ? <SparkleLoader /> :
               !data.documentos.length ? <EmptyState title="Sin resultados" message="No se encontraron documentos con los filtros aplicados." /> :
               <>
-                <div className="overflow-x-auto">
+                <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
                   <table className="w-full text-sm border-collapse border border-slate-200">
                     <thead className="bg-slate-50 text-slate-700 text-xs uppercase">
                       <tr>{columns.map(c => <th key={c.key} className="border border-slate-200 px-3 py-2 text-left">{c.label}</th>)}</tr>
