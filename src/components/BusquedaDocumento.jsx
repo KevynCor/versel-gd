@@ -160,7 +160,10 @@ export default function BusquedaDocumento() {
     { label: "Ver", key: "actions" },
     { label: "Descripción", key: "descripcion", render: d => d.Descripcion },
     { label: "Observaciones", key: "observaciones", render: d => d.Observaciones || "—" },
+    { label: "Desde", key: "desde", render: d => d.Fecha_Inicial || "—" },
+    { label: "Hasta", key: "hasta", render: d => d.Fecha_Final || "—" },
     { label: "Tomo", key: "tomo", render: d => d.Numero_Tomo || "—" },
+    { label: "Folios", key: "folios", render: d => d.Numero_Folios || "—" },
     {label: "Caja", key: "caja", render: d => (
         <div className="flex items-center gap-1">
           <Box className="w-4 h-4 text-gray-600" />
