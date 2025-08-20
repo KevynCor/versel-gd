@@ -21,7 +21,7 @@ import { ViewToggle } from "./layout/ViewToggle";
 import { SearchBar } from "./controls/SearchBar";
 
 // Iconos
-import { BookOpen, FileText, Package, Archive, Calendar, Building2, AlertTriangle, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus } from "lucide-react";
+import { BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, BarChart3, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus, Box } from "lucide-react";
 
 // Componente de filtros avanzados
 const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
@@ -597,6 +597,9 @@ export default function InventarioDocumental() {
     areas: 0,
     mediaConsulta: 0,
     bajaConsulta: 0,
+    folios: 0,
+    cajasporunidad: 0,
+    tomosfaltantes: 0,
     rangoFechas: {}
   });
 
@@ -642,6 +645,9 @@ export default function InventarioDocumental() {
         bajaConsulta: Number(statsData.baja_consulta) || 0,
         series: Number(statsData.series_documentales) || 0,
         areas: Number(statsData.areas_responsables) || 0,
+        folios: Number(statsData.total_folios) || 0,
+        cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
+        tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
         digitalizados: 0, // Mantener este campo si lo necesitas
         rangoFechas: statsData.rango_fechas || {}
       });
@@ -831,7 +837,6 @@ export default function InventarioDocumental() {
     try {
       setState(s => ({ ...s, loading: true }));
       
-      // Usar la función de filtros sin límite para exportar todos los datos
       const filterParams = {
         p_search: filters.search || null,
         p_area: filters.area || null,
@@ -1106,49 +1111,70 @@ export default function InventarioDocumental() {
           />
         )}
 
+        {/* Encabezado de estadísticas */}
+        <div className="flex items-center justify-between mb-6">          
+          <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-indigo-600" />
+            Estadísticas del Inventario Documental
+          </h3>          
+          <div className="hidden sm:block w-24 h-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+        </div>
+        
         {/* Panel de estadísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard 
-            title="Total Documentos" 
-            value={stats.total} 
+            title="Total Unidades Documentales" 
+            value={stats.total?.toLocaleString("es-PE")} 
             icon={FileText} 
             color="from-blue-600 to-blue-700"
-            subtitle="Registros totales"
           />
           <StatCard 
-            title="Unidades Órganicas" 
-            value={stats.areas} 
+            title="Total Unidades Órganicas" 
+            value={stats.areas?.toLocaleString("es-PE")} 
             icon={CheckCircle} 
             color="from-green-600 to-green-700"
-            subtitle="En uso actual"
+          />          
+          <StatCard 
+            title="Total Series Documentales" 
+            value={stats.series?.toLocaleString("es-PE")} 
+            icon={Building2} 
+            color="from-teal-600 to-teal-700"
+          />
+          <StatCard 
+            title="Total Folios" 
+            value={stats.folios?.toLocaleString("es-PE")} 
+            icon={FileText} 
+            color="from-purple-600 to-purple-700"
+          />
+          <StatCard 
+            title="Total Cajas Archiveras" 
+            value={stats.cajasporunidad?.toLocaleString("es-PE")} 
+            icon={Box} 
+            color="from-red-600 to-red-700"
+          />
+          <StatCard 
+            title="Tomos Faltantes" 
+            value={stats.tomosfaltantes?.toLocaleString("es-PE")} 
+            icon={AlertTriangle} 
+            color="from-amber-500 to-orange-600"
           />
           <StatCard 
             title="Alta Consulta" 
-            value={stats.altaConsulta} 
+            value={stats.altaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-orange-600 to-orange-700"
-            subtitle="Frecuentemente consultados"
           />
           <StatCard 
             title="Media Consulta" 
-            value={stats.mediaConsulta} 
+            value={stats.mediaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-blue-600 to-blue-700"
-            subtitle="Consulta moderada"
           />
           <StatCard 
             title="Baja Consulta" 
-            value={stats.bajaConsulta} 
+            value={stats.bajaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-gray-600 to-gray-700"
-            subtitle="Poco consultados"
-          />
-          <StatCard 
-            title="Series Documentales" 
-            value={stats.series} 
-            icon={Building2} 
-            color="from-teal-600 to-teal-700"
-            subtitle="Tipos de series"
           />
         </div>
 
