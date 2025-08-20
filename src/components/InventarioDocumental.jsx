@@ -130,6 +130,36 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
 
         {isExpanded && (
         <>
+          {/* Número de caja */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Número de Caja
+              </label>
+              <input
+                type="number"
+                value={filters.numeroCaja || ""}
+                onChange={(e) => updateFilter('numeroCaja', e.target.value)}
+                placeholder="Ej: 1, 10, 210"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={loading}
+              />
+            </div>
+
+          {/* Número Entregable */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Número Entregable
+            </label>
+            <input
+              type="number"
+              value={filters.numeroEntregable || ""}
+              onChange={(e) => updateFilter('numeroEntregable', e.target.value)}
+              placeholder="Ej: 1, 2, 3"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            />
+          </div>
+
           {/* Tomo Faltante */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -286,22 +316,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-          </div>
-
-          {/* Número Entregable */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número Entregable
-            </label>
-            <input
-              type="number"
-              value={filters.numeroEntregable || ""}
-              onChange={(e) => updateFilter('numeroEntregable', e.target.value)}
-              placeholder="Ej: 1, 10, 210"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            />
-          </div>
+          </div>          
         </>
       )}
 
@@ -825,6 +840,16 @@ export default function InventarioDocumental() {
         p_numero_caja: filters.numeroCaja || null,
         p_fecha_desde: filters.fechaDesde || null,
         p_fecha_hasta: filters.fechaHasta || null,
+        p_tomo_faltante: filters.tomoFaltante || null,
+        p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
+        p_soporte: filters.soporte || null,
+        p_estante: filters.estante || null,
+        p_cuerpo: filters.cuerpo || null,
+        p_balda: filters.balda || null,
+        p_analista: filters.analista || null,
+        p_fecha_inventario: filters.fechaInventario || null,
+        p_contratista: filters.contratista || null,
+        p_numero_entregable: filters.numeroEntregable || null,        
         p_limit: 999999, // Límite muy alto para obtener todos los registros
         p_offset: 0,
         p_order_by: 'id',
