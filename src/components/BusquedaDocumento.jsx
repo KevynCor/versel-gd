@@ -259,30 +259,34 @@ export default function BusquedaDocumento() {
                 <EmptyState title="Sin resultados" message="No se encontraron documentos con los filtros aplicados." />
               ) : (
                 <>
-                  <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                    <table className="w-full text-sm border-collapse border border-slate-200">
-                      <thead className="bg-slate-50 text-slate-700 text-xs uppercase">
-                        <tr>
-                          {columns.map(c => (
-                            <th key={c.key} className="border border-slate-200 px-3 py-2 text-left">
-                              {c.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.documentos.map(doc => (
-                          <tr key={doc.id} className="hover:bg-slate-50 transition">
-                            <td className="border border-slate-200 px-3 py-2 text-center">{renderActions(doc)}</td>
-                            {columns.slice(1).map(col => (
-                              <td key={col.key} className="border border-slate-200 px-3 py-2">
-                                {col.render ? col.render(doc) : doc[col.key]}
-                              </td>
+                  <div className="w-full bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse text-sm table-auto">
+                        <thead className="bg-slate-50 text-slate-700 text-xs uppercase tracking-wide">
+                          <tr>
+                            {columns.map((c) => (
+                              <th key={c.key} className="border-b border-slate-200 px-4 py-3 text-left font-semibold whitespace-nowrap">
+                                {c.label}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {data.documentos.map((doc) => (
+                            <tr key={doc.id} className="hover:bg-slate-50 transition duration-150 ease-in-out border-b border-slate-100 last:border-b-0">
+                              <td className="px-4 py-3 text-center border-r border-slate-100 whitespace-nowrap">
+                                {renderActions(doc)}
+                              </td>
+                              {columns.slice(1).map((col) => (
+                                <td key={col.key} className="px-4 py-3 border-r border-slate-100 text-slate-800">
+                                  {col.render ? col.render(doc) : doc[col.key]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div className="bg-white rounded-xl shadow p-4">
