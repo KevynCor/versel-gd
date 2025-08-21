@@ -6,6 +6,7 @@ import BusquedaDocumento from './components/BusquedaDocumento';
 import PrestamoDocumento from './components/PrestamoDocumento';
 import BusquedaVoucher from './components/BusquedaVoucher';
 import InventarioDocumental from './components/InventarioDocumental';
+import ServiciosArchivisticos from './components/ServiciosArchivisticos';
 import Auth from './components/Auth';
 import Navbar from './components/Navbar';
 import Profile from './components/Profile';
@@ -90,6 +91,14 @@ export default function App() {
           element={
             <ProtectedRoute user={session?.user}>
               <BusquedaVoucher />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/solicitud"
+          element={
+            <ProtectedRoute user={session?.user}>
+              <ServiciosArchivisticos />
             </ProtectedRoute>
           }
         />
