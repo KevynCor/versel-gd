@@ -1,10 +1,21 @@
 // components/data/Pagination.jsx
 import React from "react";
 
-export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChange }) => {
+export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChange, scrollRef }) => {
   const totalPages = Math.ceil(total / pageSize);
   const pages = Array.from({ length: totalPages }, (_, i) => i)
     .filter(i => i < 2 || i >= totalPages - 2 || Math.abs(i - page) <= 1);
+
+  const handlePageChange = (newPage) => {
+    onPageChange(newPage);
+    // Scroll suave al inicio del contenedor
+    scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    onPageSizeChange(newSize);
+    scrollRef?.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 text-sm">
@@ -17,7 +28,7 @@ export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChan
       <div className="flex gap-1">
         <button
           disabled={page === 0}
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => handlePageChange(page - 1)}
           className="px-2 py-1 bg-slate-100 rounded disabled:bg-slate-50 disabled:text-slate-400 text-slate-700 hover:bg-slate-200 transition"
         >
           «
@@ -31,7 +42,7 @@ export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChan
           return (
             <button
               key={i}
-              onClick={() => onPageChange(i)}
+              onClick={() => handlePageChange(i)}
               className={`w-8 h-8 rounded transition ${
                 i === page
                   ? "bg-gradient-to-r from-indigo-600 to-purple-700 text-white shadow-sm scale-105"
@@ -45,7 +56,7 @@ export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChan
 
         <button
           disabled={(page + 1) * pageSize >= total}
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => handlePageChange(page + 1)}
           className="px-2 py-1 bg-slate-100 rounded disabled:bg-slate-50 disabled:text-slate-400 text-slate-700 hover:bg-slate-200 transition"
         >
           »
@@ -56,7 +67,7 @@ export const Pagination = ({ page, total, pageSize, onPageChange, onPageSizeChan
         <span className="text-slate-600 whitespace-nowrap">Mostrar:</span>
         <select
           value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
           className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
         >
           {[5, 10, 25, 50, 100].map((size) => (

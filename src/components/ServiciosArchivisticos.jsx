@@ -59,8 +59,6 @@ export default function ServiciosArchivisticos() {
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [viewDocs, setViewDocs] = useState([]);
   const [editForm, setEditForm] = useState({
-    motivo_solicitud: "",
-    descripcion_documentos: "",
     organo_responsable: "",
     estado: "pendiente",
     fecha_devolucion_prevista: ""
@@ -547,39 +545,21 @@ export default function ServiciosArchivisticos() {
 
                 {/* Campos pre-llenados */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <InputField 
-                    label="Entidad" 
-                    value={formData.entidad}
-                    onChange={(v) => handleInputChange("entidad", v)} 
-                  />
-                  <InputField 
-                    label="Sub Gerencia" 
-                    value={formData.sub_gerencia}
-                    onChange={(v) => handleInputChange("sub_gerencia", v)} 
-                  />
-                  <InputField 
-                    label="Correo" 
-                    value={formData.email}
-                    onChange={(v) => handleInputChange("email", v)} 
-                    required 
-                  />
-                  <InputField 
-                    label="Móvil" 
-                    value={formData.movil}
-                    onChange={(v) => handleInputChange("movil", v)} 
-                  />
+                  <InputField label="Entidad" value={formData.entidad} onChange={(v) => handleInputChange("entidad", v)} />
+                  <InputField label="Sub Gerencia" value={formData.sub_gerencia}  onChange={(v) => handleInputChange("sub_gerencia", v)} />
+                  <InputField label="Correo" value={formData.email} onChange={(v) => handleInputChange("email", v)} required />
+                  <InputField label="Móvil" value={formData.movil} onChange={(v) => handleInputChange("movil", v)} />
                 </div>
-
                 <TextareaField 
                   label="Motivo de Solicitud"
-                  value={formData.motivo_solicitud}
-                  onChange={(v) => handleInputChange("motivo_solicitud", v)}
+                  value={editForm.motivo_solicitud}
+                  onChange={(field, value) => setEditForm(f => ({ ...f, motivo_solicitud: value }))}
                   required 
                 />
                 <TextareaField 
                   label="Descripción de Documentos"
-                  value={formData.descripcion_documentos}
-                  onChange={(v) => handleInputChange("descripcion_documentos", v)} 
+                  value={editForm.descripcion_documentos}
+                  onChange={(field, value) => setEditForm(f => ({ ...f, descripcion_documentos: value }))} 
                 />
 
                 {/* Buscar documentos */}
@@ -755,29 +735,29 @@ export default function ServiciosArchivisticos() {
               <InputField 
                 label="Nombre Completo"
                 value={nuevoSolicitante.nombre_completo}
-                onChange={(v) => setNuevoSolicitante(prev => ({ ...prev, nombre_completo: v }))}
+                onChange={(field, value) => setNuevoSolicitante(f => ({ ...f, nombre_completo: value }))}
                 required
               />
               <InputField 
                 label="Correo"
                 value={nuevoSolicitante.email}
-                onChange={(v) => setNuevoSolicitante(prev => ({ ...prev, email: v }))}
+                onChange={(field, value)  => setNuevoSolicitante(f => ({ ...f, email: value }))}
                 required
               />
               <InputField 
                 label="Móvil"
                 value={nuevoSolicitante.movil}
-                onChange={(v) => setNuevoSolicitante(prev => ({ ...prev, movil: v }))}
+                onChange={(filed, value) => setNuevoSolicitante(f => ({ ...f, movil: value }))}
               />
               <InputField 
                 label="Sub Gerencia"
                 value={nuevoSolicitante.sub_gerencia}
-                onChange={(v) => setNuevoSolicitante(prev => ({ ...prev, sub_gerencia: v }))}
+                onChange={(filed, value) => setNuevoSolicitante(f => ({ ...f, sub_gerencia: value }))}
               />
               <InputField 
                 label="Entidad"
                 value={nuevoSolicitante.entidad}
-                onChange={(v) => setNuevoSolicitante(prev => ({ ...prev, entidad: v }))}
+                onChange={(filed, value) => setNuevoSolicitante(f => ({ ...f, entidad: value }))}
               />
             </div>
 
