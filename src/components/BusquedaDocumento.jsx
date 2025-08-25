@@ -141,7 +141,7 @@ const DocumentTable = ({
             {data.map((doc, index) => (
               <tr
                 key={doc.id}
-                className={`transition-colors duration-200 hover:bg-blue-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                className={`transition-colors duration-200 hover:bg-blue-200 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
               >
                 <td className="px-3 py-2 text-center">{renderActions(doc)}</td>
                 {columns.slice(1).map((col) => (
@@ -266,7 +266,7 @@ export default function BusquedaDocumento() {
         setData(prevData => ({ ...prevData, unidades, allSeries, allAnios }));
       } catch (err) {
         console.error("Error al cargar catálogos:", err);
-        showMessage("❌ Error al cargar catálogos.", "error");
+        showMessage("Error al cargar catálogos.", "error");
       }
     };
     fetchCatalogs();
@@ -290,7 +290,7 @@ export default function BusquedaDocumento() {
     } catch (err) {
       console.error("Error al cargar series o años:", err);
       setData(prevData => ({ ...prevData, series: [], anios: [] }));
-      showMessage("❌ Error al cargar series o años.", "error");
+      showMessage("Error al cargar series o años.", "error");
     }
   }, []);
 
@@ -328,13 +328,13 @@ export default function BusquedaDocumento() {
 
         if (showToast) {
           showMessage(
-            total ? `✅ Se encontraron ${total} documento${total !== 1 ? "s" : ""}` : "ℹ️ No se encontraron documentos",
+            total ? `Se encontraron ${total} documento${total !== 1 ? "s" : ""}` : "No se encontraron documentos",
             total ? "success" : "info"
           );
         }
       } catch (err) {
         console.error("Error al buscar documentos:", err);
-        showMessage("❌ Error de conexión o formato de datos.", "error");
+        showMessage("Error de conexión o formato de datos.", "error");
         setState(prevState => ({ ...prevState, loading: false, total: 0 }));
       }
     },
@@ -347,7 +347,7 @@ export default function BusquedaDocumento() {
 
   // ------------------ Exportar a Excel ------------------
   const exportToExcel = async () => {
-    if (!searchAll && !filters.unidad) return showMessage("⚠️ Selecciona una unidad o habilita búsqueda global para exportar", "warning");
+    if (!searchAll && !filters.unidad) return showMessage("Selecciona una unidad o habilita búsqueda global para exportar", "warning");
 
     setState(prevState => ({ ...prevState, loading: true }));
     try {
@@ -363,7 +363,7 @@ export default function BusquedaDocumento() {
 
       const { data, error } = await query;
       if (error) throw error;
-      if (!data.length) return showMessage("⚠️ No hay datos para exportar.", "warning");
+      if (!data.length) return showMessage("No hay datos para exportar.", "warning");
 
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -371,10 +371,10 @@ export default function BusquedaDocumento() {
       const fileName = `documentos_${searchAll ? "completo" : filters.unidad}_${new Date().toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      showMessage(`✅ Exportados ${data.length} registros exitosamente`, "success");
+      showMessage(`Exportados ${data.length} registros exitosamente`, "success");
     } catch (err) {
       console.error("Error al exportar:", err);
-      showMessage(`❌ Error al exportar: ${err.message || "Error desconocido"}`, "error");
+      showMessage(`Error al exportar: ${err.message || "Error desconocido"}`, "error");
     } finally {
       setState(prevState => ({ ...prevState, loading: false }));
     }
