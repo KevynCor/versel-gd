@@ -8,13 +8,8 @@ import { DigitalSignature } from "../components/ui/DigitalSignature";
 import { InputField } from "../components/ui/InputField";
 import { TextareaField } from "../components/ui/TextareaField";
 import { SearchBar } from "../components/controls/SearchBar";
-import {
-  FileText, Plus, Clock, CheckCircle, AlertTriangle, Download,
-  FilePlus, Signature, X, Eye, Trash2, Edit3, Search, User, UserPlus,
-  Calendar, Building, Phone, Mail, FileCheck, MapPin, RotateCcw, Package
-} from "lucide-react";
+import { FileText, Plus, Clock, CheckCircle, AlertTriangle, Download, FilePlus, Signature, X, Eye, Trash2, Edit3, Search, User, UserPlus, Calendar, Building, Phone, Mail, FileCheck, MapPin, RotateCcw, CheckSquare, Square } from "lucide-react";
 
-// Componente Modal reutilizable
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
   
@@ -32,23 +27,17 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-            <button 
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <X size={20} />
             </button>
           </div>
         </div>
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
 };
 
-// Componente para mostrar información de usuario
 const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
   <div className={`relative ${disabled ? 'opacity-75' : ''}`}>
     <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
@@ -61,9 +50,7 @@ const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
         value={value || ''}
         disabled={disabled}
         className={`block w-full pl-10 pr-3 py-3 border rounded-xl text-sm transition-all ${
-          disabled 
-            ? 'bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed' 
-            : 'border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+          disabled ? 'bg-gray-50 border-gray-200 text-gray-600 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
         }`}
         readOnly={disabled}
       />
@@ -71,7 +58,6 @@ const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
   </div>
 );
 
-// Componente para documentos seleccionados
 const SelectedDocument = ({ doc, onRemove, onUpdateObservation }) => (
   <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-200 p-4">
     <div className="flex justify-between items-start gap-4">
@@ -80,9 +66,7 @@ const SelectedDocument = ({ doc, onRemove, onUpdateObservation }) => (
           <FileCheck className="h-4 w-4 text-indigo-600" />
           <h4 className="font-semibold text-gray-800">{doc.Descripcion}</h4>
         </div>
-        <p className="text-sm text-gray-600 mb-2">
-          {doc.Serie_Documental} • {doc.Unidad_Organica}
-        </p>
+        <p className="text-sm text-gray-600 mb-2">{doc.Serie_Documental} • {doc.Unidad_Organica}</p>
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
           <MapPin className="h-3 w-3" />
           <span>Ubicación: {doc.ubicacion_topografica}</span>
@@ -95,28 +79,50 @@ const SelectedDocument = ({ doc, onRemove, onUpdateObservation }) => (
           onChange={(e) => onUpdateObservation(doc.id, e.target.value)}
         />
       </div>
-      <button 
-        onClick={() => onRemove(doc.id)} 
-        className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
-        title="Remover documento"
-      >
+      <button onClick={() => onRemove(doc.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Remover documento">
         <X size={16} />
       </button>
     </div>
   </div>
 );
 
-// Componente principal
+const DevolucionDocumentoItem = ({ doc, onToggle, onUpdateObservacion }) => (
+  <div className={`border rounded-lg p-4 ${doc.devuelto ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+    <div className="flex items-start gap-3">
+      <button
+        onClick={() => onToggle(doc.id)}
+        className={`p-1 rounded mt-1 ${doc.devuelto ? 'text-green-600 bg-green-100' : 'text-gray-400 bg-white border'}`}
+      >
+        {doc.devuelto ? <CheckSquare size={20} /> : <Square size={20} />}
+      </button>
+      <div className="flex-1">
+        <h4 className="font-medium text-gray-800">{doc.Descripcion}</h4>
+        <p className="text-sm text-gray-600">Serie: {doc.Serie_Documental} • Unidad: {doc.Unidad_Organica}</p>
+        <p className="text-xs text-gray-500">Ubicación: {doc.ubicacion_topografica}</p>
+        {doc.devuelto && (
+          <div className="mt-3">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Observaciones de Devolución</label>
+            <textarea
+              value={doc.observaciones_devolucion || ''}
+              onChange={(e) => onUpdateObservacion(doc.id, e.target.value)}
+              placeholder="Observaciones sobre la devolución..."
+              rows="2"
+              className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
 export default function ServiciosArchivisticos() {
-  // Estados principales
   const [activeTab, setActiveTab] = useState("nueva");
   const [solicitudes, setSolicitudes] = useState([]);
   const [documentosInventario, setDocumentosInventario] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-
-  // Estados para formulario
   const [formData, setFormData] = useState({
     nombre_solicitante: "",
     entidad: "Electro Sur Este S.A.A.",
@@ -129,15 +135,11 @@ export default function ServiciosArchivisticos() {
     modalidad_servicio: "prestamo_original",
     fecha_devolucion_prevista: ""
   });
-
-  // Estados para documentos y búsquedas
   const [documentosSeleccionados, setDocumentosSeleccionados] = useState([]);
   const [busquedaDoc, setBusquedaDoc] = useState("");
   const [usuarios, setUsuarios] = useState([]);
   const [busquedaSolicitante, setBusquedaSolicitante] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-
-  // Estados para nuevo solicitante
   const [showNuevoSolicitante, setShowNuevoSolicitante] = useState(false);
   const [nuevoSolicitante, setNuevoSolicitante] = useState({
     nombre_completo: "",
@@ -146,8 +148,6 @@ export default function ServiciosArchivisticos() {
     sub_gerencia: "",
     entidad: "Electro Sur Este S.A.A."
   });
-
-  // Estados para modales
   const [firmaTemp, setFirmaTemp] = useState(null);
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -162,35 +162,22 @@ export default function ServiciosArchivisticos() {
     estado: "pendiente",
     fecha_devolucion_prevista: ""
   });
-
-  // Estados para devoluciones
   const [documentosDevolucion, setDocumentosDevolucion] = useState([]);
   const [firmaDevolucion, setFirmaDevolucion] = useState(null);
   const [observacionesDevolucion, setObservacionesDevolucion] = useState("");
 
-  // Cargar datos iniciales
   useEffect(() => {
     const initData = async () => {
-      await Promise.all([
-        cargarDatos(),
-        obtenerUsuarioActual(),
-        cargarUsuarios()
-      ]);
+      await Promise.all([cargarDatos(), obtenerUsuarioActual(), cargarUsuarios()]);
     };
     initData();
   }, []);
 
-  // Funciones de carga de datos
   const obtenerUsuarioActual = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase
-          .from("usuarios")
-          .select("*")
-          .eq("email", user.email)
-          .single();
-
+        const { data } = await supabase.from("usuarios").select("*").eq("email", user.email).single();
         if (data) {
           setCurrentUser(data);
           setFormData(prev => ({
@@ -215,10 +202,8 @@ export default function ServiciosArchivisticos() {
         supabase.from("vista_solicitudes_completa").select("*").order("fecha_solicitud", { ascending: false }),
         supabase.from("Inventario_documental").select("*").order("Descripcion")
       ]);
-
       if (solicitudesRes.error) throw solicitudesRes.error;
       if (inventarioRes.error) throw inventarioRes.error;
-
       setSolicitudes(solicitudesRes.data || []);
       setDocumentosInventario(inventarioRes.data || []);
     } catch (error) {
@@ -229,14 +214,10 @@ export default function ServiciosArchivisticos() {
   };
 
   const cargarUsuarios = async () => {
-    const { data } = await supabase
-      .from("usuarios")
-      .select("*")
-      .order("nombre_completo");
+    const { data } = await supabase.from("usuarios").select("*").order("nombre_completo");
     setUsuarios(data || []);
   };
 
-  // Utilidades
   const mostrarMensaje = useCallback((mensaje, tipo) => {
     setMensaje({ mensaje, tipo });
   }, []);
@@ -244,8 +225,7 @@ export default function ServiciosArchivisticos() {
   const formatearFecha = (fecha) => {
     if (!fecha) return "-";
     return new Date(fecha).toLocaleDateString('es-PE', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit'
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
     });
   };
 
@@ -256,12 +236,12 @@ export default function ServiciosArchivisticos() {
       entregada: "bg-emerald-100 text-emerald-800 border-emerald-300",
       devuelta: "bg-gray-100 text-gray-800 border-gray-300",
       vencida: "bg-red-100 text-red-800 border-red-300",
-      rechazada: "bg-red-100 text-red-800 border-red-300"
+      rechazada: "bg-red-100 text-red-800 border-red-300",
+      devolucion_parcial: "bg-yellow-100 text-yellow-800 border-yellow-300"
     };
     return `px-3 py-1 text-xs font-medium rounded-full border ${badges[estado] || badges.pendiente}`;
   };
 
-  // Manejadores de formulario
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -279,72 +259,48 @@ export default function ServiciosArchivisticos() {
     setShowUserDropdown(false);
   };
 
-  // Gestión de documentos
   const agregarDocumento = (doc) => {
     if (documentosSeleccionados.some(d => d.id === doc.id)) {
       mostrarMensaje("El documento ya está en la lista", "warning");
       return;
     }
-    
     const nuevoDoc = {
       ...doc,
       numero_orden: documentosSeleccionados.length + 1,
       ubicacion_topografica: `E${doc.Estante || 1}-B${doc.Balda || 1}`,
       observaciones_documento: ""
     };
-    
     setDocumentosSeleccionados(prev => [...prev, nuevoDoc]);
     mostrarMensaje("Documento agregado correctamente", "success");
     setBusquedaDoc("");
   };
 
   const removerDocumento = (docId) => {
-    setDocumentosSeleccionados(prev =>
-      prev.filter(d => d.id !== docId)
-        .map((d, i) => ({ ...d, numero_orden: i + 1 }))
-    );
+    setDocumentosSeleccionados(prev => prev.filter(d => d.id !== docId).map((d, i) => ({ ...d, numero_orden: i + 1 })));
   };
 
   const actualizarObservacionDoc = (docId, observacion) => {
-    setDocumentosSeleccionados(prev =>
-      prev.map(d => d.id === docId ? { ...d, observaciones_documento: observacion } : d)
-    );
+    setDocumentosSeleccionados(prev => prev.map(d => d.id === docId ? { ...d, observaciones_documento: observacion } : d));
   };
 
-  // Gestión de nuevo solicitante
   const guardarNuevoSolicitante = async () => {
     try {
       const { nombre_completo, email } = nuevoSolicitante;
-      
       if (!nombre_completo || !email) {
         mostrarMensaje("Nombre y correo son obligatorios", "error");
         return;
       }
-
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         mostrarMensaje("Correo no válido", "error");
         return;
       }
-
-      const { data: existe } = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("email", email)
-        .single();
-
+      const { data: existe } = await supabase.from("usuarios").select("*").eq("email", email).single();
       if (existe) {
         mostrarMensaje("Ya existe un usuario con ese correo", "warning");
         return;
       }
-
-      const { data, error } = await supabase
-        .from("usuarios")
-        .insert(nuevoSolicitante)
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from("usuarios").insert(nuevoSolicitante).select().single();
       if (error) throw error;
-
       setUsuarios(prev => [...prev, data]);
       seleccionarSolicitante(data);
       mostrarMensaje("Nuevo solicitante registrado", "success");
@@ -361,28 +317,22 @@ export default function ServiciosArchivisticos() {
     }
   };
 
-  // Guardar solicitud
   const guardarSolicitud = async () => {
     try {
       const { nombre_solicitante, email, motivo_solicitud } = formData;
-      
       if (!nombre_solicitante || !email || !motivo_solicitud) {
         mostrarMensaje("Complete los campos obligatorios", "error");
         return;
       }
-      
       if (documentosSeleccionados.length === 0) {
         mostrarMensaje("Debe seleccionar al menos un documento", "error");
         return;
       }
-      
       if (!firmaTemp) {
         mostrarMensaje("Debe proporcionar su firma digital", "error");
         return;
       }
-
       setLoading(true);
-
       const { data: solicitud, error: errorSolicitud } = await supabase
         .from("solicitudes_archivisticas")
         .insert({
@@ -396,9 +346,7 @@ export default function ServiciosArchivisticos() {
         })
         .select()
         .single();
-
       if (errorSolicitud) throw errorSolicitud;
-
       const documentosData = documentosSeleccionados.map(doc => ({
         solicitud_id: solicitud.id,
         documento_id: doc.id,
@@ -406,16 +354,9 @@ export default function ServiciosArchivisticos() {
         ubicacion_topografica: doc.ubicacion_topografica,
         observaciones_documento: doc.observaciones_documento
       }));
-
-      const { error: errorDocumentos } = await supabase
-        .from("solicitudes_documentos")
-        .insert(documentosData);
-
+      const { error: errorDocumentos } = await supabase.from("solicitudes_documentos").insert(documentosData);
       if (errorDocumentos) throw errorDocumentos;
-
       mostrarMensaje("Solicitud creada exitosamente", "success");
-      
-      // Reset form
       setFormData({
         nombre_solicitante: currentUser?.nombre_completo || "",
         entidad: "Electro Sur Este S.A.A.",
@@ -430,7 +371,6 @@ export default function ServiciosArchivisticos() {
       });
       setDocumentosSeleccionados([]);
       setFirmaTemp(null);
-      
       await cargarDatos();
       setActiveTab("pendientes");
     } catch (error) {
@@ -440,23 +380,20 @@ export default function ServiciosArchivisticos() {
     }
   };
 
-  // Funciones de modales
   const verSolicitud = async (solicitud) => {
     try {
       setSelectedSolicitud(solicitud);
       const { data: docs, error } = await supabase
         .from("solicitudes_documentos")
-        .select("*")
+        .select("*, devoluciones:devoluciones_documentos(*)")
         .eq("solicitud_id", solicitud.id)
         .order("numero_orden", { ascending: true });
-
       if (error) throw error;
-
       const enriquecidos = (docs || []).map(d => ({
         ...d,
-        info: documentosInventario.find(x => x.id === d.documento_id) || null
+        info: documentosInventario.find(x => x.id === d.documento_id) || null,
+        devuelto: d.devoluciones && d.devoluciones.length > 0
       }));
-      
       setViewDocs(enriquecidos);
       setShowView(true);
     } catch (error) {
@@ -464,44 +401,25 @@ export default function ServiciosArchivisticos() {
     }
   };
 
-  // Función para abrir modal de devolución
   const abrirDevolucion = async (solicitud) => {
     try {
       setSelectedSolicitud(solicitud);
-      
-      // Cargar documentos de la solicitud con estado de devolución
       const { data: docs, error } = await supabase
         .from("solicitudes_documentos")
-        .select(`
-          *,
-          devoluciones:devoluciones_documentos(
-            id,
-            fecha_devolucion,
-            cantidad_devuelta,
-            observaciones
-          )
-        `)
+        .select("*, devoluciones:devoluciones_documentos(*)")
         .eq("solicitud_id", solicitud.id)
         .order("numero_orden", { ascending: true });
-
       if (error) throw error;
-
       const documentosConInfo = (docs || []).map(d => {
         const info = documentosInventario.find(x => x.id === d.documento_id) || null;
-        const totalDevuelto = (d.devoluciones || []).reduce((sum, dev) => sum + (dev.cantidad_devuelta || 0), 0);
-        const cantidadPrestada = d.cantidad_prestada || 1;
-        const pendientePorDevolver = cantidadPrestada - totalDevuelto;
-        
+        const devuelto = d.devoluciones && d.devoluciones.length > 0;
         return {
           ...d,
           info,
-          totalDevuelto,
-          cantidadPrestada,
-          pendientePorDevolver,
-          cantidadADevolver: pendientePorDevolver > 0 ? pendientePorDevolver : 0
+          devuelto,
+          observaciones_devolucion: devuelto ? d.devoluciones[0].observaciones : ""
         };
       });
-
       setDocumentosDevolucion(documentosConInfo);
       setFirmaDevolucion(null);
       setObservacionesDevolucion("");
@@ -511,27 +429,23 @@ export default function ServiciosArchivisticos() {
     }
   };
 
-  // Función para actualizar cantidad a devolver
-  const actualizarCantidadDevolucion = (docId, cantidad) => {
-    setDocumentosDevolucion(prev =>
-      prev.map(doc => 
-        doc.id === docId 
-          ? { 
-              ...doc, 
-              cantidadADevolver: Math.min(Math.max(0, parseInt(cantidad) || 0), doc.pendientePorDevolver)
-            }
-          : doc
-      )
-    );
+  const toggleDevolucionDocumento = (docId) => {
+    setDocumentosDevolucion(prev => prev.map(doc => 
+      doc.id === docId ? { ...doc, devuelto: !doc.devuelto } : doc
+    ));
   };
 
-  // Función para procesar devolución
+  const actualizarObservacionDevolucion = (docId, observacion) => {
+    setDocumentosDevolucion(prev => prev.map(doc => 
+      doc.id === docId ? { ...doc, observaciones_devolucion: observacion } : doc
+    ));
+  };
+
   const procesarDevolucion = async () => {
     try {
       if (!selectedSolicitud) return;
-
-      const documentosADevolver = documentosDevolucion.filter(doc => doc.cantidadADevolver > 0);
       
+      const documentosADevolver = documentosDevolucion.filter(doc => doc.devuelto);
       if (documentosADevolver.length === 0) {
         mostrarMensaje("Debe seleccionar al menos un documento para devolver", "error");
         return;
@@ -544,14 +458,13 @@ export default function ServiciosArchivisticos() {
 
       setLoading(true);
 
-      // Crear registros de devolución
+      // Registrar devoluciones
       const devolucionesData = documentosADevolver.map(doc => ({
         solicitud_id: selectedSolicitud.id,
         documento_id: doc.documento_id,
         solicitud_documento_id: doc.id,
-        cantidad_devuelta: doc.cantidadADevolver,
         fecha_devolucion: new Date().toISOString(),
-        observaciones: observacionesDevolucion,
+        observaciones: doc.observaciones_devolucion || observacionesDevolucion,
         firma_receptor: firmaDevolucion,
         usuario_receptor_id: currentUser?.id
       }));
@@ -562,43 +475,37 @@ export default function ServiciosArchivisticos() {
 
       if (errorDevoluciones) throw errorDevoluciones;
 
-      // Verificar si todos los documentos han sido devueltos completamente
+      // Verificar si todos los documentos han sido devueltos
       const { data: todosDocumentos, error: errorVerificar } = await supabase
         .from("solicitudes_documentos")
-        .select(`
-          *,
-          devoluciones:devoluciones_documentos(cantidad_devuelta)
-        `)
+        .select("*, devoluciones:devoluciones_documentos(*)")
         .eq("solicitud_id", selectedSolicitud.id);
 
       if (errorVerificar) throw errorVerificar;
 
-      let todosDevueltos = true;
-      todosDocumentos.forEach(doc => {
-        const cantidadPrestada = doc.cantidad_prestada || 1;
-        const totalDevuelto = (doc.devoluciones || []).reduce((sum, dev) => sum + (dev.cantidad_devuelta || 0), 0);
-        if (totalDevuelto < cantidadPrestada) {
-          todosDevueltos = false;
-        }
-      });
+      const todosDevueltos = todosDocumentos.every(doc => 
+        doc.devoluciones && doc.devoluciones.length > 0
+      );
 
-      // Actualizar estado de la solicitud si corresponde
+      // Actualizar estado de la solicitud
       let nuevoEstado = selectedSolicitud.estado;
-      if (todosDevueltos && selectedSolicitud.estado === "entregada") {
+      if (todosDevueltos) {
         nuevoEstado = "devuelta";
-        
-        const { error: errorActualizacion } = await supabase
-          .from("solicitudes_archivisticas")
-          .update({
-            estado: "devuelta",
-            fecha_devolucion_real: new Date().toISOString(),
-            updated_by: currentUser?.id,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", selectedSolicitud.id);
-
-        if (errorActualizacion) throw errorActualizacion;
+      } else if (documentosADevolver.length > 0) {
+        nuevoEstado = "devolucion_parcial";
       }
+
+      const { error: errorActualizacion } = await supabase
+        .from("solicitudes_archivisticas")
+        .update({
+          estado: nuevoEstado,
+          fecha_devolucion_real: todosDevueltos ? new Date().toISOString() : null,
+          updated_by: currentUser?.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", selectedSolicitud.id);
+
+      if (errorActualizacion) throw errorActualizacion;
 
       mostrarMensaje(
         todosDevueltos 
@@ -623,16 +530,13 @@ export default function ServiciosArchivisticos() {
       descripcion_documentos: solicitud.descripcion_documentos || "",
       organo_responsable: solicitud.organo_responsable || "",
       estado: solicitud.estado || "pendiente",
-      fecha_devolucion_prevista: solicitud.fecha_devolucion_prevista
-        ? new Date(solicitud.fecha_devolucion_prevista).toISOString().slice(0, 10)
-        : ""
+      fecha_devolucion_prevista: solicitud.fecha_devolucion_prevista ? new Date(solicitud.fecha_devolucion_prevista).toISOString().slice(0, 10) : ""
     });
     setShowEdit(true);
   };
 
   const guardarEdicion = async () => {
     if (!selectedSolicitud) return;
-    
     try {
       setLoading(true);
       const { error } = await supabase
@@ -644,9 +548,7 @@ export default function ServiciosArchivisticos() {
           updated_at: new Date().toISOString()
         })
         .eq("id", selectedSolicitud.id);
-
       if (error) throw error;
-
       mostrarMensaje("Solicitud actualizada", "success");
       setShowEdit(false);
       setSelectedSolicitud(null);
@@ -660,22 +562,12 @@ export default function ServiciosArchivisticos() {
 
   const confirmarEliminar = async () => {
     if (!selectedSolicitud) return;
-    
     try {
       setLoading(true);
-      
-      await supabase
-        .from("solicitudes_documentos")
-        .delete()
-        .eq("solicitud_id", selectedSolicitud.id);
-      
-      const { error } = await supabase
-        .from("solicitudes_archivisticas")
-        .delete()
-        .eq("id", selectedSolicitud.id);
-
+      await supabase.from("devoluciones_documentos").delete().eq("solicitud_id", selectedSolicitud.id);
+      await supabase.from("solicitudes_documentos").delete().eq("solicitud_id", selectedSolicitud.id);
+      const { error } = await supabase.from("solicitudes_archivisticas").delete().eq("id", selectedSolicitud.id);
       if (error) throw error;
-
       mostrarMensaje("Solicitud eliminada", "success");
       setShowDelete(false);
       setSelectedSolicitud(null);
@@ -687,7 +579,6 @@ export default function ServiciosArchivisticos() {
     }
   };
 
-  // Filtros
   const documentosFiltrados = documentosInventario.filter(doc =>
     (doc.Descripcion || "").toLowerCase().includes(busquedaDoc.toLowerCase()) ||
     (doc.Serie_Documental || "").toLowerCase().includes(busquedaDoc.toLowerCase()) ||
@@ -701,13 +592,13 @@ export default function ServiciosArchivisticos() {
     (usuario.entidad || "").toLowerCase().includes(busquedaSolicitante.toLowerCase())
   );
 
-  // Estadísticas
   const stats = {
     pendientes: solicitudes.filter(s => s.estado === "pendiente").length,
     entregadas: solicitudes.filter(s => s.estado === "entregada").length,
+    devolucion_parcial: solicitudes.filter(s => s.estado === "devolucion_parcial").length,
     vencidas: solicitudes.filter(s => {
-      if (s.estado !== "entregada" || !s.fecha_devolucion_prevista) return false;
-      return new Date(s.fecha_devolucion_prevista) < new Date();
+      if (s.estado !== "entregada" && s.estado !== "devolucion_parcial") return false;
+      return s.fecha_devolucion_prevista && new Date(s.fecha_devolucion_prevista) < new Date();
     }).length,
     total: solicitudes.length
   };
@@ -715,54 +606,27 @@ export default function ServiciosArchivisticos() {
   const tabs = [
     { id: "nueva", label: "Nueva Solicitud", icon: Plus },
     { id: "pendientes", label: `Pendientes (${stats.pendientes})`, icon: Clock },
+    { id: "prestamos", label: `Préstamos Activos (${stats.entregadas + stats.devolucion_parcial})`, icon: FileCheck },
     { id: "historial", label: "Historial", icon: Download }
   ];
 
   return (
     <>
       {mensaje && <Toast {...mensaje} onClose={() => setMensaje(null)} />}
-
       <CrudLayout title="Servicios Archivísticos" icon={FileText}>
-        {/* Estadísticas con diseño mejorado */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard 
-            title="Pendientes" 
-            value={stats.pendientes} 
-            icon={Clock}
-            color="from-amber-500 to-orange-600" 
-          />
-          <StatCard 
-            title="Entregadas" 
-            value={stats.entregadas} 
-            icon={CheckCircle}
-            color="from-emerald-500 to-green-600" 
-          />
-          <StatCard 
-            title="Vencidas" 
-            value={stats.vencidas} 
-            icon={AlertTriangle}
-            color="from-red-500 to-rose-600"
-          />
-          <StatCard 
-            title="Total" 
-            value={stats.total} 
-            icon={FileText}
-            color="from-indigo-500 to-purple-600"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <StatCard title="Pendientes" value={stats.pendientes} icon={Clock} color="from-amber-500 to-orange-600" />
+          <StatCard title="Entregadas" value={stats.entregadas} icon={FileCheck} color="from-blue-500 to-indigo-600" />
+          <StatCard title="Dev. Parcial" value={stats.devolucion_parcial} icon={AlertTriangle} color="from-yellow-500 to-amber-600" />
+          <StatCard title="Vencidas" value={stats.vencidas} icon={AlertTriangle} color="from-red-500 to-rose-600" />
+          <StatCard title="Total" value={stats.total} icon={FileText} color="from-indigo-500 to-purple-600" />
         </div>
 
-        {/* Pestañas con diseño moderno */}
         <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
           {tabs.map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-all whitespace-nowrap ${
-                activeTab === tab.id 
-                  ? "border-indigo-600 text-indigo-700 bg-indigo-50" 
-                  : "border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
-              }`}
-            >
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-all whitespace-nowrap ${
+              activeTab === tab.id ? "border-indigo-600 text-indigo-700 bg-indigo-50" : "border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
+            }`}>
               <tab.icon size={18} />
               {tab.label}
             </button>
@@ -770,160 +634,73 @@ export default function ServiciosArchivisticos() {
         </div>
 
         {loading ? (
-          <div className="py-12">
-            <SparkleLoader />
-          </div>
+          <div className="py-12"><SparkleLoader /></div>
         ) : (
           <>
-            {/* Nueva Solicitud */}
             {activeTab === "nueva" && (
               <div className="bg-white rounded-2xl shadow-lg border p-8">
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="p-3 bg-indigo-100 rounded-xl">
-                    <FilePlus className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    Nueva Solicitud de Servicios Archivísticos
-                  </h2>
+                  <div className="p-3 bg-indigo-100 rounded-xl"><FilePlus className="h-6 w-6 text-indigo-600" /></div>
+                  <h2 className="text-2xl font-bold text-gray-800">Nueva Solicitud de Servicios Archivísticos</h2>
                 </div>
 
-                {/* Sección: Información del Solicitante */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <User className="h-5 w-5 text-indigo-600" />
-                    Información del Solicitante
-                  </h3>
-                  
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><User className="h-5 w-5 text-indigo-600" />Información del Solicitante</h3>
                   <div className="bg-gray-50 rounded-xl p-6">
-                    {/* Buscador de solicitante mejorado */}
                     <div className="mb-6 relative">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Buscar Solicitante
-                      </label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Buscar Solicitante</label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <input
-                          type="text"
-                          value={busquedaSolicitante}
-                          onChange={(e) => {
-                            setBusquedaSolicitante(e.target.value);
-                            setShowUserDropdown(e.target.value.length > 0);
-                          }}
-                          placeholder="Escriba nombre, correo o área..."
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                        <input type="text" value={busquedaSolicitante} onChange={(e) => {
+                          setBusquedaSolicitante(e.target.value);
+                          setShowUserDropdown(e.target.value.length > 0);
+                        }} placeholder="Escriba nombre, correo o área..." className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
                       </div>
-                      
                       {showUserDropdown && busquedaSolicitante && (
                         <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto">
-                          {usuariosFiltrados.length > 0 ? (
-                            usuariosFiltrados.map(user => (
-                              <div
-                                key={user.id}
-                                className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b last:border-b-0"
-                                onClick={() => seleccionarSolicitante(user)}
-                              >
-                                <div className="font-medium text-gray-900">{user.nombre_completo}</div>
-                                <div className="text-sm text-gray-600">{user.email}</div>
-                                <div className="text-xs text-gray-500">
-                                  {user.sub_gerencia} • {user.entidad}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-4 py-3 text-center text-gray-500">
-                              No se encontraron resultados
+                          {usuariosFiltrados.length > 0 ? usuariosFiltrados.map(user => (
+                            <div key={user.id} className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b last:border-b-0" onClick={() => seleccionarSolicitante(user)}>
+                              <div className="font-medium text-gray-900">{user.nombre_completo}</div>
+                              <div className="text-sm text-gray-600">{user.email}</div>
+                              <div className="text-xs text-gray-500">{user.sub_gerencia} • {user.entidad}</div>
                             </div>
+                          )) : (
+                            <div className="px-4 py-3 text-center text-gray-500">No se encontraron resultados</div>
                           )}
-                          <button
-                            className="w-full px-4 py-3 text-indigo-600 hover:bg-indigo-50 border-t flex items-center gap-2 justify-center"
-                            onClick={() => {
-                              setShowNuevoSolicitante(true);
-                              setShowUserDropdown(false);
-                            }}
-                          >
-                            <UserPlus size={16} />
-                            Registrar nuevo solicitante
+                          <button className="w-full px-4 py-3 text-indigo-600 hover:bg-indigo-50 border-t flex items-center gap-2 justify-center" onClick={() => {
+                            setShowNuevoSolicitante(true);
+                            setShowUserDropdown(false);
+                          }}>
+                            <UserPlus size={16} />Registrar nuevo solicitante
                           </button>
                         </div>
                       )}
                     </div>
 
-                    {/* Información del usuario (4 campos bloqueados) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <UserInfo 
-                        label="Nombre Completo"
-                        value={formData.nombre_solicitante}
-                        icon={User}
-                        disabled={true}
-                      />
-                      <UserInfo 
-                        label="Correo Electrónico"
-                        value={formData.email}
-                        icon={Mail}
-                        disabled={true}
-                      />
-                      <UserInfo 
-                        label="Sub Gerencia"
-                        value={formData.sub_gerencia}
-                        icon={Building}
-                        disabled={true}
-                      />
-                      <UserInfo 
-                        label="Teléfono"
-                        value={formData.movil}
-                        icon={Phone}
-                        disabled={true}
-                      />
+                      <UserInfo label="Nombre Completo" value={formData.nombre_solicitante} icon={User} disabled={true} />
+                      <UserInfo label="Correo Electrónico" value={formData.email} icon={Mail} disabled={true} />
+                      <UserInfo label="Sub Gerencia" value={formData.sub_gerencia} icon={Building} disabled={true} />
+                      <UserInfo label="Teléfono" value={formData.movil} icon={Phone} disabled={true} />
                     </div>
                   </div>
                 </div>
 
-                {/* Sección: Detalles de la Solicitud */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-indigo-600" />
-                    Detalles de la Solicitud
-                  </h3>
-                  
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><FileText className="h-5 w-5 text-indigo-600" />Detalles de la Solicitud</h3>
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Motivo de la Solicitud *
-                      </label>
-                      <textarea
-                        value={formData.motivo_solicitud}
-                        onChange={(e) => handleInputChange("motivo_solicitud", e.target.value)}
-                        placeholder="Describa el propósito y justificación de su solicitud..."
-                        rows="4"
-                        className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                        required
-                      />
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Motivo de la Solicitud *</label>
+                      <textarea value={formData.motivo_solicitud} onChange={(e) => handleInputChange("motivo_solicitud", e.target.value)} placeholder="Describa el propósito y justificación de su solicitud..." rows="4" className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" required />
                     </div>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Órgano Responsable
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.organo_responsable}
-                          onChange={(e) => handleInputChange("organo_responsable", e.target.value)}
-                          placeholder="Área o departamento responsable"
-                          className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Órgano Responsable</label>
+                        <input type="text" value={formData.organo_responsable} onChange={(e) => handleInputChange("organo_responsable", e.target.value)} placeholder="Área o departamento responsable" className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
                       </div>
-                      
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Modalidad del Servicio
-                        </label>
-                        <select
-                          value={formData.modalidad_servicio}
-                          onChange={(e) => handleInputChange("modalidad_servicio", e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        >
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Modalidad del Servicio</label>
+                        <select value={formData.modalidad_servicio} onChange={(e) => handleInputChange("modalidad_servicio", e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                           <option value="prestamo_original">Préstamo de Original</option>
                           <option value="copia_simple">Copia Simple</option>
                           <option value="copia_certificada">Copia Certificada</option>
@@ -931,145 +708,77 @@ export default function ServiciosArchivisticos() {
                         </select>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Descripción General de Documentos
-                        </label>
-                        <textarea
-                          value={formData.descripcion_documentos}
-                          onChange={(e) => handleInputChange("descripcion_documentos", e.target.value)}
-                          placeholder="Describa brevemente el tipo de documentos solicitados..."
-                          rows="4"
-                          className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                        />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción General de Documentos</label>
+                        <textarea value={formData.descripcion_documentos} onChange={(e) => handleInputChange("descripcion_documentos", e.target.value)} placeholder="Describa brevemente el tipo de documentos solicitados..." rows="4" className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" />
                       </div>
-                      
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          <Calendar className="inline h-4 w-4 mr-1" />
-                          Fecha de Devolución Prevista
-                        </label>
-                        <input
-                          type="date"
-                          value={formData.fecha_devolucion_prevista}
-                          onChange={(e) => handleInputChange("fecha_devolucion_prevista", e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          min={new Date().toISOString().split('T')[0]}
-                        />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2"><Calendar className="inline h-4 w-4 mr-1" />Fecha de Devolución Prevista</label>
+                        <input type="date" value={formData.fecha_devolucion_prevista} onChange={(e) => handleInputChange("fecha_devolucion_prevista", e.target.value)} className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" min={new Date().toISOString().split('T')[0]} />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Sección: Selección de Documentos */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <FileCheck className="h-5 w-5 text-indigo-600" />
-                    Selección de Documentos
-                  </h3>
-                  
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><FileCheck className="h-5 w-5 text-indigo-600" />Selección de Documentos</h3>
                   <div className="bg-gray-50 rounded-xl p-6">
-                    <SearchBar 
-                      value={busquedaDoc}
-                      onChange={setBusquedaDoc}
-                      placeholder="Buscar documentos por descripción, serie documental o unidad orgánica..." 
-                    />
-                    
+                    <SearchBar value={busquedaDoc} onChange={setBusquedaDoc} placeholder="Buscar documentos por descripción, serie documental o unidad orgánica..." />
                     {busquedaDoc && (
                       <div className="mt-4 bg-white border border-gray-200 rounded-xl max-h-64 overflow-y-auto">
-                        {documentosFiltrados.length > 0 ? (
-                          documentosFiltrados.map((doc) => (
-                            <div key={doc.id} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0 hover:bg-gray-50">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-800">{doc.Descripcion}</h4>
-                                <p className="text-sm text-gray-600">
-                                  Serie: {doc.Serie_Documental}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Unidad: {doc.Unidad_Organica} • E{doc.Estante}-B{doc.Balda}
-                                </p>
-                              </div>
-                              <button 
-                                onClick={() => agregarDocumento(doc)}
-                                className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                              >
-                                Agregar
-                              </button>
+                        {documentosFiltrados.length > 0 ? documentosFiltrados.map((doc) => (
+                          <div key={doc.id} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0 hover:bg-gray-50">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-800">{doc.Descripcion}</h4>
+                              <p className="text-sm text-gray-600">Serie: {doc.Serie_Documental}</p>
+                              <p className="text-xs text-gray-500">Unidad: {doc.Unidad_Organica} • E{doc.Estante}-B{doc.Balda}</p>
                             </div>
-                          ))
-                        ) : (
-                          <div className="px-4 py-6 text-center text-gray-500">
-                            No se encontraron documentos con ese criterio
+                            <button onClick={() => agregarDocumento(doc)} className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">Agregar</button>
                           </div>
+                        )) : (
+                          <div className="px-4 py-6 text-center text-gray-500">No se encontraron documentos con ese criterio</div>
                         )}
                       </div>
                     )}
                   </div>
-                  
-                  {/* Documentos seleccionados */}
                   {documentosSeleccionados.length > 0 && (
                     <div className="mt-6">
-                      <h4 className="font-semibold text-gray-800 mb-4">
-                        Documentos Seleccionados ({documentosSeleccionados.length})
-                      </h4>
+                      <h4 className="font-semibold text-gray-800 mb-4">Documentos Seleccionados ({documentosSeleccionados.length})</h4>
                       <div className="space-y-4">
                         {documentosSeleccionados.map((doc) => (
-                          <SelectedDocument
-                            key={doc.id}
-                            doc={doc}
-                            onRemove={removerDocumento}
-                            onUpdateObservation={actualizarObservacionDoc}
-                          />
+                          <SelectedDocument key={doc.id} doc={doc} onRemove={removerDocumento} onUpdateObservation={actualizarObservacionDoc} />
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Sección: Firma Digital */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Signature className="h-5 w-5 text-indigo-600" />
-                    Firma Digital del Solicitante
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"><Signature className="h-5 w-5 text-indigo-600" />Firma Digital del Solicitante</h3>
                   <div className="bg-gray-50 rounded-xl p-6">
                     <DigitalSignature value={firmaTemp} onChange={setFirmaTemp} />
-                    <p className="text-sm text-gray-600 mt-3">
-                      Su firma digital es requerida para procesar la solicitud
-                    </p>
+                    <p className="text-sm text-gray-600 mt-3">Su firma digital es requerida para procesar la solicitud</p>
                   </div>
                 </div>
 
-                {/* Botón de envío */}
                 <div className="flex justify-end pt-6 border-t border-gray-200">
-                  <button 
-                    onClick={guardarSolicitud}
-                    disabled={loading}
-                    className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
+                  <button onClick={guardarSolicitud} disabled={loading} className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
                     {loading ? "Procesando..." : "Enviar Solicitud"}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Solicitudes Pendientes */}
             {activeTab === "pendientes" && (
               <div className="bg-white rounded-2xl shadow-lg border p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-amber-100 rounded-xl">
-                    <Clock className="h-6 w-6 text-amber-600" />
-                  </div>
+                  <div className="p-3 bg-amber-100 rounded-xl"><Clock className="h-6 w-6 text-amber-600" /></div>
                   <h2 className="text-2xl font-bold text-gray-800">Solicitudes Pendientes</h2>
                 </div>
-                
                 {solicitudes.filter(s => s.estado === "pendiente").length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <Clock className="h-12 w-12 text-gray-400" />
-                    </div>
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><Clock className="h-12 w-12 text-gray-400" /></div>
                     <h3 className="text-lg font-semibold text-gray-600 mb-2">No hay solicitudes pendientes</h3>
                     <p className="text-gray-500">Todas las solicitudes han sido procesadas</p>
                   </div>
@@ -1089,20 +798,8 @@ export default function ServiciosArchivisticos() {
                           <div className="flex items-center gap-2 ml-4">
                             <span className={getEstadoBadge(solicitud.estado)}>{solicitud.estado}</span>
                             <div className="flex gap-1">
-                              <button
-                                onClick={() => verSolicitud(solicitud)}
-                                className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
-                                title="Ver detalle"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() => abrirEditar(solicitud)}
-                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Editar"
-                              >
-                                <Edit3 size={16} />
-                              </button>
+                              <button onClick={() => verSolicitud(solicitud)} className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Ver detalle"><Eye size={16} /></button>
+                              <button onClick={() => abrirEditar(solicitud)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Editar"><Edit3 size={16} /></button>
                             </div>
                           </div>
                         </div>
@@ -1113,21 +810,58 @@ export default function ServiciosArchivisticos() {
               </div>
             )}
 
-            {/* Historial */}
+            {activeTab === "prestamos" && (
+              <div className="bg-white rounded-2xl shadow-lg border p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-blue-100 rounded-xl"><FileCheck className="h-6 w-6 text-blue-600" /></div>
+                  <h2 className="text-2xl font-bold text-gray-800">Préstamos Activos</h2>
+                </div>
+                {solicitudes.filter(s => s.estado === "entregada" || s.estado === "devolucion_parcial").length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><FileCheck className="h-12 w-12 text-gray-400" /></div>
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">No hay préstamos activos</h3>
+                    <p className="text-gray-500">Todos los documentos han sido devueltos</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {solicitudes.filter(s => s.estado === "entregada" || s.estado === "devolucion_parcial").map(solicitud => (
+                      <div key={solicitud.id} className={`border rounded-xl p-6 ${
+                        solicitud.estado === "devolucion_parcial" ? "bg-yellow-50 border-yellow-200" : "bg-blue-50 border-blue-200"
+                      }`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800 mb-2">{solicitud.motivo_solicitud}</h3>
+                            <div className="space-y-1 text-sm text-gray-600">
+                              <p><strong>Solicitante:</strong> {solicitud.nombre_solicitante}</p>
+                              <p><strong>Fecha préstamo:</strong> {formatearFecha(solicitud.fecha_entrega)}</p>
+                              <p><strong>Vencimiento:</strong> {formatearFecha(solicitud.fecha_devolucion_prevista)}</p>
+                              <p><strong>Sub Gerencia:</strong> {solicitud.sub_gerencia}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className={getEstadoBadge(solicitud.estado)}>{solicitud.estado}</span>
+                            <div className="flex gap-1">
+                              <button onClick={() => verSolicitud(solicitud)} className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Ver detalle"><Eye size={16} /></button>
+                              <button onClick={() => abrirDevolucion(solicitud)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors" title="Procesar devolución"><RotateCcw size={16} /></button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "historial" && (
               <div className="bg-white rounded-2xl shadow-lg border p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-indigo-100 rounded-xl">
-                    <Download className="h-6 w-6 text-indigo-600" />
-                  </div>
+                  <div className="p-3 bg-indigo-100 rounded-xl"><Download className="h-6 w-6 text-indigo-600" /></div>
                   <h2 className="text-2xl font-bold text-gray-800">Historial de Solicitudes</h2>
                 </div>
-                
                 {solicitudes.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <FileText className="h-12 w-12 text-gray-400" />
-                    </div>
+                    <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4"><FileText className="h-12 w-12 text-gray-400" /></div>
                     <h3 className="text-lg font-semibold text-gray-600 mb-2">No hay solicitudes registradas</h3>
                     <p className="text-gray-500">Comience creando una nueva solicitud</p>
                   </div>
@@ -1153,51 +887,18 @@ export default function ServiciosArchivisticos() {
                               </div>
                             </td>
                             <td className="p-4">
-                              <div className="max-w-xs truncate" title={solicitud.motivo_solicitud}>
-                                {solicitud.motivo_solicitud}
-                              </div>
+                              <div className="max-w-xs truncate" title={solicitud.motivo_solicitud}>{solicitud.motivo_solicitud}</div>
                             </td>
-                            <td className="p-4">
-                              <span className={getEstadoBadge(solicitud.estado)}>
-                                {solicitud.estado}
-                              </span>
-                            </td>
-                            <td className="p-4 text-gray-600">
-                              {formatearFecha(solicitud.fecha_solicitud)}
-                            </td>
+                            <td className="p-4"><span className={getEstadoBadge(solicitud.estado)}>{solicitud.estado}</span></td>
+                            <td className="p-4 text-gray-600">{formatearFecha(solicitud.fecha_solicitud)}</td>
                             <td className="p-4">
                               <div className="flex gap-1">
-                                <button
-                                  onClick={() => verSolicitud(solicitud)}
-                                  className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
-                                  title="Ver detalle"
-                                >
-                                  <Eye size={16} />
-                                </button>
-                                <button
-                                  onClick={() => abrirEditar(solicitud)}
-                                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                  title="Editar"
-                                >
-                                  <Edit3 size={16} />
-                                </button>
-                                {(solicitud.modalidad_servicio === "prestamo_original" && 
-                                  solicitud.estado === "entregada") && (
-                                  <button
-                                    onClick={() => abrirDevolucion(solicitud)}
-                                    className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                                    title="Procesar devolución"
-                                  >
-                                    <RotateCcw size={16} />
-                                  </button>
+                                <button onClick={() => verSolicitud(solicitud)} className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Ver detalle"><Eye size={16} /></button>
+                                <button onClick={() => abrirEditar(solicitud)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Editar"><Edit3 size={16} /></button>
+                                {(solicitud.estado === "entregada" || solicitud.estado === "devolucion_parcial") && (
+                                  <button onClick={() => abrirDevolucion(solicitud)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors" title="Procesar devolución"><RotateCcw size={16} /></button>
                                 )}
-                                <button
-                                  onClick={() => setSelectedSolicitud(solicitud) || setShowDelete(true)}
-                                  className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
+                                <button onClick={() => setSelectedSolicitud(solicitud) || setShowDelete(true)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                               </div>
                             </td>
                           </tr>
@@ -1212,126 +913,55 @@ export default function ServiciosArchivisticos() {
         )}
       </CrudLayout>
 
-      {/* Modal: Nuevo Solicitante */}
-      <Modal
-        isOpen={showNuevoSolicitante}
-        onClose={() => setShowNuevoSolicitante(false)}
-        title="Registrar Nuevo Solicitante"
-        size="md"
-      >
+      <Modal isOpen={showNuevoSolicitante} onClose={() => setShowNuevoSolicitante(false)} title="Registrar Nuevo Solicitante" size="md">
         <div className="space-y-4">
-          <InputField 
-            label="Nombre Completo"
-            value={nuevoSolicitante.nombre_completo}
-            onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, nombre_completo: value }))}
-            required
-          />
-          <InputField 
-            label="Correo Electrónico"
-            type="email"
-            value={nuevoSolicitante.email}
-            onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, email: value }))}
-            required
-          />
-          <InputField 
-            label="Teléfono Móvil"
-            value={nuevoSolicitante.movil}
-            onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, movil: value }))}
-          />
-          <InputField 
-            label="Sub Gerencia"
-            value={nuevoSolicitante.sub_gerencia}
-            onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, sub_gerencia: value }))}
-          />
-          <InputField 
-            label="Entidad"
-            value={nuevoSolicitante.entidad}
-            onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, entidad: value }))}
-          />
+          <InputField label="Nombre Completo" value={nuevoSolicitante.nombre_completo} onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, nombre_completo: value }))} required />
+          <InputField label="Correo Electrónico" type="email" value={nuevoSolicitante.email} onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, email: value }))} required />
+          <InputField label="Teléfono Móvil" value={nuevoSolicitante.movil} onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, movil: value }))} />
+          <InputField label="Sub Gerencia" value={nuevoSolicitante.sub_gerencia} onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, sub_gerencia: value }))} />
+          <InputField label="Entidad" value={nuevoSolicitante.entidad} onChange={(field, value) => setNuevoSolicitante(prev => ({ ...prev, entidad: value }))} />
         </div>
-
         <div className="flex justify-end gap-3 mt-6">
-          <button 
-            onClick={() => setShowNuevoSolicitante(false)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button 
-            onClick={guardarNuevoSolicitante}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Registrar
-          </button>
+          <button onClick={() => setShowNuevoSolicitante(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button onClick={guardarNuevoSolicitante} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">Registrar</button>
         </div>
       </Modal>
 
-      {/* Modal: Ver Solicitud */}
-      <Modal
-        isOpen={showView}
-        onClose={() => setShowView(false)}
-        title="Detalle de Solicitud"
-        size="lg"
-      >
+      <Modal isOpen={showView} onClose={() => setShowView(false)} title="Detalle de Solicitud" size="lg">
         {selectedSolicitud && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Solicitante</label>
-                <p className="mt-1 text-gray-900">{selectedSolicitud.nombre_solicitante}</p>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Estado</label>
-                <p className="mt-1">
-                  <span className={getEstadoBadge(selectedSolicitud.estado)}>
-                    {selectedSolicitud.estado}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Fecha de Solicitud</label>
-                <p className="mt-1 text-gray-900">{formatearFecha(selectedSolicitud.fecha_solicitud)}</p>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Sub Gerencia</label>
-                <p className="mt-1 text-gray-900">{selectedSolicitud.sub_gerencia}</p>
-              </div>
+              <div><label className="text-sm font-semibold text-gray-700">Solicitante</label><p className="mt-1 text-gray-900">{selectedSolicitud.nombre_solicitante}</p></div>
+              <div><label className="text-sm font-semibold text-gray-700">Estado</label><p className="mt-1"><span className={getEstadoBadge(selectedSolicitud.estado)}>{selectedSolicitud.estado}</span></p></div>
+              <div><label className="text-sm font-semibold text-gray-700">Fecha de Solicitud</label><p className="mt-1 text-gray-900">{formatearFecha(selectedSolicitud.fecha_solicitud)}</p></div>
+              <div><label className="text-sm font-semibold text-gray-700">Sub Gerencia</label><p className="mt-1 text-gray-900">{selectedSolicitud.sub_gerencia}</p></div>
             </div>
-            
-            <div>
-              <label className="text-sm font-semibold text-gray-700">Motivo de la Solicitud</label>
-              <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedSolicitud.motivo_solicitud}</p>
-            </div>
-            
+            <div><label className="text-sm font-semibold text-gray-700">Motivo de la Solicitud</label><p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedSolicitud.motivo_solicitud}</p></div>
             {selectedSolicitud.descripcion_documentos && (
-              <div>
-                <label className="text-sm font-semibold text-gray-700">Descripción de Documentos</label>
-                <p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedSolicitud.descripcion_documentos}</p>
-              </div>
+              <div><label className="text-sm font-semibold text-gray-700">Descripción de Documentos</label><p className="mt-1 text-gray-900 whitespace-pre-wrap">{selectedSolicitud.descripcion_documentos}</p></div>
             )}
-
-            <div>
-              <label className="text-sm font-semibold text-gray-700">Documentos Solicitados</label>
+            <div><label className="text-sm font-semibold text-gray-700">Documentos Solicitados</label>
               <div className="mt-2 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
-                {viewDocs.length === 0 ? (
-                  <p className="p-4 text-gray-500 text-center">Sin documentos vinculados</p>
-                ) : (
+                {viewDocs.length === 0 ? <p className="p-4 text-gray-500 text-center">Sin documentos vinculados</p> : (
                   <div className="divide-y">
                     {viewDocs.map(doc => (
                       <div key={doc.id} className="p-4">
-                        <h4 className="font-medium text-gray-800">
-                          {doc.info?.Descripcion || `Documento #${doc.documento_id}`}
-                        </h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {doc.info?.Serie_Documental} • {doc.info?.Unidad_Organica}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Ubicación: {doc.ubicacion_topografica}
-                        </p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium text-gray-800">{doc.info?.Descripcion || `Documento #${doc.documento_id}`}</h4>
+                          {doc.devuelto && <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Devuelto</span>}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{doc.info?.Serie_Documental} • {doc.info?.Unidad_Organica}</p>
+                        <p className="text-xs text-gray-500 mt-1">Ubicación: {doc.ubicacion_topografica}</p>
                         {doc.observaciones_documento && (
-                          <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded">
-                            <strong>Observaciones:</strong> {doc.observaciones_documento}
-                          </p>
+                          <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded"><strong>Observaciones:</strong> {doc.observaciones_documento}</p>
+                        )}
+                        {doc.devuelto && doc.devoluciones && doc.devoluciones[0] && (
+                          <div className="mt-2 p-2 bg-green-50 rounded">
+                            <p className="text-sm text-green-800"><strong>Devolución:</strong> {formatearFecha(doc.devoluciones[0].fecha_devolucion)}</p>
+                            {doc.devoluciones[0].observaciones && (
+                              <p className="text-sm text-green-700 mt-1"><strong>Observaciones:</strong> {doc.devoluciones[0].observaciones}</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1343,109 +973,92 @@ export default function ServiciosArchivisticos() {
         )}
       </Modal>
 
-      {/* Modal: Editar Solicitud */}
-      <Modal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        title="Editar Solicitud"
-        size="md"
-      >
+      <Modal isOpen={showDevolucion} onClose={() => setShowDevolucion(false)} title="Procesar Devolución" size="lg">
+        {selectedSolicitud && (
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h4 className="font-semibold text-blue-800 mb-2">Solicitud: {selectedSolicitud.motivo_solicitud}</h4>
+              <p className="text-sm text-blue-700">Solicitante: {selectedSolicitud.nombre_solicitante}</p>
+              <p className="text-sm text-blue-700">Fecha préstamo: {formatearFecha(selectedSolicitud.fecha_entrega)}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-4">Seleccione los documentos devueltos:</label>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {documentosDevolucion.map(doc => (
+                  <DevolucionDocumentoItem
+                    key={doc.id}
+                    doc={doc}
+                    onToggle={toggleDevolucionDocumento}
+                    onUpdateObservacion={actualizarObservacionDevolucion}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Observaciones Generales de Devolución</label>
+              <textarea
+                value={observacionesDevolucion}
+                onChange={(e) => setObservacionesDevolucion(e.target.value)}
+                placeholder="Observaciones generales sobre la devolución..."
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Firma del Receptor</label>
+              <DigitalSignature value={firmaDevolucion} onChange={setFirmaDevolucion} />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button onClick={() => setShowDevolucion(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button onClick={procesarDevolucion} disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
+                {loading ? "Procesando..." : "Registrar Devolución"}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Editar Solicitud" size="md">
         <div className="space-y-4">
-          <TextareaField 
-            label="Motivo de la Solicitud"
-            value={editForm.motivo_solicitud}
-            onChange={(v) => setEditForm(prev => ({ ...prev, motivo_solicitud: v }))}
-            required 
-          />
-          <TextareaField 
-            label="Descripción de Documentos"
-            value={editForm.descripcion_documentos}
-            onChange={(v) => setEditForm(prev => ({ ...prev, descripcion_documentos: v }))} 
-          />
-          <InputField 
-            label="Órgano Responsable"
-            value={editForm.organo_responsable}
-            onChange={(field, value) => setEditForm(prev => ({ ...prev, organo_responsable: value }))} 
-          />
-          
+          <TextareaField label="Motivo de la Solicitud" value={editForm.motivo_solicitud} onChange={(v) => setEditForm(prev => ({ ...prev, motivo_solicitud: v }))} required />
+          <TextareaField label="Descripción de Documentos" value={editForm.descripcion_documentos} onChange={(v) => setEditForm(prev => ({ ...prev, descripcion_documentos: v }))} />
+          <InputField label="Órgano Responsable" value={editForm.organo_responsable} onChange={(field, value) => setEditForm(prev => ({ ...prev, organo_responsable: value }))} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={editForm.estado}
-                onChange={(e) => setEditForm(prev => ({ ...prev, estado: e.target.value }))}
-              >
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" value={editForm.estado} onChange={(e) => setEditForm(prev => ({ ...prev, estado: e.target.value }))}>
                 <option value="pendiente">Pendiente</option>
                 <option value="aprobada">Aprobada</option>
                 <option value="entregada">Entregada</option>
+                <option value="devolucion_parcial">Devolución Parcial</option>
                 <option value="devuelta">Devuelta</option>
                 <option value="rechazada">Rechazada</option>
               </select>
             </div>
-            
-            <InputField 
-              label="Fecha de Devolución Prevista"
-              type="date"
-              value={editForm.fecha_devolucion_prevista}
-              onChange={(field, value) => setEditForm(prev => ({ ...prev, fecha_devolucion_prevista: value }))} 
-            />
+            <InputField label="Fecha de Devolución Prevista" type="date" value={editForm.fecha_devolucion_prevista} onChange={(field, value) => setEditForm(prev => ({ ...prev, fecha_devolucion_prevista: value }))} />
           </div>
         </div>
-
         <div className="flex justify-end gap-3 mt-6">
-          <button 
-            onClick={() => setShowEdit(false)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button 
-            onClick={guardarEdicion}
-            disabled={loading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar Cambios"}
-          </button>
+          <button onClick={() => setShowEdit(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button onClick={guardarEdicion} disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">{loading ? "Guardando..." : "Guardar Cambios"}</button>
         </div>
       </Modal>
 
-      {/* Modal: Confirmar Eliminación */}
-      <Modal
-        isOpen={showDelete}
-        onClose={() => setShowDelete(false)}
-        title="Confirmar Eliminación"
-        size="sm"
-      >
+      <Modal isOpen={showDelete} onClose={() => setShowDelete(false)} title="Confirmar Eliminación" size="sm">
         {selectedSolicitud && (
           <div className="space-y-4">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-              <p className="text-gray-700">
-                ¿Está seguro de que desea eliminar la solicitud de{" "}
-                <span className="font-semibold">{selectedSolicitud.nombre_solicitante}</span>?
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Esta acción no se puede deshacer.
-              </p>
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4"><AlertTriangle className="h-8 w-8 text-red-600" /></div>
+              <p className="text-gray-700">¿Está seguro de que desea eliminar la solicitud de <span className="font-semibold">{selectedSolicitud.nombre_solicitante}</span>?</p>
+              <p className="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
             </div>
-
             <div className="flex justify-center gap-3">
-              <button 
-                onClick={() => setShowDelete(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={confirmarEliminar}
-                disabled={loading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? "Eliminando..." : "Eliminar"}
-              </button>
+              <button onClick={() => setShowDelete(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button onClick={confirmarEliminar} disabled={loading} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">{loading ? "Eliminando..." : "Eliminar"}</button>
             </div>
           </div>
         )}

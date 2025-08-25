@@ -3,19 +3,20 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Pen, RotateCcw, Check, X } from 'lucide-react';
 
 export const DigitalSignature = ({ 
-  onSave, 
-  onCancel, 
+  value = null,
+  onChange = () => {},
   title = "Firma Digital",
   required = false,
-  initialSignature = null,
   disabled = false 
 }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
+  const [hasSignature, setHasSignature] = useState(!!value);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     
     // Configurar canvas
@@ -26,78 +27,22 @@ export const DigitalSignature = ({
     ctx.lineCap = 'round';
     
     // Cargar firma inicial si existe
-    if (initialSignature) {
+    if (value) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0);
         setHasSignature(true);
       };
-      img.src = initialSignature;
+      img.src = value;
     } else {
-      // Limpiar canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Línea de firma
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(50, 160);
-      ctx.lineTo(350, 160);
-      ctx.stroke();
-      
-      // Texto guía
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Firme aquí', 200, 100);
-      
-      // Restaurar configuración para dibujo
-      ctx.strokeStyle = '#1e40af';
-      ctx.lineWidth = 2;
+      clearCanvas();
     }
-  }, [initialSignature]);
+  }, [value]);
 
-  const startDrawing = (e) => {
-    if (disabled) return;
-    
+  const clearCanvas = () => {
     const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
     
-    setIsDrawing(true);
-    ctx.beginPath();
-    ctx.moveTo(
-      e.clientX - rect.left,
-      e.clientY - rect.top
-    );
-  };
-
-  const draw = (e) => {
-    if (!isDrawing || disabled) return;
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext('2d');
-    
-    ctx.lineTo(
-      e.clientX - rect.left,
-      e.clientY - rect.top
-    );
-    ctx.stroke();
-    setHasSignature(true);
-  };
-
-  const stopDrawing = () => {
-    if (disabled) return;
-    setIsDrawing(false);
-  };
-
-  const clearSignature = () => {
-    if (disabled) return;
-    
-    const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -118,19 +63,69 @@ export const DigitalSignature = ({
     ctx.textAlign = 'center';
     ctx.fillText('Firme aquí', 200, 100);
     
-    // Restaurar configuración
+    // Restaurar configuración para dibujo
     ctx.strokeStyle = '#1e40af';
     ctx.lineWidth = 2;
     
     setHasSignature(false);
   };
 
+  const startDrawing = (e) => {
+    if (disabled) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    
+    setIsDrawing(true);
+    ctx.beginPath();
+    ctx.moveTo(
+      e.clientX - rect.left,
+      e.clientY - rect.top
+    );
+  };
+
+  const draw = (e) => {
+    if (!isDrawing || disabled) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    
+    ctx.lineTo(
+      e.clientX - rect.left,
+      e.clientY - rect.top
+    );
+    ctx.stroke();
+    setHasSignature(true);
+  };
+
+  const stopDrawing = () => {
+    if (disabled) return;
+    setIsDrawing(false);
+    
+    // Guardar automáticamente al terminar de dibujar
+    saveSignature();
+  };
+
+  const clearSignature = () => {
+    if (disabled) return;
+    clearCanvas();
+    onChange(null);
+  };
+
   const saveSignature = () => {
     if (!hasSignature && required) return;
     
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    
     const signatureData = canvas.toDataURL('image/png');
-    onSave(signatureData);
+    onChange(signatureData);
   };
 
   // Touch events para móviles
@@ -141,7 +136,9 @@ export const DigitalSignature = ({
       clientX: touch.clientX,
       clientY: touch.clientY
     });
-    canvasRef.current.dispatchEvent(mouseEvent);
+    if (canvasRef.current) {
+      canvasRef.current.dispatchEvent(mouseEvent);
+    }
   };
 
   const handleTouchMove = (e) => {
@@ -151,13 +148,17 @@ export const DigitalSignature = ({
       clientX: touch.clientX,
       clientY: touch.clientY
     });
-    canvasRef.current.dispatchEvent(mouseEvent);
+    if (canvasRef.current) {
+      canvasRef.current.dispatchEvent(mouseEvent);
+    }
   };
 
   const handleTouchEnd = (e) => {
     e.preventDefault();
     const mouseEvent = new MouseEvent("mouseup", {});
-    canvasRef.current.dispatchEvent(mouseEvent);
+    if (canvasRef.current) {
+      canvasRef.current.dispatchEvent(mouseEvent);
+    }
   };
 
   return (
@@ -201,17 +202,8 @@ export const DigitalSignature = ({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={onCancel}
-            className="flex items-center gap-1 px-3 py-2 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
-          >
-            <X size={16} />
-            Cancelar
-          </button>
-          
-          <button
-            type="button"
             onClick={saveSignature}
-            disabled={required && !hasSignature}
+            disabled={(required && !hasSignature) || disabled}
             className="flex items-center gap-1 px-3 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Check size={16} />

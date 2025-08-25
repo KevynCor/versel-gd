@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "../utils/supabaseClient";
 import * as XLSX from "xlsx";
-
-// Componentes
 import { Toast } from "../components/ui/Toast";
 import { SearchBar } from "../components/controls/SearchBar";
 import { Pagination } from "../components/data/Pagination";
@@ -10,14 +8,8 @@ import { CrudLayout } from "../components/layout/CrudLayout";
 import { SparkleLoader } from "../components/ui/SparkleLoader";
 import { EmptyState } from "../components/ui/EmptyState";
 import ModalDetalleDocumento from "../components/form/ModalDetalle";
+import { Search, Eye, Filter, Download, Box, Globe, Building2, FileText, Calendar, MapPin, ChevronDown, AlertCircle } from "lucide-react";
 
-// Iconos
-import { 
-  Search, Eye, Filter, Download, Box, Globe, 
-  Building2, FileText, Calendar, MapPin, ChevronDown, ChevronUp 
-} from "lucide-react";
-
-// ------------------ Toggle Switch ------------------
 const ToggleSwitch = ({ checked, onChange, label, description }) => (
   <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 transition-all duration-300 hover:shadow-sm">
     <div className="flex-shrink-0">
@@ -37,7 +29,6 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
   </div>
 );
 
-// ------------------ Select Input Reutilizable ------------------
 const SelectInput = ({ value, onChange, options, placeholder, label, icon: Icon, disabled = false }) => (
   <div className="space-y-2">
     {label && (
@@ -69,7 +60,6 @@ const SelectInput = ({ value, onChange, options, placeholder, label, icon: Icon,
   </div>
 );
 
-// ------------------ Document Table ------------------
 const DocumentTable = ({ 
   columns, 
   data, 
@@ -80,38 +70,22 @@ const DocumentTable = ({
   currentPage,
   pageSize 
 }) => {
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <SparkleLoader />
-      </div>
-    );
-  }
-
-  if (!data.length) {
-    return (
-      <div className="p-6">
-        <EmptyState
-          title="Sin resultados"
-          message={
-            searchAll
-              ? "No se encontraron documentos con los filtros aplicados en todo el inventario."
-              : "No se encontraron documentos con los filtros aplicados en esta sección."
-          }
-        />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="p-6"><SparkleLoader /></div>;
+  if (!data.length) return (
+    <div className="p-6">
+      <EmptyState
+        title="Sin resultados"
+        message={searchAll ? "No se encontraron documentos con los filtros aplicados en todo el inventario." : "No se encontraron documentos con los filtros aplicados en esta sección."}
+      />
+    </div>
+  );
 
   return (
     <>
-      {/* Cabecera de información */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <FileText className="w-4 h-4" />
-          <span>
-            Mostrando {Math.min(currentPage * pageSize + 1, totalItems)} - {Math.min((currentPage + 1) * pageSize, totalItems)} de {totalItems} documentos
-          </span>
+          <span>Mostrando {Math.min(currentPage * pageSize + 1, totalItems)} - {Math.min((currentPage + 1) * pageSize, totalItems)} de {totalItems} documentos</span>
         </div>
         {searchAll && (
           <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
@@ -120,18 +94,12 @@ const DocumentTable = ({
         )}
       </div>
 
-      {/* Tabla de documentos */}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
             <tr>
               {columns.map((c) => (
-                <th
-                  key={c.key}
-                  className={`px-3 py-2 text-left font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-200 ${
-                    c.key === "descripcion" ? "w-auto" : "w-24 sm:w-32"
-                  }`}
-                >
+                <th key={c.key} className={`px-3 py-2 text-left font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-200 ${c.key === "descripcion" ? "w-auto" : "w-24 sm:w-32"}`}>
                   {c.label}
                 </th>
               ))}
@@ -139,16 +107,10 @@ const DocumentTable = ({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {data.map((doc, index) => (
-              <tr
-                key={doc.id}
-                className={`transition-colors duration-200 hover:bg-blue-200 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-              >
+              <tr key={doc.id} className={`transition-colors duration-200 hover:bg-blue-200 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${doc.Tomo_Faltante ? "bg-red-50 hover:bg-red-100 border-l-4 border-l-red-500" : ""}`}>
                 <td className="px-3 py-2 text-center">{renderActions(doc)}</td>
                 {columns.slice(1).map((col) => (
-                  <td
-                    key={col.key}
-                    className={`px-3 py-2 ${col.key === "descripcion" ? "w-auto" : "w-24 sm:w-32 text-center"}`}
-                  >
+                  <td key={col.key} className={`px-3 py-2 ${col.key === "descripcion" ? "w-auto" : "w-24 sm:w-32 text-center"} ${doc.Tomo_Faltante && col.key === "volumen" ? "text-red-700 font-semibold" : ""}`}>
                     {col.render ? col.render(doc) : doc[col.key]}
                   </td>
                 ))}
@@ -161,7 +123,6 @@ const DocumentTable = ({
   );
 };
 
-// ------------------ Filter Section ------------------
 const FilterSection = ({ 
   filters, 
   setFilters, 
@@ -171,73 +132,71 @@ const FilterSection = ({
   currentAnios, 
   pageSize,
   exportToExcel 
-}) => {
-  return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-      <div className="mb-6">
-        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-          <Search className="w-4 h-4" /> Búsqueda de texto
-        </label>
-        <SearchBar
-          className="w-full"
-          value={filters.search}
-          onChange={(s) => {
-            const f = { ...filters, search: s };
-            setFilters(f);
-            fetchDocuments(0, pageSize, true, f);
-          }}
-          onEnter={() => fetchDocuments(0, pageSize, true, filters)}
-          placeholder={searchAll ? "Buscar en descripción, observaciones, unidad o serie..." : "Buscar por descripción u observaciones..."}
-        />
-      </div>
+}) => (
+  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+    <div className="mb-6">
+      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+        <Search className="w-4 h-4" /> Búsqueda de texto
+      </label>
+      <SearchBar
+        className="w-full"
+        value={filters.search}
+        onChange={(s) => {
+          const f = { ...filters, search: s };
+          setFilters(f);
+          fetchDocuments(0, pageSize, true, f);
+        }}
+        onEnter={() => fetchDocuments(0, pageSize, true, filters)}
+        placeholder={searchAll ? "Buscar en descripción, observaciones, unidad o serie..." : "Buscar por descripción u observaciones..."}
+      />
+    </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
-        <SelectInput
-          label="Serie Documental"
-          icon={FileText}
-          value={filters.serie}
-          onChange={(e) => {
-            const f = { ...filters, serie: e.target.value };
-            setFilters(f);
-            fetchDocuments(0, pageSize, true, f);
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
+      <SelectInput
+        label="Serie Documental"
+        icon={FileText}
+        value={filters.serie}
+        onChange={(e) => {
+          const f = { ...filters, serie: e.target.value };
+          setFilters(f);
+          fetchDocuments(0, pageSize, true, f);
+        }}
+        options={currentSeries}
+        placeholder="Todas las series"
+      />
+      <SelectInput
+        label="Año"
+        icon={Calendar}
+        value={filters.anio}
+        onChange={(e) => {
+          const f = { ...filters, anio: e.target.value };
+          setFilters(f);
+          fetchDocuments(0, pageSize, true, f);
+        }}
+        options={currentAnios}
+        placeholder="Todos los años"
+      />
+      <div className="flex gap-3">
+        <button
+          onClick={() => {
+            const baseFilters = searchAll ? { unidad: "", serie: "", anio: "", search: "" } : { unidad: filters.unidad, serie: "", anio: "", search: "" };
+            setFilters(baseFilters);
+            fetchDocuments(0, pageSize, true, baseFilters);
           }}
-          options={currentSeries}
-          placeholder="Todas las series"
-        />
-        <SelectInput
-          label="Año"
-          icon={Calendar}
-          value={filters.anio}
-          onChange={(e) => {
-            const f = { ...filters, anio: e.target.value };
-            setFilters(f);
-            fetchDocuments(0, pageSize, true, f);
-          }}
-          options={currentAnios}
-          placeholder="Todos los años"
-        />
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              const baseFilters = searchAll ? { unidad: "", serie: "", anio: "", search: "" } : { unidad: filters.unidad, serie: "", anio: "", search: "" };
-              setFilters(baseFilters);
-              fetchDocuments(0, pageSize, true, baseFilters);
-            }}
-            className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
-          >
-            <Filter size={16} /> Limpiar
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-lg"
-          >
-            <Download size={16} /> Exportar
-          </button>
-        </div>
+          className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200"
+        >
+          <Filter size={16} /> Limpiar
+        </button>
+        <button
+          onClick={exportToExcel}
+          className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-lg"
+        >
+          <Download size={16} /> Exportar
+        </button>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 export default function BusquedaDocumento() {
   const [searchAll, setSearchAll] = useState(false);
@@ -249,7 +208,6 @@ export default function BusquedaDocumento() {
 
   const showMessage = (mensaje, tipo) => setState((s) => ({ ...s, mensaje: { mensaje, tipo } }));
 
-  // ------------------ Cargar Catálogos ------------------
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
@@ -272,7 +230,6 @@ export default function BusquedaDocumento() {
     fetchCatalogs();
   }, []);
 
-  // ------------------ Cargar Series y Años por Unidad ------------------
   const cargarFiltros = useCallback(async (unidad) => {
     if (!unidad) return setData(prevData => ({ ...prevData, series: [], anios: [] }));
     
@@ -294,7 +251,6 @@ export default function BusquedaDocumento() {
     }
   }, []);
 
-  // ------------------ Buscar Documentos ------------------
   const fetchDocuments = useCallback(
     async (page = 0, size = pageSize, showToast = false, overrideFilters = null, overrideSearchAll = null) => {
       const f = overrideFilters || filters;
@@ -321,17 +277,8 @@ export default function BusquedaDocumento() {
         setData(prevData => ({ ...prevData, documentos: docs || [] }));
         setState(prevState => ({ ...prevState, page, total, loading: false }));
 
-        // restaurar scroll solo si existe
-        if (tableContainerRef.current) {
-          tableContainerRef.current.scrollTop = scrollPosition;
-        }
-
-        if (showToast) {
-          showMessage(
-            total ? `Se encontraron ${total} documento${total !== 1 ? "s" : ""}` : "No se encontraron documentos",
-            total ? "success" : "info"
-          );
-        }
+        if (tableContainerRef.current) tableContainerRef.current.scrollTop = scrollPosition;
+        if (showToast) showMessage(total ? `Se encontraron ${total} documento${total !== 1 ? "s" : ""}` : "No se encontraron documentos", total ? "success" : "info");
       } catch (err) {
         console.error("Error al buscar documentos:", err);
         showMessage("Error de conexión o formato de datos.", "error");
@@ -345,7 +292,6 @@ export default function BusquedaDocumento() {
     fetchDocuments(0, pageSize);
   }, [pageSize, fetchDocuments]);
 
-  // ------------------ Exportar a Excel ------------------
   const exportToExcel = async () => {
     if (!searchAll && !filters.unidad) return showMessage("Selecciona una unidad o habilita búsqueda global para exportar", "warning");
 
@@ -380,7 +326,6 @@ export default function BusquedaDocumento() {
     }
   };
 
-  // ------------------ Handlers ------------------
   const handleToggleSearchAll = () => {
     const newSearchAll = !searchAll;
     setSearchAll(newSearchAll);
@@ -413,7 +358,6 @@ export default function BusquedaDocumento() {
     }
   };
 
-  // ------------------ Columnas ------------------
   const columns = useMemo(() => [
     { label: "Ver", key: "actions", width: "w-16" },
     ...(searchAll ? [
@@ -434,7 +378,15 @@ export default function BusquedaDocumento() {
       key: "descripcion",
       render: (d) => (
         <div className="max-w-full relative group">
-          <p className="font-medium text-gray-900">{d.Descripcion}</p>
+          <div className="flex items-start gap-2">
+            <p className="font-medium text-gray-900 flex-1">{d.Descripcion}</p>
+            {d.Tomo_Faltante && (
+              <div className="flex items-center gap-1 bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
+                <AlertCircle className="w-3 h-3" />
+                Unidad Faltante
+              </div>
+            )}
+          </div>
           <div className="absolute left-0 bottom-full mb-2 w-max max-w-xs hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 shadow-lg z-50">
             <strong>OBSERVACIÓNES:</strong> {d.Observaciones || "—"}
           </div>
@@ -459,9 +411,9 @@ export default function BusquedaDocumento() {
     },
     {
       label: "Tomo/Folios",
-      key: "volumen",
+      key: "tomofolios",
       render: (d) => (
-        <div className="text-sm text-center">
+        <div className={`text-sm text-center ${d.Tomo_Faltante ? "text-red-700 font-semibold" : ""}`}>
           <div className="font-medium">Tomo: {d.Numero_Tomo || "—"}</div>
           <div className="text-gray-500">Folios: {d.Numero_Folios || "—"}</div>
         </div>
@@ -502,12 +454,10 @@ export default function BusquedaDocumento() {
   const currentSeries = searchAll ? data.allSeries : data.series;
   const currentAnios = searchAll ? data.allAnios : data.anios;
 
-  // ------------------ Render ------------------
   return (
     <>
       {state.mensaje && <Toast {...state.mensaje} onClose={() => setState(prevState => ({ ...prevState, mensaje: null }))} />}
       <CrudLayout title="Búsqueda de Documentos" icon={Search}>
-        {/* Toggle global */}
         <div className="mb-3">
           <ToggleSwitch
             checked={searchAll}
@@ -517,7 +467,6 @@ export default function BusquedaDocumento() {
           />
         </div>
 
-        {/* Selector de unidad */}
         {!searchAll && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6 max-w-2xl mx-auto">
             <SelectInput
@@ -533,7 +482,6 @@ export default function BusquedaDocumento() {
 
         {(searchAll || filters.unidad) && (
           <div className="space-y-6">
-            {/* Filtros */}
             <FilterSection
               filters={filters}
               setFilters={setFilters}
@@ -557,7 +505,6 @@ export default function BusquedaDocumento() {
                 pageSize={pageSize}
               />
 
-              {/* Paginación */}
               {data.documentos.length > 0 && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
                   <Pagination
