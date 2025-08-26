@@ -107,9 +107,6 @@ export const DigitalSignature = ({
   const stopDrawing = () => {
     if (disabled) return;
     setIsDrawing(false);
-    
-    // Guardar automáticamente al terminar de dibujar
-    saveSignature();
   };
 
   const clearSignature = () => {
