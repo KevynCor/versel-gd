@@ -11,11 +11,11 @@ export const Toast = ({ mensaje, tipo, onClose }) => {
 
   const { bg, icon } = config[tipo] || config.info;
 
-  // 🔥 Cerrar automáticamente a los 2 segundos
+  // 🔥 Cerrar automáticamente a los 4 segundos
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose?.();
-    }, 2000);
+    }, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
