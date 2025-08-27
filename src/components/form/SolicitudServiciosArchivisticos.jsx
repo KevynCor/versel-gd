@@ -36,14 +36,7 @@ const SelectedDocument = ({ doc, onRemove, onUpdateObservation }) => (
         <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
           <MapPin className="h-3 w-3" />
           <span>Ubicación: {doc.ubicacion_topografica} • Caja: {doc.Numero_Caja} • Folios: {doc.Numero_Folios}</span>
-        </div>
-        <textarea
-          className="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-          placeholder="Agregar observaciones para este documento..."
-          rows="2"
-          value={doc.observaciones_documento || ''}
-          onChange={(e) => onUpdateObservation(doc.id, e.target.value)}
-        />
+        </div>        
       </div>
       <button onClick={() => onRemove(doc.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Remover documento">
         <X size={16} />
@@ -465,7 +458,7 @@ const SolicitudServiciosArchivisticos = ({
               <div className="bg-gray-50 rounded-xl p-4">
                 <SearchBar value={busquedaDoc} onChange={setBusquedaDoc} placeholder="Buscar documentos por descripción o id..." />
                 {busquedaDoc && (
-                  <div className="mt-3 bg-white border border-gray-200 rounded-xl max-h-48 overflow-y-auto">
+                  <div className="mt-5 bg-white border border-gray-200 rounded-xl max-h-48 overflow-y-auto">
                     {documentosFiltrados.length > 0 ? documentosFiltrados.map((doc) => (
                       <div key={doc.id} className="flex justify-between items-center px-3 py-2 border-b last:border-b-0 hover:bg-gray-50">
                         <div className="flex-1">

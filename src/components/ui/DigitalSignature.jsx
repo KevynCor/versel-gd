@@ -5,7 +5,7 @@ import { Pen, RotateCcw, Check, X, Maximize2, Minimize2 } from 'lucide-react';
 export const DigitalSignature = ({ 
   value = null,
   onChange = () => {},
-  title = "Firma Digital",
+  title = "Firma Electrónica",
   required = false,
   disabled = false,
   fullScreenMode = true // Nueva prop para controlar el modo pantalla completa
@@ -190,7 +190,7 @@ export const DigitalSignature = ({
             <div className="p-2 bg-indigo-100 rounded-lg">
               <Pen className="text-indigo-600" size={24} />
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">Firma Digital</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Firma Electrónica</h2>
           </div>
           <button
             onClick={toggleFullScreen}

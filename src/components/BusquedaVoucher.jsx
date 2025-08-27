@@ -26,7 +26,14 @@ const TABLE_HEADERS = [
 ];
 
 const parseFecha = (fecha) => fecha ? new Date(fecha).toLocaleDateString() : "";
-const buildUbicacion = (fila) => `E${fila.Estante || ""}-C${fila.Cuerpo || ""}-B${fila.Balda || ""}`;
+const ubicacionTopografica = (fila) => {
+  const { Estante, Cuerpo, Balda } = fila || {};
+  const partes = [];
+  if (Estante) partes.push(`E${Estante}`);
+  if (Cuerpo) partes.push(`C${Cuerpo}`);
+  if (Balda) partes.push(`B${Balda}`);
+  return partes.join("-");
+};
 
 const normalizarVoucher = (input) => {
   if (!input) return null;
@@ -191,7 +198,7 @@ const useVoucherSearch = () => {
           desde: parseFecha(fila.Fecha_Inicial),
           hasta: parseFecha(fila.Fecha_Final),
           tomo_faltante: fila.Tomo_Faltante || "",
-          ubicacion: buildUbicacion(fila),
+          ubicacion: ubicacionTopografica(fila),
           _original: fila,
         };
       });
@@ -384,13 +391,7 @@ export default function BusquedaVoucher() {
                 </tr>
               </thead>
               <tbody>
-                {resultados.map((r, i) => (
-                  <FilaResultado
-                    key={i}
-                    r={r}
-                    onSelect={(doc) => setState((s) => ({ ...s, selectedDoc: doc }))}
-                  />
-                ))}
+                {resultados.map((r, i) => ( <FilaResultado key={i} r={r} onSelect={(doc) => setState((s) => ({ ...s, selectedDoc: doc }))}/>))}
               </tbody>
             </table>
           </div>

@@ -49,10 +49,10 @@ const DevolucionDocumentoItem = ({ doc, onToggle, onUpdateObservacion }) => (
         {doc.devuelto ? <CheckSquare size={20} /> : <Square size={20} />}
       </button>
       <div className="flex-1">
-        <h4 className="font-medium text-gray-800">{doc.info?.Descripcion || `Documento #${doc.documento_id}`}</h4>
+        <h4 className="font-medium text-gray-800">{doc.descripcion}</h4>
         <p className="text-sm text-gray-600">
-          Serie: {doc.info?.Serie_Documental || 'N/A'} • 
-          Unidad: {doc.info?.Unidad_Organica || 'N/A'}
+          Serie: {doc.serie || 'N/A'} • 
+          Unidad: {doc.unidad || 'N/A'}
         </p>
         <p className="text-xs text-gray-500">
           Ubicación: {doc.ubicacion_topografica || 
@@ -164,10 +164,10 @@ const ReportePDF = React.forwardRef(({ solicitud, documentos }, ref) => {
               {documentos.map((doc, index) => (
                 <tr key={doc.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="py-2 px-2 border-b text-center">{index + 1}</td>
-                  <td className="py-2 px-2 border-b">{doc.info?.id || 'N/A'}</td>
-                  <td className="py-2 px-2 border-b leading-tight">{doc.info?.Descripcion || `Documento #${doc.documento_id}`}</td>
-                  <td className="py-2 px-2 border-b text-xs">{doc.info?.Unidad_Organica || 'N/A'}</td>
-                  <td className="py-2 px-2 border-b text-center">{doc.info?.Numero_Caja || 'N/A'}</td>                  
+                  <td className="py-2 px-2 border-b">{doc.documento_id || 'N/A'}</td>
+                  <td className="py-2 px-2 border-b leading-tight">{doc.descripcion}</td>
+                  <td className="py-2 px-2 border-b text-xs">{doc.unidad || 'N/A'}</td>
+                  <td className="py-2 px-2 border-b text-center">{doc.caja || 'N/A'}</td>                  
                   <td className="py-2 px-2 border-b text-xs">{formatUbicacion(doc)}</td>
                 </tr>
               ))}
@@ -849,35 +849,10 @@ export default function ServiciosArchivisticos() {
                           <div className="flex items-center gap-2 ml-4">
                             <EstadoBadge estado={solicitud.estado} />
                             <div className="flex gap-1">
-                              <button
-                                onClick={() => verSolicitud(solicitud)}
-                                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
-                                title="Ver detalle"
-                              >
-                                <Eye size={14} />
-                              </button>
-                              <button
-                                onClick={() => abrirEditar(solicitud)}
-                                className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Editar"
-                              >
-                                <Edit3 size={14} />
-                              </button>
-                              <button
-                                onClick={() => abrirDevolucion(solicitud)}
-                                className="p-1 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors"
-                                title="Procesar devolución"
-                              >
-                                <RotateCcw size={14} />
-                              </button>
-                              <button
-                                onClick={() => imprimirSolicitud(solicitud)}
-                                className="p-1 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Imprimir PDF"
-                                disabled={loading}
-                              >
-                                <Printer size={14} />
-                              </button>
+                              <button onClick={() => verSolicitud(solicitud)} className="p-1 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="Ver detalle"><Eye size={14} /></button>
+                              <button onClick={() => abrirEditar(solicitud)} className="p-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Editar"><Edit3 size={14} /></button>
+                              <button onClick={() => abrirDevolucion(solicitud)} className="p-1 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors" title="Procesar devolución"><RotateCcw size={14} /></button>
+                              <button onClick={() => imprimirSolicitud(solicitud)} className="p-1 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Imprimir PDF" disabled={loading}><Printer size={14} /></button>
                             </div>
                           </div>
                         </div>
@@ -970,11 +945,11 @@ export default function ServiciosArchivisticos() {
                       {viewDocs.map(doc => (
                         <div key={doc.id} className="p-3">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-800 text-sm">{doc.info?.Descripcion || `Documento #${doc.documento_id}`}</h4>
+                            <h4 className="font-medium text-gray-800 text-sm">{doc.descripcion}</h4>
                             {doc.devuelto && <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Devuelto</span>}
                           </div>
-                          <p className="text-xs text-gray-600 mt-1">{doc.info?.Serie_Documental} • {doc.info?.Unidad_Organica}</p>
-                          <p className="text-xs text-gray-500 mt-1">Ubicación: {doc.ubicacion_topografica}</p>
+                          <p className="text-xs text-gray-600 mt-1">{doc.unidad} • {doc.serie}</p>
+                          <p className="text-xs text-gray-500 mt-1">Caja: {doc.caja} • Ubicación: {doc.ubicacion_topografica}</p>
                           {doc.observaciones_documento && (
                             <p className="text-xs text-gray-700 mt-2 bg-white p-2 rounded"><strong>Observaciones:</strong> {doc.observaciones_documento}</p>
                           )}
@@ -1046,7 +1021,7 @@ export default function ServiciosArchivisticos() {
         )}
       </Modal>
 
-      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Editar Solicitud" size="md">
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Estado Solicitud" size="md">
         <div className="space-y-3">
           <TextareaField label="Motivo de la Solicitud" value={editForm.motivo_solicitud} onChange={(v) => setEditForm(prev => ({ ...prev, motivo_solicitud: v }))} required />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1054,11 +1029,11 @@ export default function ServiciosArchivisticos() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
               <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm" value={editForm.estado} onChange={(e) => setEditForm(prev => ({ ...prev, estado: e.target.value }))}>
                 <option value="pendiente">Pendiente</option>
-                <option value="aprobada">Aprobada</option>
+                {/*<option value="aprobada">Aprobada</option>*/}
                 <option value="entregada">Entregada</option>
-                <option value="devolucion parcial">Devolución Parcial</option>
+                {/*<option value="devolucion parcial">Devolución Parcial</option>
                 <option value="devuelta">Devuelta</option>
-                <option value="rechazada">Rechazada</option>
+                <option value="rechazada">Rechazada</option>*/}
                 <option value="cancelado">Cancelado</option>
               </select>
             </div>
