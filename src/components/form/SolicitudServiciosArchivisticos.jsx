@@ -495,7 +495,7 @@ const SolicitudServiciosArchivisticos = ({
 
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Signature className="h-5 w-5 text-indigo-600" />Firma Digital
+                <Signature className="h-5 w-5 text-indigo-600" />Firma
               </h3>
               <div className="bg-gray-50 rounded-xl p-4">
                 <DigitalSignature value={firmaTemp} onChange={setFirmaTemp} />

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, BookOpen, FileText } from 'lucide-react';
-import BusquedaDocumento from './components/BusquedaDocumento';
-import PrestamoDocumento from './components/PrestamoDocumento';
+import BusquedaDocumento from './components/pages/BusquedaDocumento/BusquedaDocumento';
 import BusquedaVoucher from './components/BusquedaVoucher';
 import InventarioDocumental from './components/InventarioDocumental';
 import ServiciosArchivisticos from './components/ServiciosArchivisticos';
@@ -69,15 +68,7 @@ export default function App() {
               <BusquedaDocumento />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/prestamo"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <PrestamoDocumento />
-            </ProtectedRoute>
-          }
-        />
+        />        
         <Route
           path="/inventario"
           element={
@@ -153,15 +144,7 @@ const HomeContent = () => {
               color="text-blue-500"
               delay={0.3}
               onClick={() => navigate('/busqueda')}
-            />
-            <HomeCard
-              icon={BookOpen}
-              title="Gestiona Préstamos"
-              description="Controla quién tiene qué documento y cuándo debe devolverlo."
-              color="text-purple-500"
-              delay={0.4}
-              onClick={() => navigate('/prestamo')}
-            />
+            />            
             <HomeCard
               icon={FileText}
               title="Buscar Vouchers"

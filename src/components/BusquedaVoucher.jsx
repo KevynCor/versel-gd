@@ -27,8 +27,9 @@ const TABLE_HEADERS = [
 
 const parseFecha = (fecha) => fecha ? new Date(fecha).toLocaleDateString() : "";
 const ubicacionTopografica = (fila) => {
-  const { Estante, Cuerpo, Balda } = fila || {};
+  const { Ambiente, Estante, Cuerpo, Balda } = fila || {};
   const partes = [];
+  if (Ambiente) partes.push(Ambiente);
   if (Estante) partes.push(`E${Estante}`);
   if (Cuerpo) partes.push(`C${Cuerpo}`);
   if (Balda) partes.push(`B${Balda}`);

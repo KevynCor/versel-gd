@@ -86,7 +86,6 @@ export const DigitalSignature = ({
     ctx.fillStyle = '#94a3b8';
     ctx.font = isFullScreen ? '20px sans-serif' : '16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Deslice su dedo o use el mouse para firmar', canvas.width / 2, canvas.height / 2);
     
     ctx.strokeStyle = '#1e40af';
     ctx.lineWidth = isFullScreen ? 4 : 3;
@@ -288,7 +287,7 @@ export const DigitalSignature = ({
           />
           {!hasSignature && !disabled && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-gray-400 text-lg font-medium">Haga clic aquí para firmar</p>
+              <p className="text-gray-400 text-lg font-medium">Deslice su dedo o use el mouse para firmar</p>
             </div>
           )}
         </div>

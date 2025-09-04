@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../../../utils/supabaseClient";
 import * as XLSX from "xlsx";
-import { Toast } from "../components/ui/Toast";
-import { SearchBar } from "../components/controls/SearchBar";
-import { Pagination } from "../components/data/Pagination";
-import { CrudLayout } from "../components/layout/CrudLayout";
-import { SparkleLoader } from "../components/ui/SparkleLoader";
-import { EmptyState } from "../components/ui/EmptyState";
-import ModalDetalleDocumento from "../components/form/ModalDetalle";
+import { Toast } from "../../ui/Toast";
+import { SearchBar } from "../../controls/SearchBar";
+import { Pagination } from "../../data/Pagination";
+import { CrudLayout } from "../../layout/CrudLayout";
+import { SparkleLoader } from "../../ui/SparkleLoader";
+import { EmptyState } from "../../ui/EmptyState";
+import ModalDetalleDocumento from "../../form/ModalDetalle";
 import { Search, Eye, Filter, Download, Box, Globe, Building2, FileText, Calendar, MapPin, ChevronDown, AlertCircle } from "lucide-react";
 
 const ToggleSwitch = ({ checked, onChange, label, description }) => (
@@ -432,7 +432,7 @@ export default function BusquedaDocumento() {
           <div className="flex items-center gap-1 mb-1">
             <MapPin className="w-4 h-4 text-gray-500" />
             <span className="text-gray-500">
-              {[d.Estante && `E${d.Estante}`, d.Cuerpo && `C${d.Cuerpo}`, d.Balda && `B${d.Balda}`].filter(Boolean).join("-") || "Sin ubicación"}
+              {[d.Ambiente, d.Estante && `E${d.Estante}`, d.Cuerpo && `C${d.Cuerpo}`, d.Balda && `B${d.Balda}`].filter(Boolean).join("-") || "Sin ubicación"}
             </span>
           </div>
         </div>
