@@ -20,9 +20,9 @@ const TABLE_HEADERS = [
   { name: "Descripción", icon: Info, className: "min-w-[220px]" },
   { name: "Folios", icon: FileText },
   { name: "Desde", icon: Calendar },
-  { name: "Hasta", icon: Calendar },
-  { name: "T. Faltante", icon: AlertCircle },
+  { name: "Hasta", icon: Calendar },  
   { name: "Ubicación", icon: MapPin },
+  { name: "T. Faltante", icon: AlertCircle },
 ];
 
 const parseFecha = (fecha) => fecha ? new Date(fecha).toLocaleDateString() : "";
@@ -83,9 +83,14 @@ const TableHeaderCell = ({ name, icon: Icon, className = "" }) => (
   </th>
 );
 
-const FilaResultado = ({ r, onSelect }) => {
+const FilaResultado = ({ r, onSelect, esDuplicado }) => {
   const tieneTomoFaltante = r.tomo_faltante && r.tomo_faltante !== "-";
-  
+
+  // 👇 prioridad visual: rojo > amarillo > gris
+  let bgClass = "hover:bg-slate-50";
+  if (tieneTomoFaltante) bgClass = "bg-red-50 hover:bg-red-100";
+  else if (esDuplicado) bgClass = "bg-yellow-50 hover:bg-yellow-100";
+
   const celdas = [
     { valor: r.voucherBuscado, align: "left" },
     { valor: r.id, align: "left", clickable: true },
@@ -95,35 +100,26 @@ const FilaResultado = ({ r, onSelect }) => {
     { valor: r.n_folios || "-", align: "center" },
     { valor: r.desde || "-", align: "center" },
     { valor: r.hasta || "-", align: "center" },
-    { 
-      valor: r.tomo_faltante || "-", 
-      align: "center",
-    },
     { valor: r.ubicacion || "-", align: "left" },
+    { valor: r.tomo_faltante || "-", align: "center" },
   ];
 
   return (
-    <tr className={`text-sm border-b border-slate-100 ${tieneTomoFaltante ? "bg-red-50 hover:bg-red-100" : "hover:bg-slate-50"}`}>
+    <tr className={`text-sm border-b border-slate-100 ${bgClass}`}>
       {celdas.map(({ valor, align, clickable }, i) => (
         <td
           key={i}
           className={`px-3 py-3 ${align === "center" ? "text-center" : "text-left"} 
-            ${(i === 1 || i === 9) ? "font-mono text-sm" : ""}
+            ${(i === 1 || i === 9) ? "font-mono text-sm" : ""} 
             ${tieneTomoFaltante ? "text-red-700 font-medium" : "text-slate-800"}`}
-          title={i === 4 ? valor : undefined}
         >
           {clickable && r.id ? (
             <button
               onClick={() => onSelect(r._original)}
-              className={`text-blue-600 hover:underline text-sm font-medium hover:text-blue-800 transition-colors ${tieneTomoFaltante ? "hover:text-red-900" : ""}`}
+              className="text-blue-600 hover:underline text-sm font-medium hover:text-blue-800 transition-colors"
             >
               {valor}
             </button>
-          ) : i === 8 && tieneTomoFaltante ? ( // Celda de T. Faltante con icono
-            <span className="flex items-center justify-center gap-1">
-              <AlertCircle className="w-4 h-4" />
-              {valor}
-            </span>
           ) : (
             <span>{valor}</span>
           )}
@@ -259,8 +255,12 @@ const useVoucherSearch = () => {
       try {
         const wb = XLSX.read(target.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        const vouchers = data.flat().slice(1).filter(Boolean);
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });        
+        const vouchers = data
+          .slice(1)
+          .map((row) => row[0])
+          .filter(Boolean);
+        
         procesarVouchers(vouchers);
       } catch (err) {
         console.error("Error Excel:", err);
@@ -304,6 +304,15 @@ export default function BusquedaVoucher() {
   const isLoading = cargando || procesandoListado;
 
   const ejemplosVoucher = useMemo(() => ["001201612694", "6500000107-2017", "3100001245-2018"], []);
+
+  // 👇 Detectar vouchers duplicados
+  const duplicados = useMemo(() => {
+    const counts = {};
+    state.resultados.forEach(r => {
+      counts[r.voucherBuscado] = (counts[r.voucherBuscado] || 0) + 1;
+    });
+    return new Set(Object.keys(counts).filter(k => counts[k] > 1));
+  }, [state.resultados]);
 
   return (
     <CrudLayout title="Búsqueda de Voucher" icon={Search}>
@@ -392,7 +401,14 @@ export default function BusquedaVoucher() {
                 </tr>
               </thead>
               <tbody>
-                {resultados.map((r, i) => ( <FilaResultado key={i} r={r} onSelect={(doc) => setState((s) => ({ ...s, selectedDoc: doc }))}/>))}
+                {resultados.map((r, i) => (
+                  <FilaResultado
+                    key={i}
+                    r={r}
+                    esDuplicado={duplicados.has(r.voucherBuscado)}
+                    onSelect={(doc) => setState((s) => ({ ...s, selectedDoc: doc }))}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
