@@ -316,7 +316,25 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-          </div>          
+          </div>     
+
+          {/* Ambiente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ambiente
+            </label>
+            <select
+              value={filters.ambiente || ""}
+              onChange={(e) => updateFilter('ambiente', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.ambientes?.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>      
         </>
       )}
 
@@ -364,6 +382,7 @@ const DocumentModal = ({ doc, onClose, onSave, onDelete }) => {
       Fecha_Inventario: "",
       Contratista: "",
       Numero_Entregable: "",
+      Ambiente: "",
       ...docData
     };
   });
@@ -507,6 +526,7 @@ const DocumentModal = ({ doc, onClose, onSave, onDelete }) => {
             <InputField label="Fecha Inventario" field="Fecha_Inventario" type="date" />
             <InputField label="Contratista" field="Contratista" />
             <InputField label="Número Entregable" field="Numero_Entregable" />
+            <InputField label="Ambiente" field="Ambiente" />
           </div>
 
           <div className="mt-6">
@@ -584,7 +604,8 @@ export default function InventarioDocumental() {
     cuerpo: [],
     balda: [],
     analistas: [],
-    contratistas: []
+    contratistas: [],
+    ambientes: []
   });
 
   const [stats, setStats] = useState({
@@ -627,6 +648,7 @@ export default function InventarioDocumental() {
         p_analista: currentFilters.analista || null,
         p_fecha_inventario: currentFilters.fechaInventario || null,
         p_contratista: currentFilters.contratista || null,
+        p_ambiente: currentFilters.ambiente || null,
         p_numero_entregable: currentFilters.numeroEntregable || null
       };
 
@@ -671,26 +693,27 @@ export default function InventarioDocumental() {
               p_serie: filters.serie || null,
               p_frecuencia: filters.frecuencia || null,
               p_numero_caja: filters.numeroCaja || null,
+              p_numero_entregable: filters.numeroEntregable || null, 
               p_fecha_desde: filters.fechaDesde || null,
               p_fecha_hasta: filters.fechaHasta || null,
-              p_tomo_faltante: filters.tomoFaltante || null,
+              p_fecha_inventario: filters.fechaInventario || null,              
+              p_contratista: filters.contratista || null,
+              p_analista: filters.analista || null,
+              p_soporte: filters.soporte || null,              
               p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
-              p_soporte: filters.soporte || null,
+              p_tomo_faltante: filters.tomoFaltante || null,
               p_estante: filters.estante || null,
               p_cuerpo: filters.cuerpo || null,
               p_balda: filters.balda || null,
-              p_analista: filters.analista || null,
-              p_fecha_inventario: filters.fechaInventario || null,
-              p_contratista: filters.contratista || null,
-              p_numero_entregable: filters.numeroEntregable || null,
+              p_ambiente: filters.ambiente || null,           
               p_limit: pageSize,
               p_offset: offset,
               p_order_by: 'id',
               p_order_direction: 'desc'
           };
-
+                  
           const { data: result, error } = await supabase.rpc('get_documentos_filtrados', filterParams);
-
+          
           if (error) throw error;
 
           // Asegúrate de que result contenga un array con un objeto que tenga 'documents_data' y 'total_records'
@@ -700,15 +723,15 @@ export default function InventarioDocumental() {
               return;
           }
 
-          const documents_data = result[0].documents_data || []; // Asegúrate de que esta propiedad sea correcta
-          const total_records = result[0].total_records || 0; // Asegúrate de que esta propiedad sea correcta
-
+          const documents_data = result[0].documentos || []; // Asegúrate de que esta propiedad sea correcta
+          const total_records = result[0].total || 0; // Asegúrate de que esta propiedad sea correcta
+          console.log("🧾 Documentos recibidos:", documents_data);
           setData({ documentos: documents_data });
-          setState(s => ({ ...s, page, total: Number(total_records), loading: false }));
+          setState(s => ({ ...s, page, total: Number(total_records), loading: false }));     
 
       } catch (error) {
           console.error('Error fetching documents:', error);
-          showMessage("Error al cargar documentos", "error");
+          showMessage("Error al cargar documentos", error);
           setState(s => ({ ...s, loading: false }));
       }
   }, [filters, pageSize]);
@@ -747,7 +770,8 @@ export default function InventarioDocumental() {
             cuerpo: normalizeArray(opt?.cuerpo),
             balda: normalizeArray(opt?.balda),
             analistas: normalizeArray(opt?.analistas),
-            contratistas: normalizeArray(opt?.contratistas)
+            contratistas: normalizeArray(opt?.contratistas),
+            ambientes: normalizeArray(opt?.ambientes)
           });
         }
       } catch (error) {
@@ -854,7 +878,8 @@ export default function InventarioDocumental() {
         p_analista: filters.analista || null,
         p_fecha_inventario: filters.fechaInventario || null,
         p_contratista: filters.contratista || null,
-        p_numero_entregable: filters.numeroEntregable || null,        
+        p_numero_entregable: filters.numeroEntregable || null,
+        p_ambiente: filters.ambiente || null,
         p_limit: 999999, // Límite muy alto para obtener todos los registros
         p_offset: 0,
         p_order_by: 'id',
@@ -983,9 +1008,18 @@ export default function InventarioDocumental() {
             {doc.Numero_Caja || 'N/A'}
           </div>
           <div className="text-gray-500">
-            {doc.Estante && doc.Cuerpo && doc.Balda 
-              ? `E${doc.Estante}-C${doc.Cuerpo}-B${doc.Balda}` 
-              : 'Sin ubicación'}
+            {doc.Ambiente || doc.Estante || doc.Cuerpo || doc.Balda ? (
+              [
+                doc.Ambiente && `${doc.Ambiente}`,
+                doc.Estante && `E${doc.Estante}`,
+                doc.Cuerpo && `C${doc.Cuerpo}`,
+                doc.Balda && `B${doc.Balda}`
+              ]
+                .filter(Boolean) // elimina valores nulos o vacíos
+                .join('-')       // une solo los que existen con guiones
+            ) : (
+              'Sin ubicación'
+            )}
           </div>
         </div>
       )
