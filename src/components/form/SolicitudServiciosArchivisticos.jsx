@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import { DigitalSignature } from "../ui/DigitalSignature";
 import { SearchBar } from "../controls/SearchBar";
-import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown, QrCode, Scan, Camera } from "lucide-react";
+import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown, QrCode, Scan, Camera, Text } from "lucide-react";
 
-// Instalar jsQR: npm install jsQR
-import jsQR from "jsqr";
+// Instalar: npm install tesseract.js
+import Tesseract from 'tesseract.js';
 
 const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
   <div className={`relative ${disabled ? 'opacity-90' : ''}`}>
@@ -112,11 +112,13 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   );
 };
 
-const ScannerModal = ({ isOpen, onClose, onScan }) => {
+const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const iniciarCamara = async () => {
     try {
@@ -133,12 +135,16 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
         streamRef.current = stream;
         
         videoRef.current.onloadedmetadata = () => {
-          iniciarEscaneoQR();
+          if (mode === "qr") {
+            iniciarEscaneoQR();
+          } else {
+            // Para OCR no necesitamos escaneo continuo, solo cuando el usuario tome foto
+          }
         };
       }
     } catch (error) {
       console.error("Error al acceder a la cámara:", error);
-      alert("No se pudo acceder a la cámara. Asegúrate de permitir el acceso.");
+      onMostrarMensaje("No se pudo acceder a la cámara. Asegúrate de permitir el acceso.", "error");
     }
   };
 
@@ -173,18 +179,6 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
           canvas.height = video.videoHeight;
           
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
-          });
-          
-          if (code) {
-            console.log("✅ Código QR detectado:", code.data);
-            onScan(code.data);
-            detenerCamara();
-            onClose();
-            return;
-          }
         }
         
         if (animationFrameRef.current) {
@@ -198,11 +192,60 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
     animationFrameRef.current = requestAnimationFrame(escanearFrame);
   };
 
+  const tomarFoto = async () => {
+    if (!videoRef.current) return;
+    
+    setIsProcessing(true);
+    setProgress(0);
+
+    try {
+      const canvas = document.createElement('canvas');
+      const video = videoRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Para OCR, procesamos la imagen con Tesseract
+      if (mode === "ocr") {
+        const { data: { text } } = await Tesseract.recognize(
+          canvas.toDataURL('image/jpeg'),
+          'spa+eng', // Español e inglés
+          {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                setProgress(Math.round(m.progress * 100));
+              }
+            }
+          }
+        );
+
+        console.log("Texto reconocido:", text);
+        onScan(text.trim());
+      } else {
+        // Para QR, usaríamos jsQR aquí
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        // Aquí integrarías jsQR si lo necesitas
+        onScan("QR_CODE_PLACEHOLDER");
+      }
+
+    } catch (error) {
+      console.error("Error procesando imagen:", error);
+      onMostrarMensaje("Error al procesar la imagen: " + error.message, "error");
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => iniciarCamara(), 300);
     } else {
       detenerCamara();
+      setIsProcessing(false);
+      setProgress(0);
     }
 
     return () => {
@@ -219,8 +262,8 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Scan size={24} />
-              Escanear Código QR
+              {mode === "qr" ? <Scan size={24} /> : <Text size={24} />}
+              {mode === "qr" ? "Escanear Código QR" : "Reconocer Texto"}
             </h3>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <X size={20} />
@@ -241,19 +284,57 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
               className="hidden" 
             />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="border-2 border-green-500 w-48 h-48 rounded-lg animate-pulse"></div>
+              {mode === "qr" ? (
+                <div className="border-2 border-green-500 w-48 h-48 rounded-lg animate-pulse"></div>
+              ) : (
+                <div className="border-2 border-blue-500 w-64 h-32 rounded-lg animate-pulse flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">Enfoca el texto</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {isProcessing && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-800">Procesando texto...</span>
+                <span className="text-sm text-blue-600">{progress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 text-center space-y-4">
             <div>
               <p className="text-slate-600 font-medium">
-                Apunta la cámara hacia el código QR
+                {mode === "qr" 
+                  ? 'Apunta la cámara hacia el código QR' 
+                  : 'Toma una foto del texto que quieres reconocer'
+                }
               </p>
               <p className="text-sm text-slate-500 mt-1">
-                El escaneo se realizará automáticamente
+                {mode === "qr" 
+                  ? 'El escaneo se realizará automáticamente' 
+                  : 'Asegúrate de que el texto esté bien iluminado y enfocado'
+                }
               </p>
             </div>
             <div className="flex gap-3 justify-center">
+              {mode === "ocr" && (
+                <button
+                  onClick={tomarFoto}
+                  disabled={isProcessing}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                  type="button"
+                >
+                  {isProcessing ? "Procesando..." : "Tomar Foto"}
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
@@ -283,7 +364,7 @@ const InputField = ({ label, type = "text", value, onChange, required = false, p
   </div>
 );
 
-const CustomSearchBar = ({ value, onChange, placeholder, onScan }) => {
+const CustomSearchBar = ({ value, onChange, placeholder, onScanQR, onScanOCR }) => {
   const [showScannerOptions, setShowScannerOptions] = useState(false);
   const scannerButtonRef = useRef(null);
 
@@ -313,17 +394,17 @@ const CustomSearchBar = ({ value, onChange, placeholder, onScan }) => {
             <button
               onClick={() => setShowScannerOptions(!showScannerOptions)}
               className="h-full px-3 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-r-lg transition-all duration-200 flex items-center"
-              title="Escanear código QR"
+              title="Opciones de escaneo"
               type="button"
             >
-              <Scan size={20} />
+              <Camera size={20} />
             </button>
             
             {showScannerOptions && (
-              <div className="absolute top-full right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 min-w-[180px] py-2">
+              <div className="absolute top-full right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 min-w-[200px] py-2">
                 <button
                   onClick={() => {
-                    onScan();
+                    onScanQR();
                     setShowScannerOptions(false);
                   }}
                   className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 transition-colors"
@@ -332,7 +413,21 @@ const CustomSearchBar = ({ value, onChange, placeholder, onScan }) => {
                   <QrCode size={20} className="text-green-600" />
                   <div className="text-left">
                     <div className="font-medium text-slate-800">Escanear QR</div>
-                    <div className="text-xs text-slate-500">Buscar documento por QR</div>
+                    <div className="text-xs text-slate-500">Buscar por código QR</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    onScanOCR();
+                    setShowScannerOptions(false);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 transition-colors border-t border-slate-100"
+                  type="button"
+                >
+                  <Text size={20} className="text-blue-600" />
+                  <div className="text-left">
+                    <div className="font-medium text-slate-800">Reconocer Texto</div>
+                    <div className="text-xs text-slate-500">OCR con cámara</div>
                   </div>
                 </button>
               </div>
@@ -371,6 +466,7 @@ const SolicitudServiciosArchivisticos = ({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNuevoSolicitante, setShowNuevoSolicitante] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [scannerMode, setScannerMode] = useState("qr");
   const [nuevoSolicitante, setNuevoSolicitante] = useState({
     nombre_completo: "",
     email: "",
@@ -380,7 +476,7 @@ const SolicitudServiciosArchivisticos = ({
   });
   const [firmaTemp, setFirmaTemp] = useState(null);
 
-  // Mover agregarDocumento al inicio para que esté disponible para procesarCodigoQR
+  // Mover agregarDocumento al inicio
   const agregarDocumento = useCallback((doc) => {
     if (documentosSeleccionados.some(d => d.id === doc.id)) {
       onMostrarMensaje("El documento ya está en la lista", "warning");
@@ -401,7 +497,6 @@ const SolicitudServiciosArchivisticos = ({
     try {
       console.log("Buscando documento con código:", codigo);
       
-      // Buscar por ID exacto
       const { data: documento, error } = await supabase
         .from("Inventario_documental")
         .select("*")
@@ -409,8 +504,6 @@ const SolicitudServiciosArchivisticos = ({
         .single();
 
       if (error) {
-        console.error("Error al buscar documento:", error);
-        // Intentar búsqueda por coincidencia parcial
         const { data: documentos, error: error2 } = await supabase
           .from("Inventario_documental")
           .select("*")
@@ -427,7 +520,7 @@ const SolicitudServiciosArchivisticos = ({
             setBusquedaDoc(codigo);
           }
         } else {
-          onMostrarMensaje("No se encontró ningún documento con ese código QR", "error");
+          onMostrarMensaje("No se encontró ningún documento con ese código", "error");
         }
         return;
       }
@@ -436,8 +529,51 @@ const SolicitudServiciosArchivisticos = ({
         agregarDocumento(documento);
       }
     } catch (error) {
-      console.error("Error procesando código QR:", error);
+      console.error("Error procesando código:", error);
       onMostrarMensaje("Error al buscar documento: " + error.message, "error");
+    }
+  }, [agregarDocumento, onMostrarMensaje]);
+
+  const procesarTextoOCR = useCallback(async (texto) => {
+    try {
+      console.log("Texto reconocido por OCR:", texto);
+      
+      if (!texto || texto.trim().length < 3) {
+        onMostrarMensaje("No se pudo reconocer texto válido en la imagen", "error");
+        return;
+      }
+
+      // Limpiar y preparar el texto para búsqueda
+      const textoLimpio = texto.trim()
+        .replace(/[^\w\s]/gi, ' ') // Remover caracteres especiales
+        .replace(/\s+/g, ' ')      // Normalizar espacios
+        .substring(0, 100);        // Limitar longitud
+
+      onMostrarMensaje(`Buscando: "${textoLimpio}"`, "info");
+      
+      // Buscar en la base de datos
+      const { data: documentos, error } = await supabase
+        .from("Inventario_documental")
+        .select("*")
+        .or(`Descripcion.ilike.%${textoLimpio}%,id.ilike.%${textoLimpio}%,Unidad_Organica.ilike.%${textoLimpio}%`)
+        .limit(10);
+
+      if (error) throw error;
+
+      if (documentos && documentos.length > 0) {
+        if (documentos.length === 1) {
+          agregarDocumento(documentos[0]);
+        } else {
+          onMostrarMensaje(`Se encontraron ${documentos.length} documentos coincidentes`, "info");
+          setBusquedaDoc(textoLimpio);
+        }
+      } else {
+        onMostrarMensaje("No se encontraron documentos con el texto reconocido", "warning");
+        setBusquedaDoc(textoLimpio);
+      }
+    } catch (error) {
+      console.error("Error procesando texto OCR:", error);
+      onMostrarMensaje("Error al buscar documentos: " + error.message, "error");
     }
   }, [agregarDocumento, onMostrarMensaje]);
 
@@ -727,7 +863,14 @@ const SolicitudServiciosArchivisticos = ({
                   value={busquedaDoc} 
                   onChange={setBusquedaDoc} 
                   placeholder="Buscar documentos por descripción o id..." 
-                  onScan={() => setShowScanner(true)}
+                  onScanQR={() => {
+                    setScannerMode("qr");
+                    setShowScanner(true);
+                  }}
+                  onScanOCR={() => {
+                    setScannerMode("ocr");
+                    setShowScanner(true);
+                  }}
                 />
                 {busquedaDoc && (
                   <div className="mt-5 bg-white border border-gray-200 rounded-xl max-h-48 overflow-y-auto">
@@ -794,7 +937,9 @@ const SolicitudServiciosArchivisticos = ({
       <ScannerModal 
         isOpen={showScanner} 
         onClose={() => setShowScanner(false)} 
-        onScan={procesarCodigoQR}
+        onScan={scannerMode === "qr" ? procesarCodigoQR : procesarTextoOCR}
+        mode={scannerMode}
+        onMostrarMensaje={onMostrarMensaje}
       />
 
       <Modal isOpen={showNuevoSolicitante} onClose={() => setShowNuevoSolicitante(false)} title="Registrar Nuevo Solicitante" size="md">
