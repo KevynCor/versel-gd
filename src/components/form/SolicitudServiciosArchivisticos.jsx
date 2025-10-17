@@ -4,8 +4,9 @@ import { DigitalSignature } from "../ui/DigitalSignature";
 import { SearchBar } from "../controls/SearchBar";
 import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown, QrCode, Scan, Camera, Text } from "lucide-react";
 
-// Instalar: npm install tesseract.js
+// Instalar: npm install tesseract.js jsqr
 import Tesseract from 'tesseract.js';
+import jsQR from "jsqr";
 
 const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
   <div className={`relative ${disabled ? 'opacity-90' : ''}`}>
@@ -137,9 +138,8 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
         videoRef.current.onloadedmetadata = () => {
           if (mode === "qr") {
             iniciarEscaneoQR();
-          } else {
-            // Para OCR no necesitamos escaneo continuo, solo cuando el usuario tome foto
           }
+          // Para OCR no iniciamos escaneo automático
         };
       }
     } catch (error) {
@@ -179,13 +179,25 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
           canvas.height = video.videoHeight;
           
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code) {
+            console.log("✅ Código QR detectado:", code.data);
+            onScan(code.data);
+            detenerCamara();
+            onClose();
+            return;
+          }
         }
         
         if (animationFrameRef.current) {
           animationFrameRef.current = requestAnimationFrame(escanearFrame);
         }
       } catch (error) {
-        console.error("Error en escaneo:", error);
+        console.error("Error en escaneo QR:", error);
       }
     };
     
@@ -208,26 +220,32 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // Para OCR, procesamos la imagen con Tesseract
-      if (mode === "ocr") {
-        const { data: { text } } = await Tesseract.recognize(
-          canvas.toDataURL('image/jpeg'),
-          'spa+eng', // Español e inglés
-          {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                setProgress(Math.round(m.progress * 100));
-              }
+      const { data: { text } } = await Tesseract.recognize(
+        canvas.toDataURL('image/jpeg'),
+        'spa', // Solo español para mejor rendimiento
+        {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              setProgress(Math.round(m.progress * 100));
             }
           }
-        );
+        }
+      );
 
-        console.log("Texto reconocido:", text);
-        onScan(text.trim());
+      console.log("Texto reconocido:", text);
+      
+      // Limpiar y procesar el texto
+      const textoLimpio = limpiarTextoOCR(text);
+      
+      if (textoLimpio && textoLimpio.length >= 3) {
+        onScan(textoLimpio);
+        // Cerrar automáticamente después del escaneo
+        setTimeout(() => {
+          detenerCamara();
+          onClose();
+        }, 500);
       } else {
-        // Para QR, usaríamos jsQR aquí
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        // Aquí integrarías jsQR si lo necesitas
-        onScan("QR_CODE_PLACEHOLDER");
+        onMostrarMensaje("No se pudo reconocer texto válido en la imagen", "error");
       }
 
     } catch (error) {
@@ -237,6 +255,18 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
       setIsProcessing(false);
       setProgress(0);
     }
+  };
+
+  // Función para limpiar el texto OCR
+  const limpiarTextoOCR = (texto) => {
+    if (!texto) return '';
+    
+    return texto
+      .replace(/[^\w\sáéíóúñÁÉÍÓÚÑ.,;:!?()-]/g, ' ') // Mantener caracteres españoles y puntuación básica
+      .replace(/\s+/g, ' ')                          // Normalizar espacios
+      .replace(/(\r\n|\n|\r)/gm, ' ')                // Remover saltos de línea
+      .trim()                                        // Remover espacios al inicio/final
+      .substring(0, 200);                            // Limitar longitud
   };
 
   useEffect(() => {
@@ -288,7 +318,9 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
                 <div className="border-2 border-green-500 w-48 h-48 rounded-lg animate-pulse"></div>
               ) : (
                 <div className="border-2 border-blue-500 w-64 h-32 rounded-lg animate-pulse flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">Enfoca el texto</span>
+                  <span className="text-white text-sm font-medium text-center px-2">
+                    Enfoca el texto en español
+                  </span>
                 </div>
               )}
             </div>
@@ -297,7 +329,7 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
           {isProcessing && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-blue-800">Procesando texto...</span>
+                <span className="text-sm font-medium text-blue-800">Procesando texto en español...</span>
                 <span className="text-sm text-blue-600">{progress}%</span>
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
@@ -314,13 +346,13 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
               <p className="text-slate-600 font-medium">
                 {mode === "qr" 
                   ? 'Apunta la cámara hacia el código QR' 
-                  : 'Toma una foto del texto que quieres reconocer'
+                  : 'Toma una foto del texto en español'
                 }
               </p>
               <p className="text-sm text-slate-500 mt-1">
                 {mode === "qr" 
                   ? 'El escaneo se realizará automáticamente' 
-                  : 'Asegúrate de que el texto esté bien iluminado y enfocado'
+                  : 'El texto debe estar en español y bien legible'
                 }
               </p>
             </div>
@@ -332,7 +364,7 @@ const ScannerModal = ({ isOpen, onClose, onScan, mode = "qr", onMostrarMensaje }
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
                   type="button"
                 >
-                  {isProcessing ? "Procesando..." : "Tomar Foto"}
+                  {isProcessing ? "Procesando..." : "Tomar Foto y Escanear"}
                 </button>
               )}
               <button
@@ -427,7 +459,7 @@ const CustomSearchBar = ({ value, onChange, placeholder, onScanQR, onScanOCR }) 
                   <Text size={20} className="text-blue-600" />
                   <div className="text-left">
                     <div className="font-medium text-slate-800">Reconocer Texto</div>
-                    <div className="text-xs text-slate-500">OCR con cámara</div>
+                    <div className="text-xs text-slate-500">OCR para texto en español</div>
                   </div>
                 </button>
               </div>
@@ -495,7 +527,7 @@ const SolicitudServiciosArchivisticos = ({
 
   const procesarCodigoQR = useCallback(async (codigo) => {
     try {
-      console.log("Buscando documento con código:", codigo);
+      console.log("Buscando documento con código QR:", codigo);
       
       const { data: documento, error } = await supabase
         .from("Inventario_documental")
@@ -520,7 +552,7 @@ const SolicitudServiciosArchivisticos = ({
             setBusquedaDoc(codigo);
           }
         } else {
-          onMostrarMensaje("No se encontró ningún documento con ese código", "error");
+          onMostrarMensaje("No se encontró ningún documento con ese código QR", "error");
         }
         return;
       }
@@ -529,7 +561,7 @@ const SolicitudServiciosArchivisticos = ({
         agregarDocumento(documento);
       }
     } catch (error) {
-      console.error("Error procesando código:", error);
+      console.error("Error procesando código QR:", error);
       onMostrarMensaje("Error al buscar documento: " + error.message, "error");
     }
   }, [agregarDocumento, onMostrarMensaje]);
@@ -543,19 +575,13 @@ const SolicitudServiciosArchivisticos = ({
         return;
       }
 
-      // Limpiar y preparar el texto para búsqueda
-      const textoLimpio = texto.trim()
-        .replace(/[^\w\s]/gi, ' ') // Remover caracteres especiales
-        .replace(/\s+/g, ' ')      // Normalizar espacios
-        .substring(0, 100);        // Limitar longitud
-
-      onMostrarMensaje(`Buscando: "${textoLimpio}"`, "info");
+      onMostrarMensaje(`Buscando: "${texto}"`, "info");
       
-      // Buscar en la base de datos
+      // Buscar en la base de datos con el texto reconocido
       const { data: documentos, error } = await supabase
         .from("Inventario_documental")
         .select("*")
-        .or(`Descripcion.ilike.%${textoLimpio}%,id.ilike.%${textoLimpio}%,Unidad_Organica.ilike.%${textoLimpio}%`)
+        .or(`Descripcion.ilike.%${texto}%,id.ilike.%${texto}%,Unidad_Organica.ilike.%${texto}%,Serie_Documental.ilike.%${texto}%`)
         .limit(10);
 
       if (error) throw error;
@@ -565,11 +591,11 @@ const SolicitudServiciosArchivisticos = ({
           agregarDocumento(documentos[0]);
         } else {
           onMostrarMensaje(`Se encontraron ${documentos.length} documentos coincidentes`, "info");
-          setBusquedaDoc(textoLimpio);
+          setBusquedaDoc(texto);
         }
       } else {
         onMostrarMensaje("No se encontraron documentos con el texto reconocido", "warning");
-        setBusquedaDoc(textoLimpio);
+        setBusquedaDoc(texto);
       }
     } catch (error) {
       console.error("Error procesando texto OCR:", error);
