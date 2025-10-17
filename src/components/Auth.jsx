@@ -20,35 +20,87 @@ const Auth = () => {
     setMessageType('');
 
     try {
+      // Validaciones antes de enviar
+      if (!email || !password) {
+        throw new Error('Por favor completa todos los campos');
+      }
+
+      if (password.length < 6) {
+        throw new Error('La contraseña debe tener al menos 6 caracteres');
+      }
+
+      // Normalizar email
+      const normalizedEmail = email.trim().toLowerCase();
+
       let authResponse;
       if (isSignUp) {
-        authResponse = await supabase.auth.signUp({ email, password });
+        authResponse = await supabase.auth.signUp({ 
+          email: normalizedEmail, 
+          password: password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
       } else {
-        authResponse = await supabase.auth.signInWithPassword({ email, password });
+        authResponse = await supabase.auth.signInWithPassword({ 
+          email: normalizedEmail, 
+          password: password 
+        });
       }
 
       const { data, error } = authResponse;
 
       if (error) {
-        throw error;
+        // Manejo específico de errores comunes
+        switch (error.message) {
+          case 'Invalid login credentials':
+            throw new Error('Email o contraseña incorrectos. Verifica tus credenciales.');
+          case 'Email not confirmed':
+            throw new Error('Por favor confirma tu email antes de iniciar sesión. Revisa tu bandeja de entrada.');
+          case 'User already registered':
+            throw new Error('Este email ya está registrado. Inicia sesión o usa otro email.');
+          default:
+            throw new Error(`Error de autenticación: ${error.message}`);
+        }
       }
 
       if (isSignUp) {
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error('Este usuario ya está registrado');
+        }
+        
         setMessage('¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
         setMessageType('success');
+        
+        // Limpiar formulario después del registro
+        setEmail('');
+        setPassword('');
       } else {
         setMessage('¡Inicio de sesión exitoso! Redirigiendo...');
         setMessageType('success');
-        // Redirigir después de 1 segundo (opcional, para que el usuario vea el mensaje)
-        setTimeout(() => navigate('/'), 1000);
+        
+        // Verificar que la sesión se creó correctamente
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          setTimeout(() => navigate('/'), 1500);
+        } else {
+          throw new Error('No se pudo crear la sesión. Intenta nuevamente.');
+        }
       }
     } catch (error) {
-      setMessage(`Error: ${error.message}`);
+      setMessage(error.message);
       setMessageType('error');
       console.error('Error de autenticación:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setMessage('');
+    setMessageType('');
   };
 
   return (
@@ -98,16 +150,26 @@ const Auth = () => {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Mínimo 6 caracteres"
                 required
+                minLength={6}
                 className="w-full pl-10 pr-4 py-3 bg-gray-50/80 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 text-gray-900 placeholder-gray-500 font-medium"
               />
             </div>
+            {isSignUp && (
+              <p className="text-xs text-gray-500 mt-2">
+                La contraseña debe tener al menos 6 caracteres
+              </p>
+            )}
           </div>
 
           {message && (
             <motion.p
-              className={`text-center text-sm font-medium p-3 rounded-xl ${messageType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+              className={`text-center text-sm font-medium p-3 rounded-xl ${
+                messageType === 'success' 
+                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                  : 'bg-red-100 text-red-700 border border-red-200'
+              }`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -119,17 +181,29 @@ const Auth = () => {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full px-6 py-3 rounded-2xl font-semibold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="w-full px-6 py-3 rounded-2xl font-semibold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+            whileHover={{ scale: loading ? 1 : 1.05 }}
+            whileTap={{ scale: loading ? 1 : 0.95 }}
           >
-            {loading ? 'Cargando...' : (isSignUp ? <><UserPlus className="w-5 h-5" /> Registrarme</> : <><LogIn className="w-5 h-5" /> Iniciar Sesión</>)}
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Cargando...
+              </div>
+            ) : (
+              <>
+                {isSignUp ? <><UserPlus className="w-5 h-5" /> Registrarme</> : <><LogIn className="w-5 h-5" /> Iniciar Sesión</>}
+              </>
+            )}
           </motion.button>
         </form>
 
         <motion.button
-          onClick={() => setIsSignUp(!isSignUp)}
-          className="w-full mt-4 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            resetForm();
+          }}
+          className="w-full mt-4 text-blue-600 hover:text-blue-800 font-medium transition-colors text-center"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

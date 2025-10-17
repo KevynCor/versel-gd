@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import { DigitalSignature } from "../ui/DigitalSignature";
 import { SearchBar } from "../controls/SearchBar";
-import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown } from "lucide-react";
+import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown, QrCode, Scan, Camera } from "lucide-react";
+
+// Instalar jsQR: npm install jsQR
+import jsQR from "jsqr";
 
 const UserInfo = ({ label, value, icon: Icon, disabled = false }) => (
   <div className={`relative ${disabled ? 'opacity-90' : ''}`}>
@@ -109,6 +112,163 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   );
 };
 
+const ScannerModal = ({ isOpen, onClose, onScan }) => {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
+  const iniciarCamara = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        
+        videoRef.current.onloadedmetadata = () => {
+          iniciarEscaneoQR();
+        };
+      }
+    } catch (error) {
+      console.error("Error al acceder a la cámara:", error);
+      alert("No se pudo acceder a la cámara. Asegúrate de permitir el acceso.");
+    }
+  };
+
+  const detenerCamara = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const iniciarEscaneoQR = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas) return;
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+
+    const escanearFrame = () => {
+      if (!animationFrameRef.current) return;
+      
+      try {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code) {
+            console.log("✅ Código QR detectado:", code.data);
+            onScan(code.data);
+            detenerCamara();
+            onClose();
+            return;
+          }
+        }
+        
+        if (animationFrameRef.current) {
+          animationFrameRef.current = requestAnimationFrame(escanearFrame);
+        }
+      } catch (error) {
+        console.error("Error en escaneo:", error);
+      }
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(escanearFrame);
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => iniciarCamara(), 300);
+    } else {
+      detenerCamara();
+    }
+
+    return () => {
+      detenerCamara();
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Scan size={24} />
+              Escanear Código QR
+            </h3>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="relative bg-black rounded-lg overflow-hidden mx-auto max-w-md">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-64 object-cover"
+            />
+            <canvas 
+              ref={canvasRef} 
+              className="hidden" 
+            />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="border-2 border-green-500 w-48 h-48 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+          <div className="mt-6 text-center space-y-4">
+            <div>
+              <p className="text-slate-600 font-medium">
+                Apunta la cámara hacia el código QR
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                El escaneo se realizará automáticamente
+              </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                type="button"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const InputField = ({ label, type = "text", value, onChange, required = false, placeholder = "" }) => (
   <div>
     <label className="block text-sm font-semibold text-gray-700 mb-2">{label}{required && " *"}</label>
@@ -122,6 +282,67 @@ const InputField = ({ label, type = "text", value, onChange, required = false, p
     />
   </div>
 );
+
+const CustomSearchBar = ({ value, onChange, placeholder, onScan }) => {
+  const [showScannerOptions, setShowScannerOptions] = useState(false);
+  const scannerButtonRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (scannerButtonRef.current && !scannerButtonRef.current.contains(event.target)) {
+        setShowScannerOptions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+        />
+        <div className="absolute right-0 top-0 bottom-0 flex items-center">
+          <div className="relative" ref={scannerButtonRef}>
+            <button
+              onClick={() => setShowScannerOptions(!showScannerOptions)}
+              className="h-full px-3 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-r-lg transition-all duration-200 flex items-center"
+              title="Escanear código QR"
+              type="button"
+            >
+              <Scan size={20} />
+            </button>
+            
+            {showScannerOptions && (
+              <div className="absolute top-full right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 min-w-[180px] py-2">
+                <button
+                  onClick={() => {
+                    onScan();
+                    setShowScannerOptions(false);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                  type="button"
+                >
+                  <QrCode size={20} className="text-green-600" />
+                  <div className="text-left">
+                    <div className="font-medium text-slate-800">Escanear QR</div>
+                    <div className="text-xs text-slate-500">Buscar documento por QR</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SolicitudServiciosArchivisticos = ({
   currentUser,
@@ -149,6 +370,7 @@ const SolicitudServiciosArchivisticos = ({
   const [busquedaSolicitante, setBusquedaSolicitante] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNuevoSolicitante, setShowNuevoSolicitante] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [nuevoSolicitante, setNuevoSolicitante] = useState({
     nombre_completo: "",
     email: "",
@@ -157,6 +379,67 @@ const SolicitudServiciosArchivisticos = ({
     entidad: "Electro Sur Este S.A.A."
   });
   const [firmaTemp, setFirmaTemp] = useState(null);
+
+  // Mover agregarDocumento al inicio para que esté disponible para procesarCodigoQR
+  const agregarDocumento = useCallback((doc) => {
+    if (documentosSeleccionados.some(d => d.id === doc.id)) {
+      onMostrarMensaje("El documento ya está en la lista", "warning");
+      return;
+    }
+    const nuevoDoc = {
+      ...doc,
+      numero_orden: documentosSeleccionados.length + 1,
+      ubicacion_topografica: `E${doc.Estante || 1}-C${doc.Cuerpo || 1}-B${doc.Balda || 1}`,
+      observaciones_documento: ""
+    };
+    setDocumentosSeleccionados(prev => [...prev, nuevoDoc]);
+    onMostrarMensaje(`Documento "${doc.Descripcion}" agregado correctamente`, "success");
+    setBusquedaDoc("");
+  }, [documentosSeleccionados, onMostrarMensaje]);
+
+  const procesarCodigoQR = useCallback(async (codigo) => {
+    try {
+      console.log("Buscando documento con código:", codigo);
+      
+      // Buscar por ID exacto
+      const { data: documento, error } = await supabase
+        .from("Inventario_documental")
+        .select("*")
+        .eq("id", codigo.trim())
+        .single();
+
+      if (error) {
+        console.error("Error al buscar documento:", error);
+        // Intentar búsqueda por coincidencia parcial
+        const { data: documentos, error: error2 } = await supabase
+          .from("Inventario_documental")
+          .select("*")
+          .or(`id.ilike.%${codigo}%,Descripcion.ilike.%${codigo}%`)
+          .limit(5);
+
+        if (error2) throw error2;
+
+        if (documentos && documentos.length > 0) {
+          if (documentos.length === 1) {
+            agregarDocumento(documentos[0]);
+          } else {
+            onMostrarMensaje(`Se encontraron ${documentos.length} documentos. Usa la búsqueda manual.`, "info");
+            setBusquedaDoc(codigo);
+          }
+        } else {
+          onMostrarMensaje("No se encontró ningún documento con ese código QR", "error");
+        }
+        return;
+      }
+
+      if (documento) {
+        agregarDocumento(documento);
+      }
+    } catch (error) {
+      console.error("Error procesando código QR:", error);
+      onMostrarMensaje("Error al buscar documento: " + error.message, "error");
+    }
+  }, [agregarDocumento, onMostrarMensaje]);
 
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -174,22 +457,6 @@ const SolicitudServiciosArchivisticos = ({
     setBusquedaSolicitante("");
     setShowUserDropdown(false);
   }, []);
-
-  const agregarDocumento = useCallback((doc) => {
-    if (documentosSeleccionados.some(d => d.id === doc.id)) {
-      onMostrarMensaje("El documento ya está en la lista", "warning");
-      return;
-    }
-    const nuevoDoc = {
-      ...doc,
-      numero_orden: documentosSeleccionados.length + 1,
-      ubicacion_topografica: `E${doc.Estante || 1}-C${doc.Cuerpo || 1}-B${doc.Balda || 1}`,
-      observaciones_documento: ""
-    };
-    setDocumentosSeleccionados(prev => [...prev, nuevoDoc]);
-    onMostrarMensaje("Documento agregado correctamente", "success");
-    setBusquedaDoc("");
-  }, [documentosSeleccionados, onMostrarMensaje]);
 
   const removerDocumento = useCallback((docId) => {
     setDocumentosSeleccionados(prev => prev.filter(d => d.id !== docId).map((d, i) => ({ ...d, numero_orden: i + 1 })));
@@ -456,7 +723,12 @@ const SolicitudServiciosArchivisticos = ({
                 <FileCheck className="h-5 w-5 text-indigo-600" />Selección de Documentos
               </h3>
               <div className="bg-gray-50 rounded-xl p-4">
-                <SearchBar value={busquedaDoc} onChange={setBusquedaDoc} placeholder="Buscar documentos por descripción o id..." />
+                <CustomSearchBar 
+                  value={busquedaDoc} 
+                  onChange={setBusquedaDoc} 
+                  placeholder="Buscar documentos por descripción o id..." 
+                  onScan={() => setShowScanner(true)}
+                />
                 {busquedaDoc && (
                   <div className="mt-5 bg-white border border-gray-200 rounded-xl max-h-48 overflow-y-auto">
                     {documentosFiltrados.length > 0 ? documentosFiltrados.map((doc) => (
@@ -518,6 +790,12 @@ const SolicitudServiciosArchivisticos = ({
           </button>
         </div>
       </div>
+
+      <ScannerModal 
+        isOpen={showScanner} 
+        onClose={() => setShowScanner(false)} 
+        onScan={procesarCodigoQR}
+      />
 
       <Modal isOpen={showNuevoSolicitante} onClose={() => setShowNuevoSolicitante(false)} title="Registrar Nuevo Solicitante" size="md">
         <div className="space-y-4">
