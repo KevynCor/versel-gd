@@ -77,7 +77,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
         {/* Área responsable */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Área Responsable
+            Sección
           </label>
           <select
             value={filters.area ?? ""}
@@ -85,7 +85,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={loading}
           >
-            <option value="">Todas las áreas</option>
+            <option value="">Todos</option>
             {filterOptions?.areas?.map((area) => (
               <option key={area} value={area}>{area}</option>
             ))}
@@ -103,7 +103,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={loading}
           >
-            <option value="">Todas las series</option>
+            <option value="">Todos</option>
             {filterOptions?.series_documentales?.map(serie => (
               <option key={serie} value={serie}>{serie}</option>
             ))}
@@ -121,7 +121,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             disabled={loading}
           >
-            <option value="">Todas</option>
+            <option value="">Todos</option>
             {filterOptions?.frecuencias_consulta?.map(frecuencia => (
               <option key={frecuencia} value={frecuencia}>{frecuencia}</option>
             ))}
@@ -286,15 +286,29 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
             </select>
           </div>
 
-          {/* Fecha Inventario */}
+          {/* Fecha Inicial */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha Inventario
+              Fecha Inicial
             </label>
             <input
               type="date"
-              value={filters.fechaInventario || ""}
-              onChange={(e) => updateFilter('fechaInventario', e.target.value)}
+              value={filters.fechaInicial || ""}
+              onChange={(e) => updateFilter('fechaInicial', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Fecha Final */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha Final
+            </label>
+            <input
+              type="date"
+              value={filters.fechaFinal || ""}
+              onChange={(e) => updateFilter('fechaFinal', e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               disabled={loading}
             />
@@ -960,52 +974,74 @@ export default function InventarioDocumental() {
   // Definición de columnas para la tabla
   const columns = useMemo(() => [
     { 
-      label: "ID/Código", 
-      key: "id", 
-      render: (doc) => (
-        <div className="font-mono text-sm font-medium text-indigo-600">
+      label: "Código", 
+      key: "id",
+      render: (doc) => (        
+        <div className="text-sm font-medium text-gray-900">
           {doc.id || 'Sin código'}
         </div>
-      )
+      ) 
     },
     { 
       label: "Descripción", 
       key: "descripcion", 
       render: (doc) => (
-        <div className="max-w-xs">
-          <div className="font-medium text-gray-900 truncate">
+        <div className="text-sm group">
+          <div className="font-medium text-gray-900 line-clamp-2 group-hover:line-clamp-none transition-all duration-200">
             {doc.Descripcion}
           </div>
-          <div className="text-sm text-gray-500 truncate">
-            {doc.Serie_Documental}
-          </div>
-        </div>
-      )
-    },
-    { 
-      label: "Unidad/Área", 
-      key: "unidad", 
-      render: (doc) => (
-        <div className="text-sm">
-          <div className="font-medium text-gray-900">
-            {doc.Unidad_Organica || 'Sin asignar'}
-          </div>
-          {doc.Subserie_Documental && (
-            <div className="text-gray-500">
-              {doc.Subserie_Documental}
+          {(doc.Serie_Documental || doc.Observaciones) && (
+            <div className="text-sm text-gray-500 line-clamp-1 group-hover:line-clamp-none transition-all duration-200">
+              {doc.Serie_Documental && doc.Serie_Documental}              
+              <div className="text-blue-600">
+                {doc.Serie_Documental && doc.Observaciones && "OBSERVACIONES: "}
+                {doc.Observaciones && doc.Observaciones}
+             </div>              
             </div>
           )}
         </div>
       )
     },
     { 
+      label: "Sección", 
+      key: "seccion", 
+      render: (doc) => (
+        <div className="text-sm">
+          <div className="font-medium text-gray-900">
+            {doc.Unidad_Organica || 'Sin asignar'}
+          </div>
+          {doc.STipo_Unidad_Conservacion && (
+            <div className="text-gray-500">
+              {doc.STipo_Unidad_Conservacion}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      label: "Fechas Extrenas", 
+      key: "fechasExtremas", 
+      render: (doc) => (
+        <div className="text-sm">
+          <div className="text-gray-500">
+            {doc.Fecha_Inicial || 'Sin asignar'}
+          </div>
+          {doc.Fecha_Final && (
+            <div className="text-gray-500">
+              {doc.Fecha_Final}
+            </div>
+          )}
+        </div>
+      )
+    },    
+    { 
       label: "Ubicación", 
       key: "ubicacion", 
       render: (doc) => (
         <div className="text-sm">
-          <div className="flex items-center gap-1 text-gray-600">
+          <div className="flex items-center gap-1 font-medium text-gray-900">
             <Package className="w-4 h-4" />
-            {doc.Numero_Caja || 'N/A'}
+            {doc.Numero_Caja || 'Sin asignar'}
           </div>
           <div className="text-gray-500">
             {doc.Ambiente || doc.Estante || doc.Cuerpo || doc.Balda ? (
@@ -1025,22 +1061,24 @@ export default function InventarioDocumental() {
       )
     },
     { 
-      label: "Consulta", 
-      key: "frecuencia", 
+      label: "Tipo Unidad", 
+      key: "tipoUnidad", 
       render: (doc) => (
-        <div className="flex flex-col gap-1">
-          {doc.Frecuencia_Consulta && (
+        <div className="flex flex-col gap-1 items-center text-center">
+          {doc.Tipo_Unidad_Conservacion && (
             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-100 text-orange-800' :
-              doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-100 text-blue-800' :
+              doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-orange-100 text-orange-800' :
+              doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-blue-100 text-blue-800' :
               'bg-gray-100 text-gray-800'
             }`}>
-              {doc.Frecuencia_Consulta}
+              {doc.Tipo_Unidad_Conservacion}
             </span>
           )}
-          {doc.Numero_Tomo && (
+          {(doc.Numero_Tomo || doc.Numero_Folios) && (
             <span className="text-xs text-gray-500">
-              Tomo: {doc.Numero_Tomo}
+              {doc.Numero_Tomo && `Tomo: ${doc.Numero_Tomo}`}
+              {doc.Numero_Tomo && doc.Numero_Folios && " | "}
+              {doc.Numero_Folios && `Folios: ${doc.Numero_Folios}`}
             </span>
           )}
         </div>
@@ -1134,7 +1172,7 @@ export default function InventarioDocumental() {
   return (
     <>
       <CrudLayout 
-        title="Sistema de Inventario Documental" 
+        title="Inventario del Fondo Documental" 
         icon={BookOpen}
       >
         {/* Toast de notificaciones */}
@@ -1149,7 +1187,7 @@ export default function InventarioDocumental() {
         <div className="flex items-center justify-between mb-6">          
           <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-indigo-600" />
-            Estadísticas del Inventario Documental
+            Estadísticas del Inventario Documental de ELSE
           </h3>          
           <div className="hidden sm:block w-24 h-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600"></div>
         </div>
@@ -1163,7 +1201,7 @@ export default function InventarioDocumental() {
             color="from-blue-600 to-blue-700"
           />
           <StatCard 
-            title="Total Unidades Órganicas" 
+            title="Total Secciones" 
             value={stats.areas?.toLocaleString("es-PE")} 
             icon={CheckCircle} 
             color="from-green-600 to-green-700"
@@ -1187,25 +1225,25 @@ export default function InventarioDocumental() {
             color="from-red-600 to-red-700"
           />
           <StatCard 
-            title="Tomos Faltantes" 
+            title="Unidades Faltantes" 
             value={stats.tomosfaltantes?.toLocaleString("es-PE")} 
             icon={AlertTriangle} 
             color="from-amber-500 to-orange-600"
           />
           <StatCard 
-            title="Alta Consulta" 
+            title="Consulta Alta (2015-2025)" 
             value={stats.altaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-orange-600 to-orange-700"
           />
           <StatCard 
-            title="Media Consulta" 
+            title="Consulta Media (2000-2014)" 
             value={stats.mediaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-blue-600 to-blue-700"
           />
           <StatCard 
-            title="Baja Consulta" 
+            title="Consulta Baja (1984-1999)" 
             value={stats.bajaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-gray-600 to-gray-700"
