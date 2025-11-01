@@ -110,26 +110,44 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
           </select>
         </div>
 
-        {/* Frecuencia de consulta */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Frecuencia de Consulta
-          </label>
-          <select
-            value={filters.frecuencia || ""}
-            onChange={(e) => updateFilter('frecuencia', e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.frecuencias_consulta?.map(frecuencia => (
-              <option key={frecuencia} value={frecuencia}>{frecuencia}</option>
-            ))}
-          </select>
-        </div>
+        {/* Año */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Año
+            </label>
+            <select
+              value={filters.anio || ""}
+              onChange={(e) => updateFilter('anio', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.years?.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>  
 
         {isExpanded && (
-        <>
+        <>        
+          {/* Frecuencia de consulta */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Frecuencia de Consulta
+            </label>
+            <select
+              value={filters.frecuencia || ""}
+              onChange={(e) => updateFilter('frecuencia', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.frecuencias_consulta?.map(frecuencia => (
+                <option key={frecuencia} value={frecuencia}>{frecuencia}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Número de caja */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -143,22 +161,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 disabled={loading}
               />
-            </div>
-
-          {/* Número Entregable */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número Entregable
-            </label>
-            <input
-              type="number"
-              value={filters.numeroEntregable || ""}
-              onChange={(e) => updateFilter('numeroEntregable', e.target.value)}
-              placeholder="Ej: 1, 2, 3"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            />
-          </div>
+            </div>          
 
           {/* Tomo Faltante */}
           <div>
@@ -195,6 +198,24 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
               ))}
             </select>
           </div>
+
+          {/* Ambiente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ambiente
+            </label>
+            <select
+              value={filters.ambiente || ""}
+              onChange={(e) => updateFilter('ambiente', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.ambientes?.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>  
 
           {/* Soporte */}
           <div>
@@ -266,7 +287,40 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
                 <option key={b} value={b}>{b}</option>
               ))}
             </select>
+          </div>                  
+
+          {/* Contratista */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contratista
+            </label>
+            <select
+              value={filters.contratista || ""}
+              onChange={(e) => updateFilter('contratista', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.contratistas?.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
+
+          {/* Número Entregable */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Número Entregable
+            </label>
+            <input
+              type="number"
+              value={filters.numeroEntregable || ""}
+              onChange={(e) => updateFilter('numeroEntregable', e.target.value)}
+              placeholder="Ej: 1, 2, 3"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
+            />
+          </div> 
 
           {/* Analista */}
           <div>
@@ -285,70 +339,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
               ))}
             </select>
           </div>
-
-          {/* Fecha Inicial */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha Inicial
-            </label>
-            <input
-              type="date"
-              value={filters.fechaInicial || ""}
-              onChange={(e) => updateFilter('fechaInicial', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            />
-          </div>
-
-          {/* Fecha Final */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha Final
-            </label>
-            <input
-              type="date"
-              value={filters.fechaFinal || ""}
-              onChange={(e) => updateFilter('fechaFinal', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            />
-          </div>
-
-          {/* Contratista */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contratista
-            </label>
-            <select
-              value={filters.contratista || ""}
-              onChange={(e) => updateFilter('contratista', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.contratistas?.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>     
-
-          {/* Ambiente */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ambiente
-            </label>
-            <select
-              value={filters.ambiente || ""}
-              onChange={(e) => updateFilter('ambiente', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.ambientes?.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>      
+             
         </>
       )}
 
@@ -651,8 +642,7 @@ export default function InventarioDocumental() {
         p_serie: currentFilters.serie || null,
         p_frecuencia: currentFilters.frecuencia || null,
         p_numero_caja: currentFilters.numeroCaja || null,
-        p_fecha_desde: currentFilters.fechaDesde || null,
-        p_fecha_hasta: currentFilters.fechaHasta || null,
+        p_anio: currentFilters.anio ? parseInt(currentFilters.anio) : null, // ✅ AGREGADO
         p_tomo_faltante: currentFilters.tomoFaltante || null,
         p_tipo_unidad_conservacion: currentFilters.tipoUnidadConservacion || null,
         p_soporte: currentFilters.soporte || null,
@@ -666,11 +656,12 @@ export default function InventarioDocumental() {
         p_numero_entregable: currentFilters.numeroEntregable || null
       };
 
+      console.log("📈 Filtros para estadísticas:", statsParams); // ✅ DEBUG
+      
       const { data: statsResult, error } = await supabase.rpc('get_inventario_stats', statsParams);
       
       if (error) throw error;
 
-      // statsResult es un array con un objeto
       const statsData = statsResult?.[0] || {};
 
       setStats({
@@ -684,7 +675,7 @@ export default function InventarioDocumental() {
         folios: Number(statsData.total_folios) || 0,
         cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
         tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
-        digitalizados: 0, // Mantener este campo si lo necesitas
+        digitalizados: 0,
         rangoFechas: statsData.rango_fechas || {}
       });
       
@@ -708,8 +699,7 @@ export default function InventarioDocumental() {
               p_frecuencia: filters.frecuencia || null,
               p_numero_caja: filters.numeroCaja || null,
               p_numero_entregable: filters.numeroEntregable || null, 
-              p_fecha_desde: filters.fechaDesde || null,
-              p_fecha_hasta: filters.fechaHasta || null,
+              p_anio: filters.anio ? parseInt(filters.anio) : null, // ✅ Usar 'anio' no 'years'
               p_fecha_inventario: filters.fechaInventario || null,              
               p_contratista: filters.contratista || null,
               p_analista: filters.analista || null,
@@ -726,26 +716,45 @@ export default function InventarioDocumental() {
               p_order_direction: 'desc'
           };
                   
+          console.log("🔍 Filtros aplicados:", filterParams);
+          
           const { data: result, error } = await supabase.rpc('get_documentos_filtrados', filterParams);
           
           if (error) throw error;
 
-          // Asegúrate de que result contenga un array con un objeto que tenga 'documents_data' y 'total_records'
           if (!result || result.length === 0) {
               setData({ documentos: [] });
               setState(s => ({ ...s, page, total: 0, loading: false }));
               return;
           }
 
-          const documents_data = result[0].documentos || []; // Asegúrate de que esta propiedad sea correcta
-          const total_records = result[0].total || 0; // Asegúrate de que esta propiedad sea correcta
-          console.log("🧾 Documentos recibidos:", documents_data);
+          let documents_data = result[0].documentos || [];
+          const total_records = result[0].total || 0;
+          
+          // ✅ VERIFICACIÓN ROBUSTA: Asegurar que documents_data sea un array
+          if (!Array.isArray(documents_data)) {
+              console.warn("⚠️ documents_data no es un array, forzando conversión:", documents_data);
+              // Si es un objeto con propiedad data, extraer el array
+              if (documents_data && documents_data.data && Array.isArray(documents_data.data)) {
+                  documents_data = documents_data.data;
+              } else if (typeof documents_data === 'object' && documents_data !== null) {
+                  // Si es un objeto simple, convertirlo a array
+                  documents_data = [documents_data];
+              } else {
+                  documents_data = [];
+              }
+          }
+
+          console.log("🧾 Documentos recibidos:", documents_data.length, "registros");
+          console.log("📊 Total de registros:", total_records);
+          
           setData({ documentos: documents_data });
           setState(s => ({ ...s, page, total: Number(total_records), loading: false }));     
 
       } catch (error) {
           console.error('Error fetching documents:', error);
-          showMessage("Error al cargar documentos", error);
+          showMessage("Error al cargar documentos", "error");
+          setData({ documentos: [] }); // ✅ Asegurar que siempre haya un array vacío en caso de error
           setState(s => ({ ...s, loading: false }));
       }
   }, [filters, pageSize]);
@@ -754,7 +763,9 @@ export default function InventarioDocumental() {
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const { data: options, error: optionsError } = await supabase.rpc('get_filter_options');
+        const { data: options, error: optionsError } = await supabase.rpc('get_filter_options', {
+          p_unidad_organica: filters.area || null // ✅ CORREGIDO: usa filters.area en lugar de selectedArea
+        });
         if (optionsError) throw optionsError;
 
         if (options && options.length > 0) {
@@ -776,6 +787,7 @@ export default function InventarioDocumental() {
           setFilterOptions({
             areas: normalizeArray(opt?.areas),
             series_documentales: normalizeArray(opt?.series_documentales),
+            years: normalizeArray(opt?.years),
             frecuencias_consulta: normalizeArray(opt?.frecuencias_consulta),
             tomo_faltante: normalizeArray(opt?.tomo_faltante),
             tipo_unidad_conservacion: normalizeArray(opt?.tipo_unidad_conservacion),
@@ -795,7 +807,7 @@ export default function InventarioDocumental() {
     };
 
     loadOptions();
-  }, []);
+  }, [filters.area, filters.anio]);
 
   // Cargar datos y estadísticas iniciales
   useEffect(() => {
@@ -904,13 +916,15 @@ export default function InventarioDocumental() {
       
       if (error) throw error;
 
-      const allDocs = result?.[0]?.data || [];
+      // CORRECCIÓN: Usar la misma estructura que en fetchDocuments
+      const allDocs = result?.[0]?.documentos || [];
 
       if (allDocs.length === 0) {
         showMessage("No hay datos para exportar", "warning");
         return;
       }
 
+      // Crear el workbook y worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(allDocs);
       
@@ -1067,8 +1081,11 @@ export default function InventarioDocumental() {
         <div className="flex flex-col gap-1 items-center text-center">
           {doc.Tipo_Unidad_Conservacion && (
             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-orange-100 text-orange-800' :
-              doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-blue-100 text-blue-800' :
+              doc.Tipo_Unidad_Conservacion === 'SIN UNIDAD' ? 'bg-red-100 text-red-800' :
+              doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-emerald-100 text-emerald-800' :
+              doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-green-100 text-green-800' :
+              doc.Tipo_Unidad_Conservacion === 'FOLDER MANILA' ? 'bg-amber-100 text-amber-800' :              
+              doc.Tipo_Unidad_Conservacion === 'ANILLADO' ? 'bg-sky-100 text-sky-800' :              
               'bg-gray-100 text-gray-800'
             }`}>
               {doc.Tipo_Unidad_Conservacion}
