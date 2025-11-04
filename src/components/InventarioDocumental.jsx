@@ -633,16 +633,17 @@ export default function InventarioDocumental() {
   const showMessage = (mensaje, tipo) => 
     setState(s => ({ ...s, mensaje: { mensaje, tipo } }));
 
-  // Función para obtener estadísticas según filtros
+  // Función para obtener estadísticas según filtros - VERSIÓN CORREGIDA
   const fetchStats = useCallback(async (currentFilters = {}) => {
     try {
+      // Limpiar y convertir parámetros
       const statsParams = {
         p_search: currentFilters.search || null,
         p_area: currentFilters.area || null,
         p_serie: currentFilters.serie || null,
         p_frecuencia: currentFilters.frecuencia || null,
         p_numero_caja: currentFilters.numeroCaja || null,
-        p_anio: currentFilters.anio ? parseInt(currentFilters.anio) : null, // ✅ AGREGADO
+        p_anio: currentFilters.anio ? parseInt(currentFilters.anio) : null,
         p_tomo_faltante: currentFilters.tomoFaltante || null,
         p_tipo_unidad_conservacion: currentFilters.tipoUnidadConservacion || null,
         p_soporte: currentFilters.soporte || null,
@@ -656,13 +657,29 @@ export default function InventarioDocumental() {
         p_numero_entregable: currentFilters.numeroEntregable || null
       };
 
-      console.log("📈 Filtros para estadísticas:", statsParams); // ✅ DEBUG
+      console.log("Filtros para estadísticas:", statsParams);
+
+      // Limpiar parámetros nulos/vacíos
+      const cleanedParams = {};
+      Object.keys(statsParams).forEach(key => {
+        const value = statsParams[key];
+        if (value !== null && value !== undefined && value !== '') {
+          cleanedParams[key] = value;
+        }
+      });
+
+      console.log("Parámetros limpios:", cleanedParams);
       
-      const { data: statsResult, error } = await supabase.rpc('get_inventario_stats', statsParams);
+      const { data: statsResult, error } = await supabase.rpc('get_inventario_stats', cleanedParams);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error de Supabase:', error);
+        throw error;
+      }
 
       const statsData = statsResult?.[0] || {};
+
+      console.log("Datos de estadísticas recibidos:", statsData);
 
       setStats({
         total: Number(statsData.total_documentos) || 0,

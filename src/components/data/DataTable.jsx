@@ -49,9 +49,14 @@ export const DataTable = ({
       : <ChevronDown size={16} className="text-primary" />;
   };
 
-  // Función para verificar si hay tomo faltante
+  // Función para verificar si hay tomo faltante - MODIFICADA para buscar "TRUE"
   const hasMissingTomo = (row) => {
-    return row.Tomo_Faltante && row.Tomo_Faltante.trim() !== '';
+    const tomoFaltante = row.Tomo_Faltante;
+    return tomoFaltante && 
+           (tomoFaltante.toString().toUpperCase().trim() === 'TRUE' || 
+            tomoFaltante.toString().toUpperCase().trim() === 'SI' ||
+            tomoFaltante.toString().toUpperCase().trim() === 'SÍ' ||
+            tomoFaltante.toString().toUpperCase().trim() === '1');
   };
 
   if (loading) {
@@ -109,7 +114,7 @@ export const DataTable = ({
                   border-b border-border transition-colors
                   ${hasMissingTomo(row) 
                     ? 'bg-red-50/80 hover:bg-red-100 border-l-4 border-l-red-400' 
-                    : 'hover:bg-blue-50'
+                    : 'hover:bg-muted/50'
                   }
                 `}
               >
@@ -117,13 +122,13 @@ export const DataTable = ({
                   <td key={col.key} className="p-2">
                     <div className="flex items-center gap-2">
                       {/* Icono de advertencia para tomo faltante */}
-                      {col.key === 'Tomo_Faltante' && hasMissingTomo(row) && (
+                      {hasMissingTomo(row) && (
                         <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
                       )}
                       <div className="flex-1">
                         {col.render ? col.render(row) : (
                           <span className={`
-                            ${hasMissingTomo(row) && col.key === 'Tomo_Faltante' 
+                            ${hasMissingTomo(row) 
                               ? 'text-red-700 font-semibold' 
                               : 'text-foreground'
                             }
@@ -157,7 +162,7 @@ export const DataTable = ({
               border rounded-lg p-4 space-y-3 transition-colors
               ${hasMissingTomo(row) 
                 ? 'bg-red-50/80 border-red-200 border-l-4 border-l-red-400' 
-                : 'border-border hover:bg-blue-50'
+                : 'border-border hover:bg-muted/50'
               }
             `}
           >
@@ -165,7 +170,7 @@ export const DataTable = ({
             {hasMissingTomo(row) && (
               <div className="flex items-center gap-2 bg-red-100/50 px-3 py-2 rounded-lg -mx-2 -mt-1">
                 <AlertTriangle size={16} className="text-red-500" />
-                <span className="text-red-700 text-sm font-medium">Tomo Faltante: {row.Tomo_Faltante}</span>
+                <span className="text-red-700 text-sm font-medium">Tomo Faltante</span>
               </div>
             )}
 
@@ -175,9 +180,9 @@ export const DataTable = ({
                   <p className="text-sm text-muted-foreground font-medium">{col.label}</p>
                   <div className={`
                     mt-1 flex items-center gap-2
-                    ${hasMissingTomo(row) && col.key === 'Tomo_Faltante' ? 'text-red-700 font-semibold' : 'text-foreground'}
+                    ${hasMissingTomo(row) ? 'text-red-700 font-semibold' : 'text-foreground'}
                   `}>
-                    {col.key === 'Tomo_Faltante' && hasMissingTomo(row) && (
+                    {hasMissingTomo(row) && (
                       <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
                     )}
                     {col.render ? col.render(row) : row[col.key]}
@@ -200,9 +205,9 @@ export const DataTable = ({
                       <p className="text-sm text-muted-foreground font-medium">{col.label}</p>
                       <div className={`
                         mt-1 flex items-center gap-2
-                        ${hasMissingTomo(row) && col.key === 'Tomo_Faltante' ? 'text-red-700 font-semibold' : 'text-foreground'}
+                        ${hasMissingTomo(row) ? 'text-red-700 font-semibold' : 'text-foreground'}
                       `}>
-                        {col.key === 'Tomo_Faltante' && hasMissingTomo(row) && (
+                        {hasMissingTomo(row) && (
                           <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
                         )}
                         {col.render ? col.render(row) : row[col.key]}
