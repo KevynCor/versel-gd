@@ -21,7 +21,7 @@ import { ViewToggle } from "./layout/ViewToggle";
 import { SearchBar } from "./controls/SearchBar";
 
 // Iconos
-import { BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, BarChart3, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus, Box } from "lucide-react";
+import { BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, BarChart3, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus, Box, Book, Archive, Folder } from "lucide-react";
 
 // Componente de filtros avanzados
 const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
@@ -633,7 +633,7 @@ export default function InventarioDocumental() {
   const showMessage = (mensaje, tipo) => 
     setState(s => ({ ...s, mensaje: { mensaje, tipo } }));
 
-  // Función para obtener estadísticas según filtros - VERSIÓN CORREGIDA
+  // Función para obtener estadísticas según filtros - VERSIÓN ACTUALIZADA
   const fetchStats = useCallback(async (currentFilters = {}) => {
     try {
       // Limpiar y convertir parámetros
@@ -693,7 +693,10 @@ export default function InventarioDocumental() {
         cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
         tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
         digitalizados: 0,
-        rangoFechas: statsData.rango_fechas || {}
+        rangoFechas: statsData.rango_fechas || {},
+        totalEmpastado: Number(statsData.total_empastado) || 0,
+        totalArchivadores: Number(statsData.total_archivadores) || 0,
+        totalOtrosTipos: Number(statsData.total_otros_tipos) || 0
       });
       
     } catch (error) {
@@ -1281,6 +1284,24 @@ export default function InventarioDocumental() {
             value={stats.bajaConsulta?.toLocaleString("es-PE")} 
             icon={Clock} 
             color="from-gray-600 to-gray-700"
+          />
+          <StatCard 
+            title="Total Empastado" 
+            value={stats.totalEmpastado?.toLocaleString("es-PE")} 
+            icon={Book} 
+            color="from-indigo-600 to-indigo-700"
+          />
+          <StatCard 
+            title="Total Archivadores" 
+            value={stats.totalArchivadores?.toLocaleString("es-PE")} 
+            icon={Archive} 
+            color="from-pink-600 to-pink-700"
+          />
+          <StatCard 
+            title="Otros Tipos" 
+            value={stats.totalOtrosTipos?.toLocaleString("es-PE")} 
+            icon={Folder} 
+            color="from-cyan-600 to-cyan-700"
           />
         </div>
 

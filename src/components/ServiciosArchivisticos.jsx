@@ -49,13 +49,13 @@ const DevolucionDocumentoItem = ({ doc, onToggle, onUpdateObservacion }) => (
         {doc.devuelto ? <CheckSquare size={20} /> : <Square size={20} />}
       </button>
       <div className="flex-1">
-        <h4 className="font-medium text-gray-800">{doc.descripcion}</h4>
+        <h4 className="font-medium text-gray-800">{doc.documento_id}: {doc.descripcion}</h4>
         <p className="text-sm text-gray-600">
-          Serie: {doc.serie || 'N/A'} • 
-          Unidad: {doc.unidad || 'N/A'}
+          Unidad: {doc.unidad || 'N/A'} • 
+          Serie: {doc.serie || 'N/A'}
         </p>
         <p className="text-xs text-gray-500">
-          Ubicación: {doc.ubicacion_topografica || 
+           Caja: {doc.caja || 'N/A'} • Ubicación: {doc.ubicacion_topografica || 
             (doc.info ? `E${doc.info.Estante || ''}-C${doc.info.Cuerpo || ''}-B${doc.info.Balda || ''}` : 'Sin ubicación')}
         </p>
         {doc.devuelto && (
