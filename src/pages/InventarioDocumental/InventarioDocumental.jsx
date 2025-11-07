@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../../utils/supabaseClient";
 import * as XLSX from "xlsx";
 
 // Componentes UI base
-import { Toast } from "./ui/Toast";
-import { StatCard } from "./ui/StatCard";
-import { EmptyState } from "./ui/EmptyState";
-import { SparkleLoader } from "./ui/SparkleLoader";
+import { Toast } from "../../components/ui/Toast";
+import { StatCard } from "../../components/ui/StatCard";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { SparkleLoader } from "../../components/ui/SparkleLoader";
 
 // Componentes de datos
-import { DataTable } from "./data/DataTable";
-import { DataCardGrid } from "./data/DataCardGrid";
-import { Pagination } from "./data/Pagination";
+import { DataTable } from "../../components/data/DataTable";
+import { DataCardGrid } from "../../components/data/DataCardGrid";
+import { Pagination } from "../../components/data/Pagination";
 
 // Componentes de layout
-import { CrudLayout } from "./layout/CrudLayout";
-import { ViewToggle } from "./layout/ViewToggle";
+import { CrudLayout } from "../../components/layout/CrudLayout";
+import { ViewToggle } from "../../components/layout/ViewToggle";
 
 // Componentes de controles
-import { SearchBar } from "./controls/SearchBar";
+import { SearchBar } from "../../components/controls/SearchBar";
 
 // Iconos
 import { BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, BarChart3, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus, Box, Book, Archive, Folder } from "lucide-react";
@@ -70,7 +70,7 @@ const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) =
           <SearchBar
             value={filters.search || ""}
             onChange={(value) => updateFilter('search', value)}
-            placeholder="ID, descripción, serie..."
+            placeholder="Por ID, Descripción y Observación..."
           />
         </div>
 

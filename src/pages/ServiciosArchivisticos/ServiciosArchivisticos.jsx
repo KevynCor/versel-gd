@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { CrudLayout } from "../components/layout/CrudLayout";
-import { Toast } from "../components/ui/Toast";
-import { SparkleLoader } from "../components/ui/SparkleLoader";
-import { StatCard } from "../components/ui/StatCard";
-import { InputField } from "../components/ui/InputField";
-import { TextareaField } from "../components/ui/TextareaField";
+import { supabase } from "../../utils/supabaseClient";
+import { CrudLayout } from "../../components/layout/CrudLayout";
+import { Toast } from "../../components/ui/Toast";
+import { SparkleLoader } from "../../components/ui/SparkleLoader";
+import { StatCard } from "../../components/ui/StatCard";
+import { InputField } from "../../components/ui/InputField";
+import { TextareaField } from "../../components/ui/TextareaField";
 import { FileText, Plus, Clock, AlertTriangle, Download, FileCheck, Eye, Edit3, RotateCcw, Printer, X, CheckSquare, Square } from "lucide-react";
 import { useReactToPrint } from 'react-to-print';
-import { DigitalSignature } from "../components/ui/DigitalSignature";
-import SolicitudServiciosArchivisticos from "./form/SolicitudServiciosArchivisticos";
+import { DigitalSignature } from "../../components/ui/DigitalSignature";
+import SolicitudServiciosArchivisticos from "./components/SolicitudServiciosArchivisticos";
 
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
