@@ -1026,7 +1026,7 @@ export default function InventarioDocumental() {
           </div>
           {(doc.Serie_Documental || doc.Observaciones) && (
             <div className="text-sm text-gray-500 line-clamp-1 group-hover:line-clamp-none transition-all duration-200">
-              {doc.Serie_Documental && doc.Serie_Documental}              
+              SERIE: {doc.Serie_Documental && doc.Serie_Documental}              
               <div className="text-blue-600">
                 {doc.Serie_Documental && doc.Observaciones && "OBSERVACIONES: "}
                 {doc.Observaciones && doc.Observaciones}

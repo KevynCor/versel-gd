@@ -1,36 +1,27 @@
-export const InputField = ({ label, field, value, onChange, disabled = false, type = "text", icon: Icon, className = "" }) => {
-  const handleChange = (e) => {
-    let val = e.target.value;
-    if (type === "numeric") val = val.replace(/\D/g, "").slice(0, 4);
-    if (type === "fecha") {
-      const digits = val.replace(/\D/g, "");
-      val = '';
-      if (digits.length >= 2) val += digits.slice(0, 2) + '/';
-      else val += digits;
-      if (digits.length >= 4) val += digits.slice(2, 4) + '/';
-      else if (digits.length > 2) val += digits.slice(2);
-      if (digits.length > 4) val += digits.slice(4, 8);
-    }
-    onChange(field, val);
-  };
+import React from "react";
 
+export const InputField = ({ label, icon: Icon, className = "", ...props }) => {
   return (
-    <div className={`group ${className}`}>
-      <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
-        {Icon && <Icon size={14} className="text-indigo-600" />}
-        {label}
-      </label>
-      <div className="relative">
+    <div className="space-y-1">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700">
+          {label}
+        </label>
+      )}
+      <div className="relative rounded-md shadow-sm">
+        {Icon && (
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          </div>
+        )}
         <input
-          type="text"
-          value={value || ""}
-          onChange={handleChange}
-          disabled={disabled}
-          className={`w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm ${
-            disabled ? 'opacity-60' : 'hover:border-indigo-300'
-          } ${type === "numeric" ? 'text-center font-mono' : ''}`}
+          {...props} 
+          className={`block w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors
+            ${Icon ? 'pl-10' : ''} 
+            ${props.disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'}
+            ${className}
+          `}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg opacity-0 group-focus-within:opacity-5 pointer-events-none"></div>
       </div>
     </div>
   );

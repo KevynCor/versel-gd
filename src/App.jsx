@@ -6,9 +6,11 @@ import BusquedaDocumento from './pages/BusquedaDocumento/BusquedaDocumento';
 import BusquedaVoucher from './components/BusquedaVoucher';
 import InventarioDocumental from './pages/InventarioDocumental/InventarioDocumental';
 import ServiciosArchivisticos from './pages/ServiciosArchivisticos/ServiciosArchivisticos';
+import EliminacionDocumental from './pages/EliminacionDocumental/EliminacionDocumental';
 import Auth from './components/Auth';
 import Navbar from './components/Navbar';
 import Profile from './components/Profile';
+
 import { supabase } from './utils/supabaseClient';
 
 // Ruta protegida
@@ -98,6 +100,14 @@ export default function App() {
           element={
             <ProtectedRoute user={session?.user}>
               <Profile user={session?.user} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/eliminacion"
+          element={
+            <ProtectedRoute user={session?.user}>
+              <EliminacionDocumental user={session?.user} />
             </ProtectedRoute>
           }
         />
