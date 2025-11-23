@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { supabase } from "../../../utils/supabaseClient"; 
 import { Clock, Check, Search, Trash2, FileText, AlertCircle, X, Scan, PlusSquare, Save, Box, RefreshCw, Ban } from "lucide-react";
 import { DigitalSignature } from "../../../components/ui/DigitalSignature";
+import { TextareaField } from "../../../components/ui/TextareaField";
 import jsQR from "jsqr"; 
 
 // --- COMPONENTES UI LOCALES ---
@@ -463,31 +464,23 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="bg-white text-amber-700 text-xs font-bold px-2 py-0.5 rounded border border-amber-200">#{sol.numero_solicitud || sol.id.slice(0,8)}</span>
                                     <div className="group relative w-full">
-                                        <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:line-clamp-none transition-all duration-200">
+                                        <h3 className="text-gray-900 group-hover:line-clamp-none transition-all duration-200 whitespace-pre-wrap line-clamp-2 group-hover:line-clamp-none transition-all duration-200">
                                             {sol.motivo_solicitud}
                                         </h3>
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-600">Solicitante: <strong>{sol.nombre_solicitante}</strong> ({sol.sub_gerencia})</p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Fecha: {new Date(sol.fecha_solicitud).toLocaleDateString()} • <span className="font-medium text-indigo-600">{formatModalidad(sol.modalidad_servicio)}</span>
+                                    Fecha y hora: {new Date(sol.fecha_solicitud).toLocaleString('es-ES', {dateStyle: 'short',timeStyle: 'short'})} • <span className="font-medium text-indigo-600">{formatModalidad(sol.modalidad_servicio)}</span>
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <EstadoBadge estado={sol.estado} />
-                                
-                                {/* BOTÓN RECHAZAR (NUEVO) */}
-                                <button 
-                                    onClick={() => handleRechazarClick(sol)} 
-                                    className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
-                                    title="Rechazar Solicitud"
-                                >
-                                    <Ban size={16}/> Rechazar
-                                </button>
-
                                 <button onClick={() => handleAtenderClick(sol)} className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2 shadow-sm">
-                                    <Check size={16}/> Atender
-                                </button>
+                                 <Check size={16}/> Atender </button>
+                                <button onClick={() => handleRechazarClick(sol)} 
+                                    className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
+                                    title="Rechazar Solicitud"> <Ban size={16}/> Rechazar</button>
                             </div>
                         </div>
                     ))}
@@ -600,6 +593,14 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                                 )}
                             </div>
                         </div>
+                        <div>
+                        <TextareaField 
+                            label="Observaciones" 
+                            placeholder="Describa..."
+                            value={observacionesAtencion} onChange={(e) => setObservacionesAtencion(e.target.value)}
+                            rows={4}
+                        />
+                        </div>
                     </div>
 
                     {/* COLUMNA DERECHA */}
@@ -614,11 +615,6 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                              <div className="min-h-[220px] border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex flex-col justify-center overflow-hidden relative">
                                 <DigitalSignature value={firma} onChange={setFirma} />
                              </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                            <textarea className="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 resize-none" rows="3" value={observacionesAtencion} onChange={(e) => setObservacionesAtencion(e.target.value)} />
                         </div>
 
                         <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100 items-center">
