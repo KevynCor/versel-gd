@@ -1,17 +1,39 @@
 import React, { useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 
-export const Toast = ({ mensaje, tipo, onClose }) => {
+export const Toast = ({ mensaje, tipo = "info", onClose }) => {
+  // Configuración de estilos corporativos (Borde lateral y colores de icono)
   const config = {
-    success: { bg: "from-emerald-500 to-green-600", icon: "✓" },
-    error: { bg: "from-red-500 to-pink-600", icon: "✗" },
-    warning: { bg: "from-amber-500 to-orange-600", icon: "⚠" },
-    info: { bg: "from-blue-500 to-indigo-600", icon: "ⓘ" }
+    success: { 
+      border: "border-emerald-500", 
+      text: "text-emerald-700", 
+      bgIcon: "bg-emerald-100",
+      icon: <CheckCircle size={20} className="text-emerald-600" /> 
+    },
+    error: { 
+      border: "border-red-500", 
+      text: "text-red-700", 
+      bgIcon: "bg-red-100",
+      icon: <AlertCircle size={20} className="text-red-600" /> 
+    },
+    warning: { 
+      border: "border-amber-500", 
+      text: "text-amber-700", 
+      bgIcon: "bg-amber-100",
+      icon: <AlertTriangle size={20} className="text-amber-600" /> 
+    },
+    info: { 
+      border: "border-blue-500", 
+      text: "text-blue-700", 
+      bgIcon: "bg-blue-100",
+      icon: <Info size={20} className="text-blue-600" /> 
+    }
   };
 
-  const { bg, icon } = config[tipo] || config.info;
+  const style = config[tipo] || config.info;
 
-  // 🔥 Cerrar automáticamente a los 4 segundos
+  // Cerrar automáticamente a los 4 segundos
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose?.();
@@ -21,26 +43,39 @@ export const Toast = ({ mensaje, tipo, onClose }) => {
 
   return (
     <motion.div
-      initial={{ x: 300, opacity: 0 }}
+      initial={{ x: 100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 300, opacity: 0 }}
-      className="fixed top-4 right-4 z-[100] sm:top-6 sm:right-6"
+      exit={{ x: 100, opacity: 0 }}
+      className="fixed top-20 right-6 z-[100] flex flex-col gap-2"
     >
-      <div className={`bg-gradient-to-r ${bg} backdrop-blur-lg border rounded-xl shadow-xl p-3 min-w-[280px] max-w-sm text-white`}>
-        <div className="flex items-center gap-2">
-          <div className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-            {icon}
-          </div>
-          <p className="text-sm flex-1">{mensaje}</p>
-          <button
-            onClick={onClose}
-            className="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded-full"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      <div className={`
+        flex items-start gap-3 p-4 
+        bg-white border-l-4 ${style.border} 
+        rounded-r-lg shadow-lg border-y border-r border-slate-200
+        min-w-[320px] max-w-md relative overflow-hidden
+      `}>
+        {/* Icono */}
+        <div className={`p-2 rounded-full ${style.bgIcon} flex-shrink-0`}>
+          {style.icon}
         </div>
+
+        {/* Contenido */}
+        <div className="flex-1 pt-0.5">
+          <h4 className={`text-sm font-bold capitalize mb-0.5 ${style.text}`}>
+            {tipo === 'info' ? 'Información' : tipo}
+          </h4>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            {mensaje}
+          </p>
+        </div>
+
+        {/* Botón Cerrar */}
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded transition-colors absolute top-2 right-2"
+        >
+          <X size={16} />
+        </button>
       </div>
     </motion.div>
   );

@@ -1,4 +1,3 @@
-// src/components/ui/DigitalSignature.jsx
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Pen, RotateCcw, Check, X, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -50,7 +49,8 @@ export const DigitalSignature = ({
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
     
-    ctx.strokeStyle = '#1e40af';
+    // Color corporativo para la tinta (Azul Oscuro)
+    ctx.strokeStyle = '#1e3a8a'; // blue-900
     ctx.lineWidth = isFullScreen ? 4 : 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -72,22 +72,25 @@ export const DigitalSignature = ({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f8fafc';
+    // Fondo sutilmente blanco/slate
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Línea guía
-    ctx.strokeStyle = '#e2e8f0';
+    // Línea guía estilo firma
+    ctx.strokeStyle = '#cbd5e1'; // slate-300
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(canvas.width * 0.1, canvas.height * 0.8);
     ctx.lineTo(canvas.width * 0.9, canvas.height * 0.8);
     ctx.stroke();
     
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = isFullScreen ? '20px sans-serif' : '16px sans-serif';
-    ctx.textAlign = 'center';
+    // Placeholder text
+    if (!hasSignature) {
+        /* Se dibuja solo si está vacío para evitar superposición */
+    }
     
-    ctx.strokeStyle = '#1e40af';
+    // Restaurar estilo de pluma
+    ctx.strokeStyle = '#1e3a8a'; // blue-900
     ctx.lineWidth = isFullScreen ? 4 : 3;
     setHasSignature(false);
   };
@@ -180,56 +183,62 @@ export const DigitalSignature = ({
     };
   }, [isDrawing]);
 
-  // Pantalla completa
+  // Pantalla completa (Modal Overlay)
   if (isFullScreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b bg-white shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Pen className="text-indigo-600" size={24} />
+      <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white w-full h-full max-w-6xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
+          {/* Header Fullscreen */}
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Pen className="text-blue-700" size={24} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">Firma Electrónica (Pantalla Completa)</h2>
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">Firma Electrónica</h2>
-          </div>
-          <button
-            onClick={toggleFullScreen}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <Minimize2 size={24} />
-          </button>
-        </div>
-        <div className="flex-1 p-4 overflow-hidden">
-          <div className="h-full border-2 border-dashed border-indigo-300 rounded-xl overflow-hidden">
-            <canvas
-              ref={canvasRef}
-              className="block w-full h-full cursor-crosshair touch-none"
-              style={{ touchAction: 'none' }}
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            />
-          </div>
-        </div>
-        <div className="p-4 border-t bg-white shadow-md">
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
             <button
+              onClick={toggleFullScreen}
+              className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors"
+              title="Salir de pantalla completa"
+            >
+              <Minimize2 size={24} />
+            </button>
+          </div>
+          
+          {/* Canvas Area Fullscreen */}
+          <div className="flex-1 p-6 bg-slate-100 overflow-hidden flex items-center justify-center">
+            <div className="relative w-full h-full border-2 border-dashed border-blue-300 rounded-xl bg-white shadow-sm overflow-hidden">
+              <canvas
+                ref={canvasRef}
+                className="block w-full h-full cursor-crosshair touch-none"
+                style={{ touchAction: 'none' }}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+            </div>
+          </div>
+
+          {/* Footer Fullscreen */}
+          <div className="p-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row justify-between gap-4 items-center">
+             <button
               type="button"
               onClick={clearSignature}
               disabled={disabled || !hasSignature}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition-colors disabled:opacity-50 font-medium w-full sm:w-auto"
             >
               <RotateCcw size={20} />
-              Limpiar
+              Limpiar Lienzo
             </button>
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={toggleFullScreen}
-                className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-medium flex-1 sm:flex-none"
               >
                 <X size={20} />
                 Cancelar
@@ -238,10 +247,10 @@ export const DigitalSignature = ({
                 type="button"
                 onClick={saveSignature}
                 disabled={(required && !hasSignature) || disabled}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-md"
+                className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-700 text-white hover:bg-blue-800 rounded-lg transition-colors disabled:opacity-50 shadow-md font-bold flex-1 sm:flex-none"
               >
                 <Check size={20} />
-                Guardar Firma
+                Confirmar Firma
               </button>
             </div>
           </div>
@@ -250,32 +259,43 @@ export const DigitalSignature = ({
     );
   }
 
-  // Vista normal
+  // Vista Normal (Embed)
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-4xl mx-auto" ref={containerRef}>
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 w-full max-w-4xl mx-auto" ref={containerRef}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Pen className="text-indigo-600" size={24} />
+          <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg">
+            <Pen className="text-blue-700" size={20} />
           </div>
-          <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-          {required && <span className="text-red-500 text-lg">*</span>}
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+            {required && <span className="text-xs text-red-500 font-medium uppercase tracking-wide">* Requerido</span>}
+          </div>
         </div>
         {fullScreenMode && (
           <button
             onClick={toggleFullScreen}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Pantalla Completa"
             disabled={disabled}
           >
             <Maximize2 size={20} />
           </button>
         )}
       </div>
-      <div className={`border-2 border-dashed rounded-xl p-4 ${disabled ? 'border-gray-300 bg-gray-50' : 'border-indigo-300 hover:border-indigo-400'}`}>
-        <div className="relative">
+
+      {/* Canvas Container */}
+      <div 
+        className={`
+          border-2 border-dashed rounded-xl p-1 bg-slate-50 transition-colors
+          ${disabled ? 'border-slate-200 opacity-60' : 'border-blue-200 hover:border-blue-300'}
+        `}
+      >
+        <div className="relative bg-white rounded-lg overflow-hidden shadow-inner">
           <canvas
             ref={canvasRef}
-            className={`block mx-auto rounded-lg shadow-inner ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-crosshair'}`}
+            className={`block mx-auto ${disabled ? 'cursor-not-allowed' : 'cursor-crosshair'}`}
             style={{ width: '100%', height: canvasSize.height, maxWidth: canvasSize.width, touchAction: 'none' }}
             onMouseDown={startDrawing}
             onMouseMove={draw}
@@ -286,35 +306,38 @@ export const DigitalSignature = ({
             onTouchEnd={handleTouchEnd}
           />
           {!hasSignature && !disabled && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <p className="text-gray-400 text-lg font-medium">Deslice su dedo o use el mouse para firmar</p>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+              <p className="text-slate-400 text-sm font-medium uppercase tracking-widest select-none">Espacio para firmar</p>
             </div>
           )}
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6">
+
+      {/* Footer Controls */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 pt-4 border-t border-slate-100">
         <button
           type="button"
           onClick={clearSignature}
           disabled={disabled || !hasSignature}
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
         >
-          <RotateCcw size={20} />
-          Limpiar Firma
+          <RotateCcw size={16} />
+          Limpiar
         </button>
         <button
           type="button"
           onClick={saveSignature}
           disabled={(required && !hasSignature) || disabled}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-md"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-700 text-white hover:bg-blue-800 rounded-lg transition-colors disabled:opacity-50 shadow-sm text-sm font-bold"
         >
-          <Check size={20} />
+          <Check size={18} />
           Guardar Firma
         </button>
       </div>
+      
       {required && !hasSignature && (
-        <p className="text-red-500 text-sm mt-4 text-center">
-          * La firma es obligatoria para continuar
+        <p className="text-red-500 text-xs mt-3 text-center font-medium bg-red-50 py-1 rounded">
+          Debe registrar su firma para continuar
         </p>
       )}
     </div>

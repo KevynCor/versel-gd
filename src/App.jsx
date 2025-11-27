@@ -1,235 +1,197 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, BookOpen, FileText } from 'lucide-react';
+
+import { supabase } from './utils/supabaseClient';
+import Navbar from './components/Navbar';
+import Auth from './pages/Login/Auth';
+import Profile from './pages/Perfil/Profile';
+import Dashboard from './pages/Dashboard/Dashboard';
 import BusquedaDocumento from './pages/BusquedaDocumento/BusquedaDocumento';
-import BusquedaVoucher from './components/BusquedaVoucher';
 import InventarioDocumental from './pages/InventarioDocumental/InventarioDocumental';
 import ServiciosArchivisticos from './pages/ServiciosArchivisticos/ServiciosArchivisticos';
 import EliminacionDocumental from './pages/EliminacionDocumental/EliminacionDocumental';
-import Auth from './components/Auth';
-import Navbar from './components/Navbar';
-import Profile from './components/Profile';
+import BusquedaVoucher from './pages/BusquedaVoucher/BusquedaVoucher';
+import SessionTimeout from './components/SessionTimeout'; 
 
-import { supabase } from './utils/supabaseClient';
+const ModuloEnConstruccion = ({ titulo }) => (
+  <div className="p-8 text-center">
+    <h2 className="text-xl font-bold text-slate-700 mb-2">{titulo}</h2>
+    <p className="text-slate-500">Módulo en desarrollo.</p>
+  </div>
+);
 
-// Ruta protegida
-const ProtectedRoute = ({ children, user }) =>
-  user ? children : <Navigate to="/login" replace />;
+// --- COMPONENTE DE RUTA PROTEGIDA MEJORADO ---
+const ProtectedRoute = ({ children, user, userRole, allowedRoles, loading }) => {
+  if (loading || (user && userRole === undefined)) {
+     return (
+        <div className="flex items-center justify-center h-screen bg-slate-50">
+           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+     );
+  }
 
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// --- APP PRINCIPAL ---
 export default function App() {
   const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState(undefined);
+  const [userName, setUserName] = useState(""); 
   const [loadingSession, setLoadingSession] = useState(true);
+  const [dbError, setDbError] = useState(null);
+
+  const lastProcessedUserId = useRef(null);
+
+  const fetchUserData = useCallback(async (userId) => {
+    if (!userId) return;
+    
+    try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado en DB')), 4000)
+      );
+
+      const queryPromise = supabase
+        .from('usuarios')
+        .select('rol, nombre_completo') 
+        .eq('id', userId)
+        .maybeSingle();
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+      if (error) {
+        console.error("Error Supabase:", error.message);
+        setUserRole('Usuario'); // Fallback actualizado a Mayúscula
+        setUserName("Usuario"); 
+        setDbError(error.message);
+      } else {
+        setUserRole(data?.rol || 'Usuario'); // Fallback actualizado a Mayúscula
+        setUserName(data?.nombre_completo || 'Usuario'); 
+        setDbError(null);
+        lastProcessedUserId.current = userId;
+      }
+
+    } catch (e) {
+      console.error("Aviso:", e.message || e);
+      setUserRole('Usuario');
+      setUserName("Usuario");
+      setDbError("Error de conexión");
+    }
+  }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoadingSession(false);
+    let mounted = true;
+
+    const initSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (mounted && initialSession?.user) {
+          setSession(initialSession);
+          lastProcessedUserId.current = initialSession.user.id;
+          await fetchUserData(initialSession.user.id);
+        }
+      } catch (error) {
+        console.error("Error en initSession:", error);
+      } finally {
+        if (mounted) setLoadingSession(false);
+      }
+    };
+
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      if (!mounted) return;
+      setSession(currentSession);
+
+      if (event === 'SIGNED_IN') {
+         const newUserId = currentSession?.user?.id;
+         if (newUserId && newUserId === lastProcessedUserId.current) {
+             setLoadingSession(false); 
+             return;
+         }
+         if (currentSession?.user) {
+            setLoadingSession(true); 
+            try {
+                await fetchUserData(currentSession.user.id);
+            } finally {
+                setLoadingSession(false); 
+            }
+         } else {
+             setLoadingSession(false);
+         }
+      } else if (event === 'SIGNED_OUT') {
+         lastProcessedUserId.current = null;
+         setUserRole(undefined);
+         setUserName("");
+         setDbError(null);
+         setLoadingSession(false);
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setLoadingSession(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserData]);
 
   if (loadingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-2xl font-bold text-gray-700"
-        >
-          Cargando aplicación...
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center">
+             <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-700 rounded-full mb-4 animate-spin" />
+             <span className="text-slate-600 font-medium text-sm animate-pulse">Cargando DocuFlow...</span>
+        </div>
       </div>
     );
   }
 
+  const rolesAdmin = ['Admin', 'Archivero', 'Supervisor'];
+
   return (
     <Router>
-      <Navbar user={session?.user} />
+      {/* NUEVO: Componente Monitor de Sesión Se activa solo si hay sesión (session es true/objeto) */}
+      <SessionTimeout isActive={!!session} />
+
       <Routes>
-        <Route path="/login" element={<Auth />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <HomeContent />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/busqueda"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <BusquedaDocumento />
-            </ProtectedRoute>
-          }
-        />        
-        <Route
-          path="/inventario"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <InventarioDocumental />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/vouchers"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <BusquedaVoucher />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/solicitud"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <ServiciosArchivisticos />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <Profile user={session?.user} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/eliminacion"
-          element={
-            <ProtectedRoute user={session?.user}>
-              <EliminacionDocumental user={session?.user} />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
+
+        <Route element={
+            <>
+              <Navbar 
+                user={session?.user} 
+                role={userRole} 
+                userName={userName}
+                error={dbError} 
+              />
+              <Outlet />
+            </>
+        }>
+          <Route path="/" element={<ProtectedRoute user={session?.user} userRole={userRole} loading={loadingSession}><Dashboard userRole={userRole} /></ProtectedRoute>} />
+          <Route path="/solicitud" element={<ProtectedRoute user={session?.user} userRole={userRole} loading={loadingSession}><ServiciosArchivisticos /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute user={session?.user} userRole={userRole} loading={loadingSession}><Profile user={session?.user} /></ProtectedRoute>} />
+          <Route path="/busqueda" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><BusquedaDocumento /></ProtectedRoute>} />
+          <Route path="/inventario" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><InventarioDocumental /></ProtectedRoute>} />
+          <Route path="/vouchers" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><BusquedaVoucher /></ProtectedRoute>} />
+          <Route path="/eliminacion" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><EliminacionDocumental user={session?.user} /></ProtectedRoute>} />
+          
+          <Route path="/transferencia" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="Transferencia Documental"/></ProtectedRoute>} />
+          <Route path="/ccf" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="Cuadro de Clasificación"/></ProtectedRoute>} />
+          <Route path="/pcda" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="PCDA"/></ProtectedRoute>} />
+          <Route path="/reportes" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="Reportes"/></ProtectedRoute>} />
+          <Route path="/accesos" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={['admin']} loading={loadingSession}><ModuloEnConstruccion titulo="Control de Accesos"/></ProtectedRoute>} />
+        </Route>
         <Route path="*" element={<Navigate to={session ? "/" : "/login"} replace />} />
       </Routes>
     </Router>
   );
 }
-
-// Componente reutilizable para las tarjetas de inicio
-const HomeCard = ({ icon: Icon, title, description, color, delay, onClick }) => (
-  <motion.div
-    onClick={onClick}
-    className="cursor-pointer bg-white/90 backdrop-blur-xl border border-gray-200/50 rounded-3xl p-8 shadow-xl text-center hover:shadow-2xl transition"
-    initial={{ x: -100, opacity: 0 }}
-    animate={{ x: 0, opacity: 1 }}
-    transition={{ delay, type: 'spring', stiffness: 100 }}
-  >
-    <Icon className={`w-16 h-16 mx-auto ${color} mb-4`} />
-    <h2 className="text-2xl font-bold text-gray-800 mb-3">{title}</h2>
-    <p className="text-gray-600">{description}</p>
-  </motion.div>
-);
-
-const HomeContent = () => {
-  const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
-          <h1 className="text-5xl font-extrabold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-700">
-            Bienvenido a DocuFlow
-          </h1>
-          <p className="text-center text-gray-700 text-xl mb-12">
-            Tu solución integral para la gestión de documentos, préstamos y vouchers.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-            <HomeCard
-              icon={Search}
-              title="Busca Documentos"
-              description="Encuentra rápidamente cualquier documento en tu inventario."
-              color="text-blue-500"
-              delay={0.3}
-              onClick={() => navigate('/busqueda')}
-            />            
-            <HomeCard
-              icon={FileText}
-              title="Buscar Vouchers"
-              description="Consulta y verifica vouchers fácilmente."
-              color="text-green-500"
-              delay={0.5}
-              onClick={() => navigate('/vouchers')}
-            />
-            <HomeCard
-              icon={FileText}
-              title="Solicitud de Servicios Archivísticos"
-              description="Solicita servicios de gestión documental de manera rápida y organizada."
-              color="text-orange-500"
-              delay={0.6}
-              onClick={() => navigate('/solicitud')}
-            />
-            <HomeCard
-              icon={BookOpen}
-              title="Inventario Documental"
-              description="Consulta y administra todo tu inventario de documentos archivados."
-              color="text-teal-500"
-              delay={0.7}
-              onClick={() => navigate('/inventario')}
-            />
-            <HomeCard
-              icon={FileText}
-              title="Eliminación Documental"
-              description="Gestiona la eliminación segura y controlada de documentos obsoletos."
-              color="text-red-500"
-              delay={0.8}
-              onClick={() => navigate('/eliminacion')}
-            />
-            <HomeCard
-              icon={BookOpen}
-              title="Transferencia de Documentos"
-              description="Controla la transferencia física y digital de documentos entre dependencias."
-              color="text-indigo-500"
-              delay={0.9}
-              onClick={() => navigate('/transferencia')}
-            />
-            <HomeCard
-              icon={FileText}
-              title="Cuadro de Clasificación de Fondo (CCF)"
-              description="Organiza y clasifica tus documentos según normas archivísticas."
-              color="text-yellow-500"
-              delay={1.0}
-              onClick={() => navigate('/ccf')}
-            />
-            <HomeCard
-              icon={BookOpen}
-              title="Programa de Control de Documentos Archivístico (PCDA)"
-              description="Supervisa la gestión documental y el cumplimiento de normativas internas."
-              color="text-pink-500"
-              delay={1.1}
-              onClick={() => navigate('/pcda')}
-            />            
-            <HomeCard
-              icon={Search}
-              title="Reporte de Documentos"
-              description="Genera reportes detallados de inventario, préstamos y estado documental."
-              color="text-cyan-500"
-              delay={1.2}
-              onClick={() => navigate('/reportes')}
-            />
-            <HomeCard
-              icon={FileText}
-              title="Control de Acceso a Archivos"
-              description="Gestiona permisos y accesos a documentos confidenciales."
-              color="text-lime-500"
-              delay={1.3}
-              onClick={() => navigate('/accesos')}
-            />
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-};

@@ -9,7 +9,7 @@ import { TextareaField } from "../../components/ui/TextareaField";
 import { FileText, Plus, Clock, AlertTriangle, Download, FileCheck, Eye, Edit3, RotateCcw, Printer, X, CheckSquare, Square } from "lucide-react";
 import { useReactToPrint } from 'react-to-print';
 import { DigitalSignature } from "../../components/ui/DigitalSignature";
-import SolicitudServiciosArchivisticos from "../ServiciosArchivisticos/components/SolicitudServiciosArchivisticos";
+import SolicitudServiciosArchivisticos from "./ServiciosArchivisticos";
 
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;

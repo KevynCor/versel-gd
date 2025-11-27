@@ -1,586 +1,30 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "../../utils/supabaseClient";
 import * as XLSX from "xlsx";
-
 // Componentes UI base
 import { Toast } from "../../components/ui/Toast";
 import { StatCard } from "../../components/ui/StatCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
-
 // Componentes de datos
 import { DataTable } from "../../components/data/DataTable";
 import { DataCardGrid } from "../../components/data/DataCardGrid";
 import { Pagination } from "../../components/data/Pagination";
-
 // Componentes de layout
 import { CrudLayout } from "../../components/layout/CrudLayout";
 import { ViewToggle } from "../../components/layout/ViewToggle";
-
-// Componentes de controles
-import { SearchBar } from "../../components/controls/SearchBar";
-
 // Iconos
-import { BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, BarChart3, CheckCircle, Clock, Download, Upload, Filter, RefreshCw, Plus, Box, Book, Archive, Folder } from "lucide-react";
+import { 
+  BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, 
+  BarChart3, CheckCircle, Download, Upload, RefreshCw, 
+  Plus, Box, Info, Activity, TrendingUp
+} from "lucide-react";
+// Componentes Internos Refactorizados
+import { FrequencyBar } from "./components/FrequencyBar";
+import { SimpleBarChart } from "./components/SimpleBarChart";
+import { AdvancedFilters } from "./components/AdvancedFilters";
+import { DocumentModal } from "./components/DocumentModal";
 
-// Componente de filtros avanzados
-const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const updateFilter = (key, value) => {
-    onFiltersChange({ ...filters, [key]: value });
-  };
-
-  const clearFilters = () => {
-    onFiltersChange({});
-  };
-
-  const activeFiltersCount = Object.keys(filters).filter(
-    key => filters[key] && filters[key] !== ""
-  ).length;
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-          <Filter className="w-5 h-5" />
-          Filtros Avanzados
-          {activeFiltersCount > 0 && (
-            <span className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-1 rounded-full">
-              {activeFiltersCount}
-            </span>
-          )}
-        </h3>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          {isExpanded ? 'Contraer' : 'Expandir'}
-        </button>
-      </div>
-
-      {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {/* Búsqueda general */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Búsqueda General
-          </label>
-          <SearchBar
-            value={filters.search || ""}
-            onChange={(value) => updateFilter('search', value)}
-            placeholder="Por ID, Descripción y Observación..."
-          />
-        </div>
-
-        {/* Área responsable */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Sección
-          </label>
-          <select
-            value={filters.area ?? ""}
-            onChange={(e) => updateFilter("area", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.areas?.map((area) => (
-              <option key={area} value={area}>{area}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Serie documental */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Serie Documental
-          </label>
-          <select
-            value={filters.serie || ""}
-            onChange={(e) => updateFilter('serie', e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            disabled={loading}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.series_documentales?.map(serie => (
-              <option key={serie} value={serie}>{serie}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Año */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Año
-            </label>
-            <select
-              value={filters.anio || ""}
-              onChange={(e) => updateFilter('anio', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.years?.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </div>  
-
-        {isExpanded && (
-        <>        
-          {/* Frecuencia de consulta */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Frecuencia de Consulta
-            </label>
-            <select
-              value={filters.frecuencia || ""}
-              onChange={(e) => updateFilter('frecuencia', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.frecuencias_consulta?.map(frecuencia => (
-                <option key={frecuencia} value={frecuencia}>{frecuencia}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Número de caja */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Número de Caja
-              </label>
-              <input
-                type="number"
-                value={filters.numeroCaja || ""}
-                onChange={(e) => updateFilter('numeroCaja', e.target.value)}
-                placeholder="Ej: 1, 10, 210"
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                disabled={loading}
-              />
-            </div>          
-
-          {/* Tomo Faltante */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tomo Faltante
-            </label>
-            <select
-              value={filters.tomoFaltante || ""}
-              onChange={(e) => updateFilter('tomoFaltante', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.tomo_faltante?.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo Unidad Conservación */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo Unidad Conservación
-            </label>
-            <select
-              value={filters.tipoUnidadConservacion || ""}
-              onChange={(e) => updateFilter('tipoUnidadConservacion', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.tipo_unidad_conservacion?.map(tipo => (
-                <option key={tipo} value={tipo}>{tipo}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ambiente */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ambiente
-            </label>
-            <select
-              value={filters.ambiente || ""}
-              onChange={(e) => updateFilter('ambiente', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.ambientes?.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>  
-
-          {/* Soporte */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Soporte
-            </label>
-            <select
-              value={filters.soporte || ""}
-              onChange={(e) => updateFilter('soporte', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.soporte?.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Estante */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estante
-            </label>
-            <select
-              value={filters.estante || ""}
-              onChange={(e) => updateFilter('estante', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.estante?.map(e => (
-                <option key={e} value={e}>{e}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Cuerpo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cuerpo
-            </label>
-            <select
-              value={filters.cuerpo || ""}
-              onChange={(e) => updateFilter('cuerpo', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.cuerpo?.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Balda */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Balda
-            </label>
-            <select
-              value={filters.balda || ""}
-              onChange={(e) => updateFilter('balda', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.balda?.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>                  
-
-          {/* Contratista */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contratista
-            </label>
-            <select
-              value={filters.contratista || ""}
-              onChange={(e) => updateFilter('contratista', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.contratistas?.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Número Entregable */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Número Entregable
-            </label>
-            <input
-              type="number"
-              value={filters.numeroEntregable || ""}
-              onChange={(e) => updateFilter('numeroEntregable', e.target.value)}
-              placeholder="Ej: 1, 2, 3"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            />
-          </div> 
-
-          {/* Analista */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Analista
-            </label>
-            <select
-              value={filters.analista || ""}
-              onChange={(e) => updateFilter('analista', e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.analistas?.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </div>
-             
-        </>
-      )}
-
-      </div>
-
-      {/* Botones de acción */}
-      <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
-        <button
-          onClick={clearFilters}
-          disabled={activeFiltersCount === 0 || loading}
-          className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Limpiar Filtros
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Componente del modal de documento
-const DocumentModal = ({ doc, onClose, onSave, onDelete }) => {
-  const [formData, setFormData] = useState(() => {
-    const { created_at, updated_at, ...docData } = doc || {};
-    return {
-      id: "",
-      Numero_Caja: "",
-      Tomo_Faltante: "",
-      Unidad_Organica: "",
-      Sigla: "",
-      Serie_Documental: "",
-      Descripcion: "",
-      Fecha_Inicial: "",
-      Fecha_Final: "",
-      Numero_Tomo: "",
-      Tipo_Unidad_Conservacion: "",
-      Numero_Folios: "",
-      Soporte: "",
-      Estante: "",
-      Cuerpo: "",
-      Balda: "",
-      Frecuencia_Consulta: "",
-      Observaciones: "",
-      Analista: "",
-      Fecha_Inventario: "",
-      Contratista: "",
-      Numero_Entregable: "",
-      Ambiente: "",
-      ...docData
-    };
-  });
-
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.Descripcion?.trim())
-      newErrors.Descripcion = "La descripción es obligatoria";
-    if (!formData.Unidad_Organica?.trim())
-      newErrors.Unidad_Organica = "La unidad orgánica es obligatoria";
-    if (!formData.Serie_Documental?.trim())
-      newErrors.Serie_Documental = "La serie documental es obligatoria";
-
-    if (formData.Fecha_Inicial && formData.Fecha_Final) {
-      const fechaInicial = new Date(formData.Fecha_Inicial);
-      const fechaFinal = new Date(formData.Fecha_Final);
-      if (isNaN(fechaInicial) || isNaN(fechaFinal))
-        newErrors.Fecha_Inicial = "Fechas inválidas";
-      else if (fechaInicial > fechaFinal)
-        newErrors.Fecha_Final =
-          "La fecha final debe ser posterior a la fecha inicial";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      const updated = { ...errors };
-      delete updated[field];
-      setErrors(updated);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setSaving(true);
-    try {
-      await onSave(formData);
-    } catch (error) {
-      console.error("Error saving document:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const InputField = ({
-    label,
-    field,
-    type = "text",
-    required = false,
-    placeholder = "",
-    rows
-  }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {rows ? (
-        <textarea
-          value={formData[field] || ""}
-          onChange={(e) => handleChange(field, e.target.value)}
-          placeholder={placeholder}
-          rows={rows}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none ${
-            errors[field] ? "border-red-500" : "border-gray-300"
-          }`}
-          disabled={saving}
-        />
-      ) : (
-        <input
-          type={type}
-          value={formData[field] || ""}
-          onChange={(e) => handleChange(field, e.target.value)}
-          placeholder={placeholder}
-          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-            errors[field] ? "border-red-500" : "border-gray-300"
-          }`}
-          disabled={saving}
-        />
-      )}
-      {errors[field] && (
-        <p className="text-red-500 text-xs mt-1">{errors[field]}</p>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl z-10 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-800">
-            {doc?.id ? "Editar Documento" : "Nuevo Documento"}
-          </h2>
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6">
-          {doc?.id && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                Información del Registro
-              </h4>
-              <div className="text-sm text-gray-600">
-                <div>
-                  ID del documento: <span className="font-medium">{doc.id}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">            
-            <InputField label="Número de Caja" field="Numero_Caja" />
-            <InputField label="Tomo Faltante" field="Tomo_Faltante" />
-            <InputField label="Unidad Orgánica" field="Unidad_Organica" required />
-            <InputField label="Sigla" field="Sigla" />
-            <InputField label="Serie Documental" field="Serie_Documental" required />
-            <InputField label="Descripción" field="Descripcion" required rows={2} />
-            <InputField label="Fecha Inicial" field="Fecha_Inicial" type="date" />
-            <InputField label="Fecha Final" field="Fecha_Final" type="date" />
-            <InputField label="Número de Tomo" field="Numero_Tomo" />
-            <InputField label="Tipo Unidad Conservación" field="Tipo_Unidad_Conservacion" />
-            <InputField label="Número de Folios" field="Numero_Folios" />
-            <InputField label="Soporte" field="Soporte" />
-            <InputField label="Estante" field="Estante" />
-            <InputField label="Cuerpo" field="Cuerpo" />
-            <InputField label="Balda" field="Balda" />
-            <InputField label="Frecuencia de Consulta" field="Frecuencia_Consulta" />
-            <InputField label="Analista" field="Analista" />
-            <InputField label="Fecha Inventario" field="Fecha_Inventario" type="date" />
-            <InputField label="Contratista" field="Contratista" />
-            <InputField label="Número Entregable" field="Numero_Entregable" />
-            <InputField label="Ambiente" field="Ambiente" />
-          </div>
-
-          <div className="mt-6">
-            <InputField
-              label="Observaciones"
-              field="Observaciones"
-              placeholder="Notas adicionales..."
-              rows={3}
-            />
-          </div>         
-
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-            <div>
-              {doc?.id && (
-                <button
-                  type="button"
-                  onClick={() => onDelete(doc.id)}
-                  disabled={saving}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Eliminar
-                </button>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={saving}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                {saving ? "Guardando..." : doc?.id ? "Actualizar" : "Crear"}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Componente principal
 export default function InventarioDocumental() {
   // Estados principales
   const [data, setData] = useState({ documentos: [] });
@@ -592,6 +36,9 @@ export default function InventarioDocumental() {
     total: 0 
   });
 
+  // Referencia para el scroll al paginar
+  const tableTopRef = useRef(null);
+
   // Configuración de vista
   const [viewMode, setViewMode] = useState("table");
   const [pageSize, setPageSize] = useState(10);
@@ -599,44 +46,29 @@ export default function InventarioDocumental() {
   // Filtros avanzados y opciones
   const [filters, setFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({
-    areas: [],
-    series_documentales: [],
-    frecuencias_consulta: [],
-    tomo_faltante: [],
-    tipo_unidad_conservacion: [],
-    soporte: [],
-    estante: [],
-    cuerpo: [],
-    balda: [],
-    analistas: [],
-    contratistas: [],
-    ambientes: []
+    areas: [], series_documentales: [], frecuencias_consulta: [],
+    tomo_faltante: [], tipo_unidad_conservacion: [], soporte: [],
+    estante: [], cuerpo: [], balda: [],
+    analistas: [], contratistas: [], ambientes: []
   });
 
   const [stats, setStats] = useState({
-    total: 0,
-    activos: 0,
-    altaConsulta: 0,
-    conCaja: 0,
-    digitalizados: 0,
-    series: 0,
-    areas: 0,
-    mediaConsulta: 0,
-    bajaConsulta: 0,
-    folios: 0,
-    cajasporunidad: 0,
-    tomosfaltantes: 0,
-    rangoFechas: {}
+    total: 0, activos: 0, altaConsulta: 0, conCaja: 0,
+    digitalizados: 0, series: 0, areas: 0,
+    mediaConsulta: 0, bajaConsulta: 0, folios: 0,
+    cajasporunidad: 0, tomosfaltantes: 0, rangoFechas: {},
+    totalEmpastado: 0, totalArchivadores: 0, totalOtrosTipos: 0
   });
+
+  const [yearsData, setYearsData] = useState([]);
 
   // Función para mostrar mensajes
   const showMessage = (mensaje, tipo) => 
     setState(s => ({ ...s, mensaje: { mensaje, tipo } }));
 
-  // Función para obtener estadísticas según filtros - VERSIÓN ACTUALIZADA
+  // Función para obtener estadísticas según filtros
   const fetchStats = useCallback(async (currentFilters = {}) => {
     try {
-      // Limpiar y convertir parámetros
       const statsParams = {
         p_search: currentFilters.search || null,
         p_area: currentFilters.area || null,
@@ -657,9 +89,6 @@ export default function InventarioDocumental() {
         p_numero_entregable: currentFilters.numeroEntregable || null
       };
 
-      console.log("Filtros para estadísticas:", statsParams);
-
-      // Limpiar parámetros nulos/vacíos
       const cleanedParams = {};
       Object.keys(statsParams).forEach(key => {
         const value = statsParams[key];
@@ -667,19 +96,12 @@ export default function InventarioDocumental() {
           cleanedParams[key] = value;
         }
       });
-
-      console.log("Parámetros limpios:", cleanedParams);
       
       const { data: statsResult, error } = await supabase.rpc('get_inventario_stats', cleanedParams);
       
-      if (error) {
-        console.error('Error de Supabase:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       const statsData = statsResult?.[0] || {};
-
-      console.log("Datos de estadísticas recibidos:", statsData);
 
       setStats({
         total: Number(statsData.total_documentos) || 0,
@@ -698,6 +120,22 @@ export default function InventarioDocumental() {
         totalArchivadores: Number(statsData.total_archivadores) || 0,
         totalOtrosTipos: Number(statsData.total_otros_tipos) || 0
       });
+
+      const volumenAnual = statsData.volumen_por_anio || [];
+      if (volumenAnual.length > 0) {
+        const currentYear = new Date().getFullYear();
+        const cutoffYear = currentYear - 12; 
+        const formattedYears = volumenAnual
+            .filter(item => Number(item.anio) >= cutoffYear)
+            .map(item => ({
+                label: item.anio || 'S/F',
+                value: Number(item.cantidad)
+            }));
+
+        setYearsData(formattedYears);
+      } else {
+        setYearsData([]);
+      }
       
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -705,13 +143,11 @@ export default function InventarioDocumental() {
     }
   }, []);
 
-  // Función principal para obtener documentos usando la función de Supabase
   const fetchDocuments = useCallback(async (page = 0) => {
       setState(s => ({ ...s, loading: true }));
 
       try {
           const offset = page * pageSize;
-
           const filterParams = {
               p_search: filters.search || null,
               p_area: filters.area || null,
@@ -719,7 +155,7 @@ export default function InventarioDocumental() {
               p_frecuencia: filters.frecuencia || null,
               p_numero_caja: filters.numeroCaja || null,
               p_numero_entregable: filters.numeroEntregable || null, 
-              p_anio: filters.anio ? parseInt(filters.anio) : null, // ✅ Usar 'anio' no 'years'
+              p_anio: filters.anio ? parseInt(filters.anio) : null,
               p_fecha_inventario: filters.fechaInventario || null,              
               p_contratista: filters.contratista || null,
               p_analista: filters.analista || null,
@@ -729,14 +165,14 @@ export default function InventarioDocumental() {
               p_estante: filters.estante || null,
               p_cuerpo: filters.cuerpo || null,
               p_balda: filters.balda || null,
-              p_ambiente: filters.ambiente || null,           
+              p_ambiente: filters.ambiente || null,
+              p_numero_tomo: filters.numeroTomo || null,
+              p_numero_folios: filters.numeroFolios ? Number(filters.numeroFolios) : null,              
               p_limit: pageSize,
               p_offset: offset,
               p_order_by: 'id',
               p_order_direction: 'desc'
           };
-                  
-          console.log("🔍 Filtros aplicados:", filterParams);
           
           const { data: result, error } = await supabase.rpc('get_documentos_filtrados', filterParams);
           
@@ -751,47 +187,39 @@ export default function InventarioDocumental() {
           let documents_data = result[0].documentos || [];
           const total_records = result[0].total || 0;
           
-          // ✅ VERIFICACIÓN ROBUSTA: Asegurar que documents_data sea un array
+          // Validación robusta de array
           if (!Array.isArray(documents_data)) {
-              console.warn("⚠️ documents_data no es un array, forzando conversión:", documents_data);
-              // Si es un objeto con propiedad data, extraer el array
               if (documents_data && documents_data.data && Array.isArray(documents_data.data)) {
                   documents_data = documents_data.data;
               } else if (typeof documents_data === 'object' && documents_data !== null) {
-                  // Si es un objeto simple, convertirlo a array
                   documents_data = [documents_data];
               } else {
                   documents_data = [];
               }
           }
-
-          console.log("🧾 Documentos recibidos:", documents_data.length, "registros");
-          console.log("📊 Total de registros:", total_records);
           
           setData({ documentos: documents_data });
-          setState(s => ({ ...s, page, total: Number(total_records), loading: false }));     
+          setState(s => ({ ...s, page, total: Number(total_records), loading: false }));    
 
       } catch (error) {
           console.error('Error fetching documents:', error);
           showMessage("Error al cargar documentos", "error");
-          setData({ documentos: [] }); // ✅ Asegurar que siempre haya un array vacío en caso de error
+          setData({ documentos: [] });
           setState(s => ({ ...s, loading: false }));
       }
   }, [filters, pageSize]);
 
-  // Cargar opciones iniciales
   useEffect(() => {
     const loadOptions = async () => {
       try {
         const { data: options, error: optionsError } = await supabase.rpc('get_filter_options', {
-          p_unidad_organica: filters.area || null // ✅ CORREGIDO: usa filters.area en lugar de selectedArea
+          p_unidad_organica: filters.area || null
         });
         if (optionsError) throw optionsError;
 
         if (options && options.length > 0) {
           const opt = options[0];
 
-          // Función para limpiar y eliminar duplicados ignorando mayúsculas y espacios
           const normalizeArray = (arr) => {
             if (!Array.isArray(arr)) return [];
             const map = new Map();
@@ -829,7 +257,6 @@ export default function InventarioDocumental() {
     loadOptions();
   }, [filters.area, filters.anio]);
 
-  // Cargar datos y estadísticas iniciales
   useEffect(() => {
     const loadInitialData = async () => {
       await Promise.all([
@@ -841,7 +268,6 @@ export default function InventarioDocumental() {
     loadInitialData();
   }, []);
 
-  // Actualizar datos y estadísticas cuando cambian los filtros
   useEffect(() => {
     const fetchDataAndStats = async () => {
       await Promise.all([
@@ -853,7 +279,6 @@ export default function InventarioDocumental() {
     fetchDataAndStats();
   }, [filters, fetchStats, fetchDocuments]);
 
-  // Función para guardar documento
   const saveDocument = async (doc) => {
     try {
       const { error } = doc.id 
@@ -878,7 +303,6 @@ export default function InventarioDocumental() {
     }
   };
 
-  // Función para eliminar documento
   const deleteDocument = async (id) => {
     if (!window.confirm("¿Está seguro de eliminar este documento?")) return;
     
@@ -902,66 +326,129 @@ export default function InventarioDocumental() {
     }
   };
 
-  // Función para exportar a Excel
   const exportToExcel = async () => {
     try {
       setState(s => ({ ...s, loading: true }));
       
-      const filterParams = {
-        p_search: filters.search || null,
-        p_area: filters.area || null,
-        p_serie: filters.serie || null,
-        p_frecuencia: filters.frecuencia || null,
-        p_numero_caja: filters.numeroCaja || null,
-        p_fecha_desde: filters.fechaDesde || null,
-        p_fecha_hasta: filters.fechaHasta || null,
-        p_tomo_faltante: filters.tomoFaltante || null,
-        p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
-        p_soporte: filters.soporte || null,
-        p_estante: filters.estante || null,
-        p_cuerpo: filters.cuerpo || null,
-        p_balda: filters.balda || null,
-        p_analista: filters.analista || null,
-        p_fecha_inventario: filters.fechaInventario || null,
-        p_contratista: filters.contratista || null,
-        p_numero_entregable: filters.numeroEntregable || null,
-        p_ambiente: filters.ambiente || null,
-        p_limit: 999999, // Límite muy alto para obtener todos los registros
-        p_offset: 0,
-        p_order_by: 'id',
-        p_order_direction: 'desc'
+      const BATCH_SIZE = 1000;
+      let allDocs = [];
+      let offset = 0;
+      let hasMore = true;
+      
+      const baseParams = {
+          p_search: filters.search || null,
+          p_area: filters.area || null,
+          p_serie: filters.serie || null,
+          p_numero_caja: filters.numeroCaja || null,
+          p_estante: filters.estante || null,
+          p_cuerpo: filters.cuerpo || null,
+          p_balda: filters.balda || null,
+          p_ambiente: filters.ambiente || null,
+          p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
+          p_soporte: filters.soporte || null,
+          p_tomo_faltante: filters.tomoFaltante || null,
+          p_frecuencia: filters.frecuencia || null,
+          p_analista: filters.analista || null,
+          p_contratista: filters.contratista || null,
+          p_numero_entregable: filters.numeroEntregable || null,
+          p_anio: filters.anio ? parseInt(filters.anio) : null,
+          p_fecha_inventario: filters.fechaInventario || null,
+          p_order_by: 'id',
+          p_order_direction: 'asc'
       };
 
-      const { data: result, error } = await supabase.rpc('get_documentos_filtrados', filterParams);
-      
-      if (error) throw error;
+      // 2. Bucle para descargar por lotes (Batching)
+      while (hasMore) {
+          const { data: result, error } = await supabase.rpc('get_documentos_filtrados', {
+              ...baseParams,
+              p_limit: BATCH_SIZE,
+              p_offset: offset
+          });
 
-      // CORRECCIÓN: Usar la misma estructura que en fetchDocuments
-      const allDocs = result?.[0]?.documentos || [];
+          if (error) {
+              console.error("Error detallado de Supabase:", error);
+              throw error;
+          }
+          // Validación robusta de la respuesta (Soluciona el error "is not iterable")
+          let rawData = result?.[0]?.documentos;
+          let batchDocs = [];
+
+          if (Array.isArray(rawData)) {
+              batchDocs = rawData;
+          } else if (rawData && typeof rawData === 'object') {
+              if (Array.isArray(rawData.data)) {
+                  batchDocs = rawData.data;
+              } else {
+                  batchDocs = [rawData];
+              }
+          } else {
+              batchDocs = [];
+          }
+
+          if (batchDocs.length === 0) {
+              hasMore = false;
+          } else {
+              allDocs = [...allDocs, ...batchDocs];
+              offset += BATCH_SIZE;
+              
+              if (batchDocs.length < BATCH_SIZE) {
+                  hasMore = false;
+              }
+          }
+      }
 
       if (allDocs.length === 0) {
-        showMessage("No hay datos para exportar", "warning");
+        showMessage("No hay datos para exportar con los filtros actuales", "warning");
         return;
       }
 
-      // Crear el workbook y worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(allDocs);
+      // 3. Generar Excel con TODOS los campos de la tabla
+      const wb = XLSX.utils.book_new();      
+      const cleanData = allDocs.map(doc => ({
+          'Código (ID)': doc.id,
+          'Unidad Orgánica': doc.Unidad_Organica,
+          'Sigla': doc.Sigla,
+          'Serie Documental': doc.Serie_Documental,
+          'Descripción': doc.Descripcion,
+          'Fecha Inicial': doc.Fecha_Inicial,
+          'Fecha Final': doc.Fecha_Final,
+          'N° Caja': doc.Numero_Caja,
+          'N° Tomo': doc.Numero_Tomo,
+          'N° Folios': doc.Numero_Folios,
+          'Tipo Unidad Conservación': doc.Tipo_Unidad_Conservacion,
+          'Soporte': doc.Soporte,
+          'Tomo Faltante': doc.Tomo_Faltante,
+          'Frecuencia Consulta': doc.Frecuencia_Consulta,
+          'Ambiente': doc.Ambiente,
+          'Estante': doc.Estante,
+          'Cuerpo': doc.Cuerpo,
+          'Balda': doc.Balda,
+          'Fecha Inventario': doc.Fecha_Inventario,
+          'Observaciones': doc.Observaciones,
+          'Analista': doc.Analista,
+          'Contratista': doc.Contratista,
+          'N° Entregable': doc.Numero_Entregable          
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(cleanData);
       
-      XLSX.utils.book_append_sheet(wb, ws, "Inventario Documental");
-      XLSX.writeFile(wb, `Inventario_documental_${new Date().toISOString().split('T')[0]}.xlsx`);
+      // Ajuste automático de ancho de columnas (opcional, mejora legibilidad)
+      const wscols = Object.keys(cleanData[0] || {}).map(() => ({ wch: 20 }));
+      ws['!cols'] = wscols;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario Completo");
+      XLSX.writeFile(wb, `Inventario_Fondo_Documental_${new Date().toISOString().split('T')[0]}.xlsx`);
       
       showMessage(`${allDocs.length} documentos exportados exitosamente`, "success");
       
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      showMessage("Error al exportar el archivo", "error");
+      showMessage(`Error al exportar: ${error.message || 'Error desconocido'}`, "error");
     } finally {
       setState(s => ({ ...s, loading: false }));
     }
   };
 
-  // Función para importar desde Excel
   const importFromExcel = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -984,7 +471,6 @@ export default function InventarioDocumental() {
         return;
       }
 
-      // Insertar datos en la base de datos
       const { error } = await supabase
         .from("Inventario_documental")
         .insert(jsonData);
@@ -1001,7 +487,7 @@ export default function InventarioDocumental() {
       console.error('Error importing Excel:', error);
       showMessage("Error al importar el archivo", "error");
     } finally {
-      event.target.value = ''; // Reset input
+      event.target.value = '';
     }
   };
 
@@ -1011,26 +497,28 @@ export default function InventarioDocumental() {
       label: "Código", 
       key: "id",
       render: (doc) => (        
-        <div className="text-sm font-medium text-gray-900">
-          {doc.id || 'Sin código'}
+        <div className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block">
+          {doc.id || 'S/C'}
         </div>
       ) 
     },
     { 
-      label: "Descripción", 
+      label: "Descripción del Documento", 
       key: "descripcion", 
       render: (doc) => (
-        <div className="text-sm group">
-          <div className="font-medium text-gray-900 line-clamp-2 group-hover:line-clamp-none transition-all duration-200">
+        <div className="group">
+          <div className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors group-hover:line-clamp-none transition-all duration-200">
             {doc.Descripcion}
           </div>
           {(doc.Serie_Documental || doc.Observaciones) && (
-            <div className="text-sm text-gray-500 line-clamp-1 group-hover:line-clamp-none transition-all duration-200">
-              SERIE: {doc.Serie_Documental && doc.Serie_Documental}              
-              <div className="text-blue-600">
-                {doc.Serie_Documental && doc.Observaciones && "OBSERVACIONES: "}
-                {doc.Observaciones && doc.Observaciones}
-             </div>              
+            <div className="mt-1 text-xs text-slate-500 flex flex-col gap-0.5">
+              {doc.Serie_Documental && <span className="font-medium uppercase text-slate-400">{doc.Serie_Documental}</span>}
+              {doc.Observaciones && (
+                <div className="flex items-start gap-1 text-amber-600 bg-amber-50 p-1 rounded">
+                   <Info size={10} className="mt-0.5" />
+                   <span className="line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{doc.Observaciones}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1040,82 +528,70 @@ export default function InventarioDocumental() {
       label: "Sección", 
       key: "seccion", 
       render: (doc) => (
-        <div className="text-sm">
-          <div className="font-medium text-gray-900">
-            {doc.Unidad_Organica || 'Sin asignar'}
+        <div className="text-xs text-slate-600">
+          <div className="font-bold uppercase">
+            {doc.Unidad_Organica || '-'}
           </div>
-          {doc.STipo_Unidad_Conservacion && (
-            <div className="text-gray-500">
-              {doc.STipo_Unidad_Conservacion}
-            </div>
-          )}
         </div>
       )
     },
     { 
-      label: "Fechas Extrenas", 
+      label: "Periodo", 
       key: "fechasExtremas", 
       render: (doc) => (
-        <div className="text-sm">
-          <div className="text-gray-500">
-            {doc.Fecha_Inicial || 'Sin asignar'}
-          </div>
-          {doc.Fecha_Final && (
-            <div className="text-gray-500">
-              {doc.Fecha_Final}
-            </div>
-          )}
+        <div className="text-xs text-slate-500 flex flex-col gap-1">
+          <span className="flex items-center gap-1">{doc.Fecha_Inicial || '-'}</span>
+          <span className="flex items-center gap-1">{doc.Fecha_Final || '-'}</span>
         </div>
       )
     },    
     { 
-      label: "Ubicación", 
+      label: "Ubicación Topográfica", 
       key: "ubicacion", 
       render: (doc) => (
-        <div className="text-sm">
-          <div className="flex items-center gap-1 font-medium text-gray-900">
-            <Package className="w-4 h-4" />
-            {doc.Numero_Caja || 'Sin asignar'}
+        <div className="text-xs">
+          <div className="flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded mb-1 w-fit">
+            <Package className="w-3 h-3" />
+            Caja {doc.Numero_Caja || '?'}
           </div>
-          <div className="text-gray-500">
+          <div className="text-slate-500 font-mono">
             {doc.Ambiente || doc.Estante || doc.Cuerpo || doc.Balda ? (
               [
-                doc.Ambiente && `${doc.Ambiente}`,
+                doc.Ambiente,
                 doc.Estante && `E${doc.Estante}`,
                 doc.Cuerpo && `C${doc.Cuerpo}`,
                 doc.Balda && `B${doc.Balda}`
               ]
-                .filter(Boolean) // elimina valores nulos o vacíos
-                .join('-')       // une solo los que existen con guiones
+                .filter(Boolean)
+                .join('-')
             ) : (
-              'Sin ubicación'
+              <span className="italic text-slate-400">No asignada</span>
             )}
           </div>
         </div>
       )
     },
     { 
-      label: "Tipo Unidad", 
+      label: "Estado", 
       key: "tipoUnidad", 
       render: (doc) => (
-        <div className="flex flex-col gap-1 items-center text-center">
+        <div className="flex flex-col gap-1 items-start">
           {doc.Tipo_Unidad_Conservacion && (
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              doc.Tipo_Unidad_Conservacion === 'SIN UNIDAD' ? 'bg-red-100 text-red-800' :
-              doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-emerald-100 text-emerald-800' :
-              doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-green-100 text-green-800' :
-              doc.Tipo_Unidad_Conservacion === 'FOLDER MANILA' ? 'bg-amber-100 text-amber-800' :              
-              doc.Tipo_Unidad_Conservacion === 'ANILLADO' ? 'bg-sky-100 text-sky-800' :              
-              'bg-gray-100 text-gray-800'
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+              doc.Tipo_Unidad_Conservacion === 'SIN UNIDAD' ? 'bg-red-50 text-red-700 border-red-100' :
+              doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+              doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+              doc.Tipo_Unidad_Conservacion === 'FOLDER MANILA' ? 'bg-amber-50 text-amber-700 border-amber-100' :              
+              'bg-slate-50 text-slate-600 border-slate-200'
             }`}>
               {doc.Tipo_Unidad_Conservacion}
             </span>
           )}
           {(doc.Numero_Tomo || doc.Numero_Folios) && (
-            <span className="text-xs text-gray-500">
-              {doc.Numero_Tomo && `Tomo: ${doc.Numero_Tomo}`}
+            <span className="text-[10px] text-slate-400">
+              {doc.Numero_Tomo && `T: ${doc.Numero_Tomo}`}
               {doc.Numero_Tomo && doc.Numero_Folios && " | "}
-              {doc.Numero_Folios && `Folios: ${doc.Numero_Folios}`}
+              {doc.Numero_Folios && `F: ${doc.Numero_Folios}`}
             </span>
           )}
         </div>
@@ -1123,12 +599,11 @@ export default function InventarioDocumental() {
     },
   ], []);
 
-  // Función para renderizar acciones de la tabla
   const renderActions = useCallback((doc) => (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <button
         onClick={() => setState(s => ({ ...s, selectedDoc: doc }))}
-        className="w-8 h-8 bg-indigo-100 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-lg flex items-center justify-center transition-colors"
+        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
         title="Editar documento"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1138,66 +613,68 @@ export default function InventarioDocumental() {
     </div>
   ), []);
 
-  // Función para renderizar tarjetas
   const renderCard = useCallback((doc) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-3">
+    <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-blue-300 transition-all duration-200 group relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      
+      <div className="flex justify-between items-start mb-3 pl-2">
         <div className="flex-1">
-          <div className="font-mono text-sm font-medium text-indigo-600 mb-1">
-            {doc.id || 'Sin código'}
+          <div className="font-mono text-xs font-bold text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded mb-1.5">
+            {doc.id || 'S/C'}
           </div>
-          <h3 className="font-medium text-gray-900 line-clamp-2">
+          <h3 className="font-bold text-slate-800 text-sm line-clamp-2 group-hover:text-blue-800 transition-colors">
             {doc.Descripcion}
           </h3>
         </div>
         <button
           onClick={() => setState(s => ({ ...s, selectedDoc: doc }))}
-          className="text-gray-400 hover:text-indigo-600 transition-colors"
+          className="text-slate-400 hover:text-blue-600 p-1 hover:bg-blue-50 rounded transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
         </button>
       </div>
 
-      <div className="space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-gray-600">
-          <Building2 className="w-4 h-4" />
-          <span>{doc.Unidad_Organica || 'Sin área asignada'}</span>
+      <div className="space-y-2 pl-2">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <Building2 className="w-3.5 h-3.5 text-slate-400" />
+          <span className="font-medium">{doc.Unidad_Organica || 'N/A'}</span>
         </div>
         
-        <div className="flex items-center gap-2 text-gray-600">
-          <FileText className="w-4 h-4" />
-          <span>{doc.Serie_Documental || 'Sin serie'}</span>
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <FileText className="w-3.5 h-3.5 text-slate-400" />
+          <span className="truncate">{doc.Serie_Documental || 'Sin serie'}</span>
         </div>
         
-        {doc.Numero_Caja && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <Package className="w-4 h-4" />
-            <span>Caja: {doc.Numero_Caja}</span>
-          </div>
-        )}
+        <div className="grid grid-cols-2 gap-2 mt-2">
+            {doc.Numero_Caja && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-100">
+                <Package className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-bold">Caja: {doc.Numero_Caja}</span>
+            </div>
+            )}
+            {doc.Fecha_Inicial && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-100">
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <span>{new Date(doc.Fecha_Inicial).getFullYear()}</span>
+            </div>
+            )}
+        </div>
 
-        {doc.Fecha_Inicial && doc.Fecha_Final && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <Calendar className="w-4 h-4" />
-            <span>{new Date(doc.Fecha_Inicial).getFullYear()} - {new Date(doc.Fecha_Final).getFullYear()}</span>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
           {doc.Frecuencia_Consulta && (
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-100 text-orange-800' :
-              doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+              doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+              doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+              'bg-slate-50 text-slate-600 border border-slate-200'
             }`}>
               {doc.Frecuencia_Consulta}
             </span>
           )}
           
           {doc.Ubicacion_Fisica && (
-            <span className="text-xs text-gray-500 truncate max-w-24">
+            <span className="text-[10px] font-mono text-slate-400">
               {doc.Ubicacion_Fisica}
             </span>
           )}
@@ -1211,6 +688,7 @@ export default function InventarioDocumental() {
       <CrudLayout 
         title="Inventario del Fondo Documental" 
         icon={BookOpen}
+        description="Gestión centralizada de expedientes, ubicación topográfica y control de acervo."
       >
         {/* Toast de notificaciones */}
         {state.mensaje && (
@@ -1221,88 +699,71 @@ export default function InventarioDocumental() {
         )}
 
         {/* Encabezado de estadísticas */}
-        <div className="flex items-center justify-between mb-6">          
-          <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
-            Estadísticas del Inventario Documental de ELSE
-          </h3>          
-          <div className="hidden sm:block w-24 h-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+        <div className="flex items-center justify-between mb-6 px-1">          
+          <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 uppercase tracking-tight">
+            <BarChart3 className="w-5 h-5 text-blue-700" />
+            Métricas Archivisticas
+          </h3>         
+          <div className="hidden sm:block text-xs font-medium text-slate-400">
+            Actualizado: {new Date().toLocaleTimeString()}
+          </div>
         </div>
         
         {/* Panel de estadísticas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard 
-            title="Total Unidades Documentales" 
-            value={stats.total?.toLocaleString("es-PE")} 
-            icon={FileText} 
-            color="from-blue-600 to-blue-700"
-          />
-          <StatCard 
-            title="Total Secciones" 
-            value={stats.areas?.toLocaleString("es-PE")} 
-            icon={CheckCircle} 
-            color="from-green-600 to-green-700"
-          />          
-          <StatCard 
-            title="Total Series Documentales" 
-            value={stats.series?.toLocaleString("es-PE")} 
-            icon={Building2} 
-            color="from-teal-600 to-teal-700"
-          />
-          <StatCard 
-            title="Total Folios" 
-            value={stats.folios?.toLocaleString("es-PE")} 
-            icon={FileText} 
-            color="from-purple-600 to-purple-700"
-          />
-          <StatCard 
-            title="Total Cajas Archiveras" 
-            value={stats.cajasporunidad?.toLocaleString("es-PE")} 
-            icon={Box} 
-            color="from-red-600 to-red-700"
-          />
-          <StatCard 
-            title="Unidades Faltantes" 
-            value={stats.tomosfaltantes?.toLocaleString("es-PE")} 
-            icon={AlertTriangle} 
-            color="from-amber-500 to-orange-600"
-          />
-          <StatCard 
-            title="Consulta Alta (2015-2025)" 
-            value={stats.altaConsulta?.toLocaleString("es-PE")} 
-            icon={Clock} 
-            color="from-orange-600 to-orange-700"
-          />
-          <StatCard 
-            title="Consulta Media (2000-2014)" 
-            value={stats.mediaConsulta?.toLocaleString("es-PE")} 
-            icon={Clock} 
-            color="from-blue-600 to-blue-700"
-          />
-          <StatCard 
-            title="Consulta Baja (1984-1999)" 
-            value={stats.bajaConsulta?.toLocaleString("es-PE")} 
-            icon={Clock} 
-            color="from-gray-600 to-gray-700"
-          />
-          <StatCard 
-            title="Total Empastado" 
-            value={stats.totalEmpastado?.toLocaleString("es-PE")} 
-            icon={Book} 
-            color="from-indigo-600 to-indigo-700"
-          />
-          <StatCard 
-            title="Total Archivadores" 
-            value={stats.totalArchivadores?.toLocaleString("es-PE")} 
-            icon={Archive} 
-            color="from-pink-600 to-pink-700"
-          />
-          <StatCard 
-            title="Otros Tipos" 
-            value={stats.totalOtrosTipos?.toLocaleString("es-PE")} 
-            icon={Folder} 
-            color="from-cyan-600 to-cyan-700"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Card 1: Distribución por Frecuencia */}
+          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
+              <Activity className="w-4 h-4 text-blue-600" />
+              <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Frecuencia de Consulta</h4>
+            </div>
+            <div className="space-y-2">
+              <FrequencyBar 
+                label="Alta (2015-2025)" 
+                count={stats.altaConsulta} 
+                total={stats.total} 
+                colorClass="bg-orange-500"
+                bgClass="bg-orange-100"
+              />
+              <FrequencyBar 
+                label="Media (2000-2014)" 
+                count={stats.mediaConsulta} 
+                total={stats.total} 
+                colorClass="bg-blue-500"
+                bgClass="bg-blue-100"
+              />
+              <FrequencyBar 
+                label="Baja (1984-1999)" 
+                count={stats.bajaConsulta} 
+                total={stats.total} 
+                colorClass="bg-slate-500"
+                bgClass="bg-slate-100"
+              />
+            </div>
+          </div>
+
+          {/* Card 2: Evolución por Años */}
+          <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-100 pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Volumen Documental por Año</h4>
+              </div>
+              <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Últimos 13 periodos</div>
+            </div>
+            <div className="flex-1 flex items-end">
+               <SimpleBarChart data={yearsData} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+          <StatCard title="Total Folios" value={stats.folios?.toLocaleString("es-PE")} icon={FileText} color="slate" />
+          <StatCard title="Unidades Documentales" value={stats.total?.toLocaleString("es-PE")} icon={FileText} color="blue" />
+          <StatCard title="Secciones Activas" value={stats.areas?.toLocaleString("es-PE")} icon={CheckCircle} color="green" />          
+          <StatCard title="Series Documentales" value={stats.series?.toLocaleString("es-PE")} icon={Building2} color="indigo" />          
+          <StatCard title="Cajas Archiveras" value={stats.cajasporunidad?.toLocaleString("es-PE")} icon={Box} color="red" />
+          <StatCard title="Unidades Faltantes" value={stats.tomosfaltantes?.toLocaleString("es-PE")} icon={AlertTriangle} color="yellow" />
         </div>
 
         {/* Filtros avanzados */}
@@ -1313,29 +774,28 @@ export default function InventarioDocumental() {
           loading={state.loading}
         />
 
-        {/* Panel de controles principales */}
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4">
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Lado izquierdo - Vista y búsqueda rápida */}
-            <div className="flex items-center gap-4 flex-1">
-              <ViewToggle 
-                view={viewMode} 
-                onViewChange={setViewMode} 
-              />
+        {/* Panel de controles principales y Lista */}
+        <div ref={tableTopRef} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+          <div className="flex flex-col lg:flex-row gap-5 items-center justify-between mb-4">
+            {/* Lado izquierdo - Vista y Contadores */}
+            <div className="flex items-center gap-5 flex-1 w-full lg:w-auto">
+              <ViewToggle view={viewMode} onViewChange={setViewMode} />
               
-              <div className="hidden lg:block w-px h-8 bg-gray-300"></div>
+              <div className="hidden lg:block w-px h-8 bg-slate-200"></div>
               
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Mostrando {data.documentos.length} de {state.total}</span>
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-800 font-bold">{data.documentos.length}</span>
+                <span>registros visibles de</span>
+                <span className="font-bold">{state.total}</span>
               </div>
             </div>
 
             {/* Lado derecho - Acciones */}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto justify-end">
               {/* Importar Excel */}
-              <label className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer flex items-center gap-2 text-sm">
-                <Upload className="w-4 h-4" />
-                Importar Excel
+              <label className="px-4 py-2.5 bg-white border border-slate-300 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 rounded-lg transition-all cursor-pointer flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group">
+                <Upload className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Importar
                 <input
                   type="file"
                   accept=".xlsx,.xls"
@@ -1347,10 +807,10 @@ export default function InventarioDocumental() {
               {/* Exportar Excel */}
               <button
                 onClick={exportToExcel}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                className="px-4 py-2.5 bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-lg transition-all flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group"
               >
-                <Download className="w-4 h-4" />
-                Exportar Excel
+                <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Exportar
               </button>
 
               {/* Actualizar */}
@@ -1359,85 +819,85 @@ export default function InventarioDocumental() {
                   fetchDocuments(state.page);
                   fetchStats(filters);
                 }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm"
+                className="p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors flex items-center justify-center"
                 disabled={state.loading}
+                title="Actualizar datos"
               >
                 <RefreshCw className={`w-4 h-4 ${state.loading ? 'animate-spin' : ''}`} />
-                Actualizar
               </button>
 
               {/* Nuevo documento */}
               <button
                 onClick={() => setState(s => ({ ...s, selectedDoc: {} }))}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                className="px-5 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-all flex items-center gap-2 text-sm font-bold shadow-md hover:shadow-lg transform active:scale-95"
               >
                 <Plus className="w-4 h-4" />
-                Nuevo Documento
+                Nuevo Registro
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Contenido principal */}
-        {state.loading ? (
-          <SparkleLoader message="Cargando documentos y estadísticas..." />
-        ) : data.documentos.length === 0 ? (
-          <EmptyState
-            title="Sin documentos registrados"
-            message={
-              Object.keys(filters).length > 0 
-                ? "No se encontraron documentos que coincidan con los filtros aplicados"
-                : "Comience agregando el primer documento al inventario"
-            }
-            onCreate={() => setState(s => ({ ...s, selectedDoc: {} }))}
-            createLabel="Crear Primer Documento"
-            icon={FileText}
-          />
-        ) : (
-          <>
-            {/* Vista de tabla */}
-            {viewMode === "table" && (
-              <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                <DataTable
-                  columns={columns}
+          {/* Contenido principal */}
+          {state.loading ? (
+            <SparkleLoader />
+          ) : data.documentos.length === 0 ? (
+            <EmptyState
+              title="Sin registros disponibles"
+              message={
+                Object.keys(filters).length > 0 
+                  ? "No se encontraron documentos con los filtros actuales."
+                  : "La base de datos del inventario está vacía."
+              }
+              onCreate={() => setState(s => ({ ...s, selectedDoc: {} }))}
+              createLabel="Registrar Primer Documento"
+              icon={FileText}
+            />
+          ) : (
+            <>
+              {/* Vista de tabla */}
+              {viewMode === "table" && (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  <DataTable
+                    columns={columns}
+                    data={data.documentos}
+                    renderActions={renderActions}
+                    emptyMessage="No hay documentos para mostrar"
+                  />
+                </div>
+              )}
+
+              {/* Vista de tarjetas */}
+              {viewMode === "cards" && (
+                <DataCardGrid
                   data={data.documentos}
-                  renderActions={renderActions}
+                  renderCard={renderCard}
                   emptyMessage="No hay documentos para mostrar"
                 />
-              </div>
-            )}
+              )}
+            </>
+          )}
 
-            {/* Vista de tarjetas */}
-            {viewMode === "cards" && (
-              <DataCardGrid
-                data={data.documentos}
-                renderCard={renderCard}
-                emptyMessage="No hay documentos para mostrar"
+          {/* Paginación */}
+          {data.documentos.length > 0 && (
+            <div className="mt-6">
+              <Pagination
+                page={state.page}
+                total={state.total}
+                pageSize={pageSize}
+                onPageChange={(newPage) => {
+                  setState(prev => ({ ...prev, page: newPage }));
+                  fetchDocuments(newPage);
+                }}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setState(s => ({ ...s, page: 0 }));
+                  fetchDocuments(0);
+                }}
+                scrollRef={tableTopRef}
               />
-            )}
-          </>
-        )}
-
-        {/* Paginación */}
-        {data.documentos.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4">
-            <Pagination
-              page={state.page}
-              total={state.total}
-              pageSize={pageSize}
-              onPageChange={(newPage) => {
-                setState(prev => ({ ...prev, page: newPage }));
-                fetchDocuments(newPage);
-              }}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setState(s => ({ ...s, page: 0 }));
-                fetchDocuments(0);
-              }}
-              showInfo={true}
-            />
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
       </CrudLayout>
 

@@ -4,7 +4,7 @@ import { CrudLayout } from "../../components/layout/CrudLayout";
 import { Toast } from "../../components/ui/Toast";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
 import { StatCard } from "../../components/ui/StatCard";
-import { FileText, Plus, Clock, AlertTriangle, Download, FileCheck, Printer, X } from "lucide-react";
+import { FileText, Plus, Clock, AlertTriangle, Download, FileCheck, Printer, X, BarChart3, LayoutGrid, List } from "lucide-react";
 import { useReactToPrint } from 'react-to-print';
 
 // Importamos los componentes de las pestañas
@@ -13,41 +13,69 @@ import PendientesTab from "./components/PendientesTab";
 import PrestamosActivosTab from "./components/PrestamosActivosTab";
 import HistorialTab from "./components/HistorialTab";
 
-// --- Componentes UI Reutilizables ---
+// --- Componentes UI Reutilizables Internos ---
 
+// Modal con Estilo Corporativo y Responsivo
 export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
-  const sizeClasses = { sm: "max-w-md", md: "max-w-2xl", lg: "max-w-4xl", xl: "max-w-6xl" };
+  
+  const sizeClasses = { 
+    sm: "max-w-md", 
+    md: "max-w-2xl", 
+    lg: "max-w-4xl", 
+    xl: "max-w-6xl" 
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative bg-white w-full ${sizeClasses[size]} rounded-2xl shadow-2xl border max-h-[90vh] overflow-y-auto`}>
-        <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-2xl flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors"><X size={20} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div 
+        className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity" 
+        onClick={onClose} 
+      />
+      <div className={`relative bg-white w-full ${sizeClasses[size]} rounded-xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col animate-fadeIn`}>
+        {/* Header del Modal */}
+        <div className="sticky top-0 bg-slate-50 border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4 rounded-t-xl flex items-center justify-between z-10">
+          <h3 className="text-base sm:text-lg font-extrabold text-slate-800 tracking-tight line-clamp-1">
+            {title}
+          </h3>
+          <button 
+            onClick={onClose} 
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+          >
+            <X size={20} />
+          </button>
         </div>
-        <div className="p-6">{children}</div>
+        
+        {/* Contenido Scrollable */}
+        <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+          {children}
+        </div>
       </div>
     </div>
   );
 };
 
+// Badge de Estado Normalizado
 export const EstadoBadge = ({ estado }) => {
-  const badges = {
-    pendiente: "bg-amber-100 text-amber-800 border-amber-300",
-    aprobada: "bg-blue-100 text-blue-800 border-blue-300",
-    entregada: "bg-emerald-100 text-emerald-800 border-emerald-300",
-    devuelta: "bg-gray-100 text-gray-800 border-gray-300",
-    vencida: "bg-red-100 text-red-800 border-red-300",
-    rechazada: "bg-red-100 text-red-800 border-red-300",
-    devolucion_parcial: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    cancelado: "bg-gray-100 text-gray-800 border-gray-300"
+  const styles = {
+    Pendiente: "bg-amber-50 text-amber-700 border-amber-200",
+    Aprobado: "bg-blue-50 text-blue-700 border-blue-200",
+    Entregado: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    Devuelto: "bg-slate-100 text-slate-600 border-slate-200",
+    Vencido: "bg-red-50 text-red-700 border-red-200",
+    Rechazado: "bg-red-50 text-red-700 border-red-200",
+    Parcial: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    Cancelado: "bg-gray-100 text-gray-500 border-gray-200"
   };
-  return <span className={`px-3 py-1 text-xs font-medium rounded-full border uppercase ${badges[estado] || badges.pendiente}`}>{estado}</span>;
+
+  return (
+    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border uppercase tracking-wide ${styles[estado] || styles.Pendiente}`}>
+      {estado?.replace('_', ' ')}
+    </span>
+  );
 };
 
-// Componente para el PDF (Interno)
+// Componente para el PDF
 const ReportePDF = React.forwardRef(({ solicitud, documentos }, ref) => {
     const getModalidadTexto = (modalidad) => {
         const modalidades = { prestamo_original: "Préstamo de Original", copia_simple: "Copia Simple", copia_certificada: "Copia Certificada", consulta_sala: "Consulta en Sala" };
@@ -56,39 +84,70 @@ const ReportePDF = React.forwardRef(({ solicitud, documentos }, ref) => {
     const formatUbicacion = (doc) => doc.ubicacion_topografica || (doc.info ? `E${doc.info.Estante || ''}-C${doc.info.Cuerpo || ''}-B${doc.info.Balda || ''}` : 'Sin ubicación');
 
     return (
-        <div ref={ref} className="p-8 bg-white w-full text-sm">
-            <div className="text-center mb-6 border-b-2 border-gray-800 pb-2">
-                <h1 className="text-xl font-bold">Electro Sur Este S.A.A.</h1>
-                <h2 className="text-lg text-gray-600">Servicios Archivísticos - Comprobante</h2>
+        <div ref={ref} className="p-10 bg-white w-full text-sm font-serif text-black">
+            <div className="text-center mb-8 border-b-2 border-black pb-4">
+                <h1 className="text-2xl font-bold uppercase tracking-wider">Electro Sur Este S.A.A.</h1>
+                <h2 className="text-base text-gray-600 mt-1">Unidad de Archivo Central - Comprobante de Atención</h2>
             </div>
-            <div className="grid grid-cols-2 gap-6 mb-6">
-                <div className="border p-3 rounded bg-gray-50">
-                    <h3 className="font-bold border-b mb-2">Solicitante</h3>
-                    <p><strong>Nombre:</strong> {solicitud.nombre_solicitante}</p>
-                    <p><strong>Área:</strong> {solicitud.sub_gerencia}</p>
-                    <p><strong>Email:</strong> {solicitud.email}</p>
+            
+            <div className="grid grid-cols-2 gap-8 mb-8">
+                <div className="border border-gray-300 p-4 rounded">
+                    <h3 className="font-bold border-b border-gray-300 mb-3 pb-1 uppercase text-xs">Datos del Solicitante</h3>
+                    <div className="space-y-1">
+                        <p><span className="font-bold">Nombre:</span> {solicitud.nombre_solicitante}</p>
+                        <p><span className="font-bold">Área/Oficina:</span> {solicitud.sub_gerencia}</p>
+                        <p><span className="font-bold">Email:</span> {solicitud.email}</p>
+                    </div>
                 </div>
-                <div className="border p-3 rounded bg-gray-50">
-                    <h3 className="font-bold border-b mb-2">Solicitud</h3>
-                    <p><strong>N°:</strong> {solicitud.id}</p>
-                    <p><strong>Fecha:</strong> {new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
-                    <p><strong>Modalidad:</strong> {getModalidadTexto(solicitud.modalidad_servicio)}</p>
+                <div className="border border-gray-300 p-4 rounded">
+                    <h3 className="font-bold border-b border-gray-300 mb-3 pb-1 uppercase text-xs">Detalle de la Solicitud</h3>
+                    <div className="space-y-1">
+                        <p><span className="font-bold">N° Ticket:</span> {solicitud.numero_solicitud || solicitud.id.slice(0, 8)}</p>
+                        <p><span className="font-bold">Fecha:</span> {new Date(solicitud.fecha_solicitud).toLocaleDateString()} {new Date(solicitud.fecha_solicitud).toLocaleTimeString()}</p>
+                        <p><span className="font-bold">Modalidad:</span> {getModalidadTexto(solicitud.modalidad_servicio)}</p>
+                    </div>
                 </div>
             </div>
-            <div className="mb-6">
-                <h3 className="font-bold mb-2">Documentos</h3>
-                <table className="w-full border-collapse border text-xs">
-                    <thead><tr className="bg-gray-100"><th className="border p-1">Código</th><th className="border p-1">Descripción</th><th className="border p-1">Ubicación</th></tr></thead>
+            
+            <div className="mb-8">
+                <h3 className="font-bold mb-2 uppercase text-xs border-b border-black pb-1">Documentos Solicitados</h3>
+                <table className="w-full border-collapse border border-gray-300 text-xs">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="border border-gray-300 p-2 text-left">Código</th>
+                            <th className="border border-gray-300 p-2 text-left">Descripción del Documento</th>
+                            <th className="border border-gray-300 p-2 text-center">Ubicación Topográfica</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {documentos.map((d, i) => (
-                            <tr key={i}><td className="border p-1">{d.documento_id}</td><td className="border p-1">{d.descripcion}</td><td className="border p-1">{formatUbicacion(d)}</td></tr>
+                            <tr key={i}>
+                                <td className="border border-gray-300 p-2 font-mono">{d.documento_id}</td>
+                                <td className="border border-gray-300 p-2">{d.descripcion}</td>
+                                <td className="border border-gray-300 p-2 text-center">{formatUbicacion(d)}</td>
+                            </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-            <div className="mt-12 grid grid-cols-2 gap-12 text-center">
-                 <div>{solicitud.firma_solicitante_solicitud && <img src={solicitud.firma_solicitante_solicitud} className="h-16 mx-auto object-contain" alt="Firma" />}<div className="border-t border-gray-400 mt-2">Firma Solicitante</div></div>
-                 <div>{solicitud.firma_archivo_central && <img src={solicitud.firma_archivo_central} className="h-16 mx-auto object-contain" alt="Firma" />}<div className="border-t border-gray-400 mt-2">Firma Archivo Central</div></div>
+            
+            <div className="mt-16 grid grid-cols-2 gap-16 text-center">
+                 <div className="flex flex-col items-center">
+                    <div className="h-20 w-full flex items-end justify-center mb-2">
+                        {solicitud.firma_solicitante_solicitud && <img src={solicitud.firma_solicitante_solicitud} className="h-16 object-contain" alt="Firma" />}
+                    </div>
+                    <div className="border-t border-black w-3/4 pt-2 font-bold text-xs">Firma del Solicitante</div>
+                 </div>
+                 <div className="flex flex-col items-center">
+                    <div className="h-20 w-full flex items-end justify-center mb-2">
+                        {solicitud.firma_archivo_central && <img src={solicitud.firma_archivo_central} className="h-16 object-contain" alt="Firma" />}
+                    </div>
+                    <div className="border-t border-black w-3/4 pt-2 font-bold text-xs">Visto Bueno Archivo Central</div>
+                 </div>
+            </div>
+            
+            <div className="absolute bottom-10 left-0 w-full text-center text-[10px] text-gray-400">
+                Generado automáticamente por el Sistema de Gestión Documental - DocuFlow
             </div>
         </div>
     );
@@ -112,17 +171,41 @@ export default function ServiciosArchivisticos() {
   const [isPrintReady, setIsPrintReady] = useState(false);
   const reporteRef = useRef();
 
-  const canCreateRequest = useMemo(() => {
+  // --- LÓGICA DE ROLES MEJORADA ---
+
+  // 1. Roles que pueden GESTIONAR (Ver pendientes, préstamos y todo el historial)
+  // Incluye: Admin, Supervisor, Archivero
+  const canManage = useMemo(() => {
       if (!currentUser) return false;
-      const allowedRoles = ['usuario', 'admin', 'archivo_central'];
-      return allowedRoles.includes(currentUser.rol);
+      const managementRoles = ['Admin', 'Supervisor', 'Archivero']; 
+      return managementRoles.includes(currentUser.rol);
   }, [currentUser]);
 
+  // 2. Roles que pueden CREAR solicitudes (Ver pestaña "Nueva Solicitud")
+  // Incluye: Admin, Supervisor, Usuario. EXCLUYE: Archivero (según requerimiento)
+  const canCreate = useMemo(() => {
+      if (!currentUser) return false;
+      const creatorRoles = ['Admin', 'Supervisor', 'Usuario'];
+      return creatorRoles.includes(currentUser.rol);
+  }, [currentUser]);
+
+
+  // --- REDIRECCIÓN DE SEGURIDAD ---
+  // Si un rol entra a una pestaña que no le corresponde, lo movemos
   useEffect(() => {
-      if (currentUser && !canCreateRequest && activeTab === 'nueva') {
-          setActiveTab('pendientes');
+      if (!currentUser) return;
+
+      // CASO 1: Archivero entra por defecto a 'nueva' -> lo mandamos a 'pendientes'
+      if (!canCreate && activeTab === 'nueva') {
+          if (canManage) setActiveTab('pendientes');
+          else setActiveTab('historial');
       }
-  }, [currentUser, canCreateRequest, activeTab]);
+
+      // CASO 2: Usuario intenta entrar a 'pendientes' o 'prestamos' -> lo mandamos a 'nueva'
+      if (!canManage && ['pendientes', 'prestamos'].includes(activeTab)) {
+          setActiveTab('nueva');
+      }
+  }, [currentUser, canCreate, canManage, activeTab]);
 
   const mostrarMensaje = useCallback((msg, tipo) => setMensaje({ mensaje: msg, tipo }), []);
 
@@ -180,14 +263,21 @@ export default function ServiciosArchivisticos() {
             ...formData,
             solicitante_id: currentUser.id,
             created_by: currentUser.id,
-            estado: 'pendiente'
+            estado: 'Pendiente'
         });
 
         if (error) throw error;
 
-        mostrarMensaje("Solicitud creada correctamente. Pase a la pestaña 'Pendientes' para la atención.", "success");
+        mostrarMensaje("Solicitud creada correctamente.", "success");
         cargarDatos();
-        setActiveTab("pendientes");
+        
+        // Redirección post-guardado inteligente
+        if (canManage) {
+             setActiveTab("pendientes");
+        } else {
+             setActiveTab("historial");
+        }
+        
     } catch (error) {
         mostrarMensaje(error.message, "error");
     } finally {
@@ -195,76 +285,182 @@ export default function ServiciosArchivisticos() {
     }
   };
 
+  // Definir tabs disponibles dinámicamente según permisos
   const tabs = [
-    ...(canCreateRequest ? [{ id: "nueva", label: "Nueva Solicitud", icon: Plus }] : []),
-    { id: "pendientes", label: `Pendientes (${solicitudes.filter(s => s.estado === "pendiente").length})`, icon: Clock },
-    { id: "prestamos", label: "Préstamos Activos", icon: FileCheck },
+    // Nueva Solicitud: Solo Admin, Supervisor, Usuario
+    ...(canCreate ? [{ id: "nueva", label: "Nueva Solicitud", icon: Plus }] : []),
+    
+    // Pendientes y Préstamos: Solo Admin, Supervisor, Archivero
+    ...(canManage ? [
+        { id: "pendientes", label: `Pendientes`, count: solicitudes.filter(s => s.estado === "Pendiente").length, icon: Clock },
+        { id: "prestamos", label: "Préstamos Activos", icon: FileCheck }
+    ] : []),
+    
+    // Historial: Disponible para TODOS
     { id: "historial", label: "Historial", icon: Download }
   ];
 
   return (
     <>
       {mensaje && <Toast {...mensaje} onClose={() => setMensaje(null)} />}
+      
+      {/* Contenedor Oculto para Impresión */}
       <div style={{ display: "none" }}>
         <div ref={reporteRef}>
             {selectedSolicitudPrint && <ReportePDF solicitud={selectedSolicitudPrint} documentos={docsPrint} />}
         </div>
       </div>
 
-      <CrudLayout title="Servicios Archivísticos" icon={FileText}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard title="Total Solicitudes" value={solicitudes.length} icon={FileText} color="from-blue-500 to-indigo-600" />
-            <StatCard title="Pendientes" value={solicitudes.filter(s => s.estado === 'pendiente').length} icon={Clock} color="from-amber-500 to-orange-600" />
-            <StatCard title="Activos" value={solicitudes.filter(s => ['entregada', 'devolucion parcial'].includes(s.estado)).length} icon={FileCheck} color="from-green-500 to-emerald-600" />
-            <StatCard title="Vencidos" value={solicitudes.filter(s => ['entregada', 'devolucion parcial'].includes(s.estado) && new Date(s.fecha_devolucion_prevista) < new Date()).length} icon={AlertTriangle} color="from-red-500 to-rose-600" />
+      <CrudLayout 
+        title="Servicios Archivísticos" 
+        icon={FileText}
+        description="Gestión integral de solicitudes, préstamos y consultas documentales."
+      >
+        {/* Panel de Estadísticas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard 
+                title="Mis Solicitudes" 
+                // Todos ven sus propias solicitudes, pero Staff ve el total global si lo desea (aquí simplificamos a 'mis solicitudes' para el usuario base)
+                value={solicitudes.filter(s => s.solicitante_id === currentUser?.id).length} 
+                icon={FileText} 
+                color="indigo" 
+            />
+            {/* Solo mostramos métricas de gestión a quienes pueden gestionar */}
+            {canManage && (
+                <>
+                    <StatCard 
+                        title="Pendientes Atención" 
+                        value={solicitudes.filter(s => s.estado === 'Pendiente').length} 
+                        icon={Clock} 
+                        color="yellow" 
+                    />
+                    <StatCard 
+                        title="Préstamos Activos" 
+                        value={solicitudes.filter(s => ['Entregado', 'Parcial'].includes(s.estado)).length} 
+                        icon={FileCheck} 
+                        color="green" 
+                    />
+                    <StatCard 
+                        title="Préstamos Vencidos" 
+                        value={solicitudes.filter(s => ['Entregado', 'Parcial'].includes(s.estado) && new Date(s.fecha_devolucion_prevista) < new Date()).length} 
+                        icon={AlertTriangle} 
+                        color="red" 
+                    />
+                </>
+            )}
         </div>
 
-        <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
-                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id ? "border-indigo-600 text-indigo-700 bg-indigo-50" : "border-transparent text-gray-600 hover:text-gray-800"}`}>
-              <tab.icon size={18} /> {tab.label}
-            </button>
-          ))}
+        {/* --- NAVEGACIÓN --- */}
+        <div className="mb-6">
+            {/* VISTA MÓVIL */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+                {tabs.map(tab => (
+                    <button 
+                        key={tab.id} 
+                        onClick={() => setActiveTab(tab.id)} 
+                        className={`
+                            flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200
+                            ${activeTab === tab.id 
+                                ? "bg-blue-700 text-white border-blue-800 shadow-md transform scale-[1.02]" 
+                                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                            }
+                        `}
+                    >
+                        <div className={`p-1.5 rounded-full mb-1 ${activeTab === tab.id ? "bg-white/20" : "bg-slate-100"}`}>
+                            <tab.icon size={20} className={activeTab === tab.id ? "text-white" : "text-slate-500"} />
+                        </div>
+                        <span className="text-xs font-bold">{tab.label}</span>
+                        {tab.count !== undefined && tab.count > 0 && (
+                            <span className={`mt-1 text-[10px] px-1.5 rounded-full font-bold ${activeTab === tab.id ? "bg-white text-blue-700" : "bg-amber-100 text-amber-700"}`}>
+                                {tab.count}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            {/* VISTA DESKTOP */}
+            <div className="hidden sm:flex border-b border-slate-200 bg-white rounded-t-xl px-2 pt-2 shadow-sm overflow-x-auto">
+                {tabs.map(tab => (
+                    <button 
+                        key={tab.id} 
+                        onClick={() => setActiveTab(tab.id)} 
+                        className={`
+                            flex items-center gap-2 px-6 py-3.5 text-sm font-bold transition-all relative rounded-t-lg whitespace-nowrap group
+                            ${activeTab === tab.id 
+                                ? "text-blue-700 bg-blue-50/50 border-b-2 border-blue-700" 
+                                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 border-b-2 border-transparent"
+                            }
+                        `}
+                    >
+                        <tab.icon size={18} className={`transition-colors ${activeTab === tab.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}`} /> 
+                        {tab.label}
+                        {tab.count !== undefined && tab.count > 0 && (
+                            <span className="ml-1.5 bg-amber-100 text-amber-700 text-xs px-1.5 py-0.5 rounded-full font-extrabold">
+                                {tab.count}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
         </div>
 
-        {loading ? <div className="py-12"><SparkleLoader /></div> : (
-          <>
-            {activeTab === "nueva" && canCreateRequest && (
-                <NuevaSolicitudTab 
-                    currentUser={currentUser} 
-                    usuarios={usuarios} 
-                    onGuardar={guardarSolicitud} 
-                    onMensaje={mostrarMensaje} 
-                />
-            )}
-            {activeTab === "pendientes" && (
-                <PendientesTab 
-                    solicitudes={solicitudes.filter(s => s.estado === 'pendiente')} 
-                    currentUser={currentUser}
-                    documentosInventario={documentosInventario} // <-- CORRECCIÓN AQUÍ: Se pasa la prop necesaria
-                    onReload={cargarDatos}
-                    onMensaje={mostrarMensaje}
-                    onImprimir={imprimirSolicitud}
-                />
-            )}
-            {activeTab === "prestamos" && (
-                <PrestamosActivosTab 
-                    solicitudes={solicitudes.filter(s => ['entregada', 'devolucion parcial'].includes(s.estado))}
-                    currentUser={currentUser}
-                    documentosInventario={documentosInventario} 
-                    onReload={cargarDatos}
-                    onMensaje={mostrarMensaje}
-                    onImprimir={imprimirSolicitud}
-                />
-            )}
-            {activeTab === "historial" && (
-                <HistorialTab 
-                    solicitudes={solicitudes.filter(s => ['devuelta', 'rechazada', 'cancelado'].includes(s.estado))}
-                    onImprimir={imprimirSolicitud}
-                />
-            )}
-          </>
+        {/* Contenido de las Pestañas */}
+        {loading ? (
+            <SparkleLoader />
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-tr-xl sm:rounded-b-xl shadow-sm p-4 sm:p-6 min-h-[400px]">
+            <div className="animate-fadeIn">
+                {/* 1. NUEVA SOLICITUD */}
+                {activeTab === "nueva" && canCreate && (
+                    <NuevaSolicitudTab 
+                        currentUser={currentUser} 
+                        usuarios={usuarios} 
+                        onGuardar={guardarSolicitud} 
+                        onMensaje={mostrarMensaje} 
+                    />
+                )}
+
+                {/* 2. PENDIENTES */}
+                {activeTab === "pendientes" && canManage && (
+                    <PendientesTab 
+                        solicitudes={solicitudes.filter(s => s.estado === 'Pendiente')} 
+                        currentUser={currentUser}
+                        documentosInventario={documentosInventario}
+                        onReload={cargarDatos}
+                        onMensaje={mostrarMensaje}
+                        onImprimir={imprimirSolicitud}
+                    />
+                )}
+
+                {/* 3. PRESTAMOS */}
+                {activeTab === "prestamos" && canManage && (
+                    <PrestamosActivosTab 
+                        solicitudes={solicitudes.filter(s => ['Entregado', 'Parcial'].includes(s.estado))}
+                        currentUser={currentUser}
+                        documentosInventario={documentosInventario} 
+                        onReload={cargarDatos}
+                        onMensaje={mostrarMensaje}
+                        onImprimir={imprimirSolicitud}
+                    />
+                )}
+
+                {/* 4. HISTORIAL */}
+                {activeTab === "historial" && (
+                    <HistorialTab 
+                        solicitudes={
+                            // LÓGICA DE FILTRADO DE DATOS (REQUERIMIENTO CLAVE)
+                            canManage
+                                // Si es GESTOR (Admin/Archivero): Ve historial general (finalizados), no necesita ver sus propias solicitudes activas aquí porque las ve en los otros tabs.
+                                ? solicitudes.filter(s => ['Devuelto', 'Rechazado', 'Cancelado'].includes(s.estado))
+                                // Si es USUARIO: Ve TODO su historial personal, sin importar el estado.
+                                : solicitudes.filter(s => s.solicitante_id === currentUser?.id)
+                        }
+                        onImprimir={imprimirSolicitud}
+                    />
+                )}
+            </div>
+          </div>
         )}
       </CrudLayout>
     </>

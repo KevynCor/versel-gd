@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "../../../utils/supabaseClient";
-import { DigitalSignature } from "../../../components/ui/DigitalSignature";
-import { SearchBar } from "../../../components/controls/SearchBar";
+import { supabase } from "../../utils/supabaseClient";
+import { DigitalSignature } from "../../components/ui/DigitalSignature";
+import { SearchBar } from "../../components/controls/SearchBar";
 import { FilePlus, User, FileText, FileCheck, Signature, Calendar, UserPlus, Search, MapPin, X, Mail, Building, Phone, ChevronUp, ChevronDown, QrCode, Scan, Camera } from "lucide-react";
 
 // Instalar jsQR: npm install jsQR
