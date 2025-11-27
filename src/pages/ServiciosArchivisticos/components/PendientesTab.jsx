@@ -1,185 +1,52 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { supabase } from "../../../utils/supabaseClient"; 
 import { 
-  Clock, Check, Search, Trash2, FileText, AlertCircle, X, Scan, PlusSquare, 
-  Save, Box, RefreshCw, Ban, User, Calendar, MapPin, ShieldAlert, Building2, 
-  CheckCircle, Archive, Layers, Book, Loader2 
+    Clock, Check, Search, Trash2, FileText, AlertCircle, X, Scan, PlusSquare, 
+    Save, Box, RefreshCw, Ban, User, Calendar, MapPin, ShieldAlert, Building2, 
+    CheckCircle, Archive, Layers, Book, Loader2 
 } from "lucide-react";
+import QRScanner from "../../../components/ui/QRScanner"; 
 import { DigitalSignature } from "../../../components/ui/DigitalSignature";
 import { TextareaField } from "../../../components/ui/TextareaField";
-import jsQR from "jsqr"; 
+
+// import jsQR from "jsqr"; 
 import { EstadoBadge } from "../ServiciosArchivisticos";
 
 // --- COMPONENTES UI LOCALES (Estilo Corporativo) ---
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
-  if (!isOpen) return null;
-  
-  const sizeClasses = { 
-    sm: "max-w-md", 
-    md: "max-w-2xl", 
-    lg: "max-w-4xl", 
-    xl: "max-w-6xl" 
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity" 
-        onClick={onClose} 
-      />
-      <div className={`relative bg-white w-full ${sizeClasses[size]} rounded-xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col animate-fadeIn`}>
-        {/* Header Corporativo */}
-        <div className="sticky top-0 bg-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-xl flex items-center justify-between z-10 flex-shrink-0">
-          <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">{title}</h3>
-          <button 
-            onClick={onClose} 
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        {/* Contenido Scrollable */}
-        <div className="p-6 overflow-y-auto custom-scrollbar">
-            {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- COMPONENTE ESCÁNER QR (PANTALLA COMPLETA MEJORADO) ---
-const ScannerModal = ({ isOpen, onClose, onScan }) => {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const animationFrameRef = useRef(null);
-
-  const iniciarCamara = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        videoRef.current.onloadedmetadata = () => {
-             videoRef.current.play().catch(e => console.error("Error playing video", e));
-             iniciarEscaneoQR();
-        };
-      }
-    } catch (error) {
-      console.error("Error al acceder a la cámara:", error);
-      alert("No se pudo acceder a la cámara. Verifique permisos HTTPS/Navegador.");
-    }
-  };
-
-  const detenerCamara = () => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const iniciarEscaneoQR = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-
-    const escanearFrame = () => {
-      if (!animationFrameRef.current) return;
-      
-      try {
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-          
-          if (code) {
-            onScan(code.data);
-            detenerCamara();
-            onClose();
-            return;
-          }
-        }
-        if (animationFrameRef.current) {
-          animationFrameRef.current = requestAnimationFrame(escanearFrame);
-        }
-      } catch (error) {
-        console.error("Error en escaneo:", error);
-        animationFrameRef.current = requestAnimationFrame(escanearFrame);
-      }
-    };
+    if (!isOpen) return null;
     
-    animationFrameRef.current = requestAnimationFrame(escanearFrame);
-  };
+    const sizeClasses = { 
+        sm: "max-w-md", 
+        md: "max-w-2xl", 
+        lg: "max-w-4xl", 
+        xl: "max-w-6xl" 
+    };
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => iniciarCamara(), 300);
-    } else {
-      detenerCamara();
-    }
-    return () => detenerCamara();
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-        {/* Barra Superior Flotante */}
-        <div className="absolute top-0 left-0 w-full z-20 p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
-            <h3 className="text-white font-bold text-lg flex items-center gap-2 drop-shadow-md">
-                <Scan className="text-emerald-400" size={24} /> Escáner QR
-            </h3>
-            <button 
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+                className="absolute inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity" 
                 onClick={onClose} 
-                className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
-                <X size={24} />
-            </button>
-        </div>
-
-        {/* Área de Cámara */}
-        <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-            <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
-                muted 
-                className="absolute inset-0 w-full h-full object-cover" 
             />
-            <canvas ref={canvasRef} className="hidden" />
-            
-            {/* Guía visual de escaneo */}
-            <div className="relative w-72 h-72 border-2 border-emerald-500/70 rounded-3xl z-10 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
-                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/80 animate-[scan_2s_infinite] shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
-                {/* Esquinas decorativas */}
-                <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-400 -mt-1 -ml-1 rounded-tl-lg"></div>
-                <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-400 -mt-1 -mr-1 rounded-tr-lg"></div>
-                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-400 -mb-1 -ml-1 rounded-bl-lg"></div>
-                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-400 -mb-1 -mr-1 rounded-br-lg"></div>
-            </div>
-
-            <div className="absolute bottom-12 left-0 w-full text-center z-20 px-4">
-                <p className="text-white/90 text-sm bg-black/40 backdrop-blur-sm py-2 px-4 rounded-full inline-block">
-                    Apunta la cámara al código QR del documento
-                </p>
+            <div className={`relative bg-white w-full ${sizeClasses[size]} rounded-xl shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col animate-fadeIn`}>
+                {/* Header Corporativo */}
+                <div className="sticky top-0 bg-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-xl flex items-center justify-between z-10 flex-shrink-0">
+                    <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">{title}</h3>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+                {/* Contenido Scrollable */}
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    {children}
+                </div>
             </div>
         </div>
-    </div>
-  );
+    );
 };
 
 // --- COMPONENTE PRINCIPAL ---
@@ -223,11 +90,13 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
 
             setBuscandoDocs(true);
             try {
+                // Intento de búsqueda RPC (más eficiente o con full-text search)
                 const { data, error } = await supabase
                     .rpc('buscar_documentos_archivisticos', { busqueda: busquedaDoc });
 
                 if (error) {
                     console.warn("RPC error (fallback):", error.message);
+                    // Fallback a búsqueda simple (ilike)
                     const { data: simpleData } = await supabase
                         .from("Inventario_documental")
                         .select("*")
@@ -250,10 +119,12 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
 
     // --- FUNCIONES ---
     
+    // Función de callback pasada al QRScanner
     const handleScanResult = async (code) => {
         setBusquedaDoc(code);
         setBuscandoDocs(true);
         try {
+            // Se asume que el código QR es el ID del documento
             const { data } = await supabase
                 .from("Inventario_documental")
                 .select("*")
@@ -265,10 +136,11 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                 onMensaje(`Documento escaneado: ${data.Descripcion}`, "success");
                 setBusquedaDoc(""); 
             } else {
-                onMensaje(`Código: ${code}. Verifique resultados.`, "info");
+                onMensaje(`Código: ${code}. No se encontró un documento con ese ID. Verifique resultados.`, "info");
             }
         } catch (err) {
-             onMensaje(`Código escaneado: ${code}. No exacto.`, "info");
+            console.error(err);
+             onMensaje(`Error al buscar el código escaneado: ${code}.`, "error");
         } finally {
             setBuscandoDocs(false);
         }
@@ -343,12 +215,15 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
         
         setGuardandoBorrador(true);
         try {
+            // Intentar convertir la firma a string si es necesario, aunque DigitalSignature ya debería devolver una cadena
+            const firmaData = firma;
+
             const { error } = await supabase
                 .from('atenciones_temporales')
                 .upsert({
                     solicitud_id: selectedSolicitud.id,
                     documentos_json: documentosSeleccionados,
-                    firma_temp: firma,
+                    firma_temp: firmaData,
                     observaciones_temp: observacionesAtencion,
                     updated_at: new Date().toISOString()
                 });
@@ -639,11 +514,11 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                                                         <span>
                                                             {doc.ubicacion_topografica || [doc.Ambiente, doc.Estante && `E${doc.Estante}`, doc.Cuerpo && `C${doc.Cuerpo}`, doc.Balda && `B${doc.Balda}`].filter(Boolean).join("-") || 'No asignada'}
                                                         </span>
-                                                    </div>                                                    
+                                                    </div>          
                                                 </div>
                                             </div>
                                             <button onClick={() => eliminarDocumento(doc.id)} className="self-start p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors mt-1 shrink-0">
-                                            <X size={16} />
+                                                <X size={16} />
                                             </button>
                                         </div>
                                     ))
@@ -750,7 +625,8 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                 </div>
             </Modal>
 
-            <ScannerModal isOpen={showScanner} onClose={() => setShowScanner(false)} onScan={handleScanResult} />
+            {/* USAR EL COMPONENTE QRScanner SEPARADO */}
+            <QRScanner isOpen={showScanner} onClose={() => setShowScanner(false)} onScan={handleScanResult} />
         </div>
     );
 }
