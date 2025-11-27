@@ -421,12 +421,12 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
                                     />
                                     <Search className="absolute left-3 top-3 text-slate-400" size={16} />
                                 </div>
-                                <button 
-                                    onClick={() => setShowScanner(true)} 
-                                    className="p-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-sm" 
+                                <button
+                                    onClick={() => setShowScanner(true)}
+                                    className="p-2 bg-white text-slate-600 rounded-md border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"
                                     title="Escanear código QR"
                                 >
-                                    <Scan size={20} />
+                                    <Scan size={18} />
                                 </button>
                             </div>
                             

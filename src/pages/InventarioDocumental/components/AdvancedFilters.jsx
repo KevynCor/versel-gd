@@ -1,12 +1,22 @@
 import React, { useState } from "react";
-import { Filter, RefreshCw } from "lucide-react";
+import { Filter, RefreshCw, Scan } from "lucide-react";
+// Asumo la ruta a QRScanner y otros componentes basados en el contexto de un proyecto React.
+import QRScanner from "../../../components/ui/QRScanner"; 
 import { SearchBar } from "../../../components/controls/SearchBar";
 
 export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  // Estado para controlar la visibilidad del escáner QR
+  const [showScanner, setShowScanner] = useState(false); 
 
   const updateFilter = (key, value) => {
     onFiltersChange({ ...filters, [key]: value });
+  };
+
+  // Nueva función para manejar el resultado del escaneo
+  const handleScanResult = (code) => {
+    // Cuando el QRScanner detecta un código, actualizamos el filtro 'search'
+    updateFilter('search', code);
   };
 
   const clearFilters = () => {
@@ -40,16 +50,33 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
 
       {/* Grid de Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {/* Búsqueda general */}
+        
+        {/* Búsqueda general con Escáner QR integrado */}
         <div className="col-span-1 md:col-span-2 xl:col-span-1">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-            Búsqueda General
+            Búsqueda General (ID, Descripción o QR)
           </label>
-          <SearchBar
-            value={filters.search || ""}
-            onChange={(value) => updateFilter('search', value)}
-            placeholder="Buscar por ID, descripción..."
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <SearchBar
+                value={filters.search || ""}
+                onChange={(value) => updateFilter('search', value)}
+                placeholder="Buscar por ID, descripción..."
+              />
+            </div>
+            <button
+                onClick={() => setShowScanner(true)}
+                className={`p-2 rounded-md transition-colors shadow-sm w-10 h-10 flex items-center justify-center 
+                  ${loading
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
+                  }`}
+                title="Escanear código QR"
+                disabled={loading}
+            >
+              <Scan size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Área responsable */}
@@ -104,10 +131,10 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
-        </div>  
+        </div> 	
 
         {isExpanded && (
-        <>        
+        <> 		
           {/* Frecuencia de consulta */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
@@ -223,7 +250,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-          </div>  
+          </div> 
 
           {/* Soporte */}
           <div>
@@ -330,6 +357,13 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
           Limpiar Filtros
         </button>
       </div>
+
+      {/* Componente QR Scanner */}
+      <QRScanner 
+        isOpen={showScanner} 
+        onClose={() => setShowScanner(false)} 
+        onScan={handleScanResult} 
+      />
     </div>
   );
 };
