@@ -234,7 +234,7 @@ const Auth = () => {
           </form>
 
           {/* Footer / Toggle (Adaptado) */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <div className="mt-1 pt-6 border-t border-slate-100 text-center">
             <p className="text-slate-500 text-sm mb-3">
               {isResetting ? '¿Recuerdas tu contraseña ahora?' : 'El acceso es solo para personal autorizado.'}
             </p>

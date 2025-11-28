@@ -124,7 +124,7 @@ export default function InventarioDocumental() {
       const volumenAnual = statsData.volumen_por_anio || [];
       if (volumenAnual.length > 0) {
         const currentYear = new Date().getFullYear();
-        const cutoffYear = currentYear - 12; 
+        const cutoffYear = currentYear - 9; 
         const formattedYears = volumenAnual
             .filter(item => Number(item.anio) >= cutoffYear)
             .map(item => ({
@@ -749,7 +749,7 @@ export default function InventarioDocumental() {
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
                 <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Volumen Documental por Año</h4>
               </div>
-              <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Últimos 13 periodos</div>
+              <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Últimos 10 periodos</div>
             </div>
             <div className="flex-1 flex items-end">
                <SimpleBarChart data={yearsData} />

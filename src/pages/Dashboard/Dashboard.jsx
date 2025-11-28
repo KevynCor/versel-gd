@@ -51,7 +51,7 @@ const Dashboard = ({ userRole }) => {
       desc: "Localización rápida de expedientes mediante metadatos y filtros avanzados.",
       icon: Search,
       path: "/busqueda",
-      roles: ['Admin', 'Supervisor'] // Solo personal autorizado
+      roles: ['Admin', 'Supervisor']
     },
     {
       id: 'vouchers',
@@ -67,7 +67,7 @@ const Dashboard = ({ userRole }) => {
       desc: "Gestión de solicitudes de préstamo, copias certificadas y consultas en sala.",
       icon: ClipboardCheck,
       path: "/solicitud",
-      roles: ['Admin', 'Supervisor', 'Usuario'] // ACCESIBLE PARA TODOS
+      roles: ['Admin', 'Supervisor', 'Usuario']
     },
     {
       id: 'inventario',

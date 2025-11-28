@@ -7,12 +7,13 @@ import Navbar from './components/Navbar';
 import Auth from './pages/Login/Auth';
 import Profile from './pages/Perfil/Profile';
 import Dashboard from './pages/Dashboard/Dashboard';
-import BusquedaDocumento from './pages/BusquedaDocumento/BusquedaDocumento';
-import InventarioDocumental from './pages/InventarioDocumental/InventarioDocumental';
+import BusquedaDocumento from './pages/Busqueda/BusquedaDocumento';
+import InventarioDocumental from './pages/Inventario/InventarioDocumental';
 import ServiciosArchivisticos from './pages/ServiciosArchivisticos/ServiciosArchivisticos';
-import EliminacionDocumental from './pages/EliminacionDocumental/EliminacionDocumental';
-import BusquedaVoucher from './pages/BusquedaVoucher/BusquedaVoucher';
+import EliminacionDocumental from './pages/Eliminacion/EliminacionDocumental';
+import BusquedaVoucher from './pages/Busqueda/BusquedaVoucher';
 import SessionTimeout from './components/SessionTimeout'; 
+import GestionAccesos from './pages/GestionAcceso/GestionUsuarios';
 
 const ModuloEnConstruccion = ({ titulo }) => (
   <div className="p-8 text-center">
@@ -188,7 +189,7 @@ export default function App() {
           <Route path="/ccf" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="Cuadro de Clasificación"/></ProtectedRoute>} />
           <Route path="/pcda" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="PCDA"/></ProtectedRoute>} />
           <Route path="/reportes" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={rolesAdmin} loading={loadingSession}><ModuloEnConstruccion titulo="Reportes"/></ProtectedRoute>} />
-          <Route path="/accesos" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={['admin']} loading={loadingSession}><ModuloEnConstruccion titulo="Control de Accesos"/></ProtectedRoute>} />
+          <Route path="/accesos" element={<ProtectedRoute user={session?.user} userRole={userRole} allowedRoles={['Admin']} loading={loadingSession}><GestionAccesos /></ProtectedRoute>} />
         </Route>
         <Route path="*" element={<Navigate to={session ? "/" : "/login"} replace />} />
       </Routes>

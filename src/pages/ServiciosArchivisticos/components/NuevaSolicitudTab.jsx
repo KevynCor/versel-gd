@@ -1,74 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from "../../../utils/supabaseClient";
-import { User, FileText, Search, UserPlus, Lock, Unlock, Phone, Save, Briefcase, ShieldCheck, Calendar } from "lucide-react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+    User, FileText, Search, UserPlus, Phone, Briefcase, 
+    Calendar, ChevronDown, ChevronUp, Mail, Building2, Info, UserCheck 
+} from "lucide-react";
 import { InputField } from "../../../components/ui/InputField";
 import { TextareaField } from "../../../components/ui/TextareaField";
+import UserModal from '../../GestionAcceso/components/UserModal';
+import { MODALIDADES} from "./Shared";
 
-
-// --- COMPONENTE PRINCIPAL ---
 export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, onMensaje }) {
-    // Nota: Se ha incluido 'admin' minúscula por robustez, aunque la BD usa 'Admin' mayúscula.
-    const isAdmin = ['Admin', 'admin', 'Supervisor', 'supervisor'].includes(currentUser?.rol);
-    const [isManualEntry, setIsManualEntry] = useState(false);
-    const [savingUser, setSavingUser] = useState(false);
+    const isAdmin = ['Admin', 'Supervisor'].includes(currentUser?.rol);
+    const today = new Date().toISOString().split('T')[0];
+
+    // --- ESTADO ---
+    const [showUserModal, setShowUserModal] = useState(false);
     
-    // Lógica de bloqueo (Solo afecta a los datos del SOLICITANTE)
-    const areFieldsLocked = !isManualEntry;
+    // Estado de UI: Progressive Disclosure
+    const [expandUserDetails, setExpandUserDetails] = useState(false);
+    const [isBehalfMode, setIsBehalfMode] = useState(false); // Modo "Solicitar para otro"
 
-    // Calcular fecha mínima (Hoy) para validación del calendario
-    const today = new Date();
-    const minDate = today.toISOString().split('T')[0];
-
-    // Estado del formulario
-    const [formData, setFormData] = useState({
-        nombre_solicitante: currentUser?.nombre_completo || "",
-        email: currentUser?.email || "",
-        movil: currentUser?.movil || "", 
-        sub_gerencia: currentUser?.sub_gerencia || "",
-        entidad: currentUser?.entidad || "Electro Sur Este S.A.A.",
-        motivo_solicitud: "",
-        modalidad_servicio: "prestamo_original",
-        fecha_devolucion_prevista: ""
-    });
-
+    // Estado de Datos
     const [solicitanteId, setSolicitanteId] = useState(currentUser?.id);
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    // Cargar datos iniciales
-    useEffect(() => {
-        // Si NO es admin, forzamos siempre los datos del usuario logueado
-        if (!isAdmin) {
-            setFormData(prev => ({
-                ...prev,
-                nombre_solicitante: currentUser?.nombre_completo || "",
-                email: currentUser?.email || "",
-                movil: currentUser?.movil || "",
-                sub_gerencia: currentUser?.sub_gerencia || "",
-                entidad: currentUser?.entidad || "Electro Sur Este S.A.A."
-            }));
-            setSolicitanteId(currentUser?.id);
-        }
-        // Nota: Si ES admin, mantenemos los datos que haya escrito/seleccionado, no reseteamos en cada render
-    }, [currentUser, isAdmin]);
+    const [formData, setFormData] = useState({
+        nombre_solicitante: currentUser?.nombre_completo || "",
+        email: currentUser?.email || "",
+        movil: currentUser?.movil || "",
+        sub_gerencia: currentUser?.sub_gerencia || "",
+        entidad: currentUser?.entidad || "Electro Sur Este S.A.A.",
+        motivo_solicitud: "",
+        modalidad_servicio: "PRESTAMO_ORIGINAL", // Default más común
+        fecha_devolucion_prevista: ""
+    });
 
-    // Búsqueda de usuarios
+    // --- EFECTOS ---
     useEffect(() => {
-        if (isAdmin && searchTerm.length > 2) {
-            const lower = searchTerm.toLowerCase();
-            const filtered = usuarios.filter(u => 
-                (u.nombre_completo || "").toLowerCase().includes(lower) || 
-                (u.email || "").toLowerCase().includes(lower)
-            );
-            setFilteredUsers(filtered);
-            setShowSuggestions(true);
-        } else {
+        if (!isBehalfMode || searchTerm.length <= 2) {
             setShowSuggestions(false);
+            return;
         }
-    }, [searchTerm, usuarios, isAdmin]);
+        const lowerTerm = searchTerm.toLowerCase();
+        const filtered = usuarios.filter(u => 
+            (u.nombre_completo || "").toLowerCase().includes(lowerTerm) || 
+            (u.email || "").toLowerCase().includes(lowerTerm)
+        );
+        setFilteredUsers(filtered);
+        setShowSuggestions(true);
+    }, [searchTerm, usuarios, isBehalfMode]);
 
-    const selectUser = (user) => {
+    // --- HANDLERS ---
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSelectUser = (user) => {
         setFormData(prev => ({
             ...prev,
             nombre_solicitante: user.nombre_completo,
@@ -77,317 +65,253 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
             sub_gerencia: user.sub_gerencia || "",
             entidad: user.entidad || "Electro Sur Este S.A.A."
         }));
-        // ASIGNAMOS el ID del usuario seleccionado
         setSolicitanteId(user.id);
-        
-        setIsManualEntry(false);
         setShowSuggestions(false);
         setSearchTerm("");
     };
 
-    const handleNewApplicant = () => {
-        setFormData(prev => ({
-            ...prev,
-            nombre_solicitante: "",
-            email: "",
-            movil: "",
-            sub_gerencia: "",
-            entidad: "Electro Sur Este S.A.A."
-        }));
-        setSolicitanteId(null); // Limpiamos ID para obligar a crear nuevo
-        setIsManualEntry(true);
-        setSearchTerm("");
-    };
-
-    const handleCancelManual = () => {
-        setFormData(prev => ({
-            ...prev,
-            nombre_solicitante: currentUser?.nombre_completo || "",
-            email: currentUser?.email || "",
-            movil: currentUser?.movil || "",
-            sub_gerencia: currentUser?.sub_gerencia || "",
-            entidad: currentUser?.entidad || "Electro Sur Este S.A.A."
-        }));
-        // Volvemos al ID del usuario logueado
-        setSolicitanteId(currentUser?.id);
-        setIsManualEntry(false);
-        setSearchTerm("");
-    };
-
-    const handleSaveNewUser = async () => {
-        if (!formData.nombre_solicitante || !formData.email) {
-            onMensaje("Nombre y Email son obligatorios para registrar al usuario.", "error");
-            return;
+    const toggleBehalfMode = () => {
+        if (isBehalfMode) {
+            // Revertir a currentUser
+            handleSelectUser(currentUser);
+        } else {
+            setSearchTerm("");
         }
-
-        setSavingUser(true);
-        try {
-            const { data, error } = await supabase.from('usuarios').insert({
-                nombre_completo: formData.nombre_solicitante,
-                email: formData.email,
-                movil: formData.movil,
-                sub_gerencia: formData.sub_gerencia,
-                entidad: formData.entidad,
-                rol: 'Usuario', // Estandarizamos a Mayúscula según tu esquema
-                activo: true
-            }).select().single();
-
-            if (error) throw error;
-
-            onMensaje("Usuario registrado exitosamente en la Base de Datos.", "success");
-            setSolicitanteId(data.id); // Asignamos el ID del nuevo usuario creado
-            setIsManualEntry(false); 
-            
-        } catch (error) {
-            console.error(error);
-            onMensaje("Error al guardar usuario: " + (error.message || "Verifique los datos"), "error");
-        } finally {
-            setSavingUser(false);
-        }
+        setIsBehalfMode(!isBehalfMode);
     };
 
     const handleSubmit = () => {
         if (!formData.nombre_solicitante || !formData.motivo_solicitud) {
-            onMensaje("Por favor complete la información del solicitante y el motivo.", "error");
-            return;
+            return onMensaje("Indique el motivo de la solicitud.", "error");
+        }
+        if (formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' && !formData.fecha_devolucion_prevista) {
+            return onMensaje("La fecha de devolución es requerida para préstamos.", "error");
         }
 
-        if (isManualEntry && !solicitanteId) {
-            onMensaje("Por favor guarde al nuevo usuario antes de registrar la solicitud.", "warning");
-            return;
-        }
-        
-        // Limpiar la fecha de devolución si no es préstamo original
         const finalData = { ...formData };
-        if (formData.modalidad_servicio !== 'prestamo_original') {
+        if (formData.modalidad_servicio !== 'PRESTAMO_ORIGINAL') {
             finalData.fecha_devolucion_prevista = null;
         }
 
-        // --- VALIDACIÓN ESTRICTA DEL ID (PUNTO CRÍTICO CORREGIDO) ---
-        // Si no hay ID de un usuario seleccionado (solicitanteId es nulo)
-        // Y el usuario logueado tampoco tiene ID (currentUser?.id es nulo)
-        // -> Detenemos el proceso y mostramos un error.
-        
-        let finalSolicitanteId = solicitanteId;
-
-        if (!finalSolicitanteId) {
-            // Intenta usar el ID del usuario logueado como respaldo si solicitanteId es nulo.
-            finalSolicitanteId = currentUser?.id;
-
-            // Si el respaldo también es nulo, es un fallo crítico
-            if (!finalSolicitanteId) {
-                onMensaje("Error Crítico: La identidad del solicitante es inválida. Por favor recargue la página e inicie sesión nuevamente.", "error");
-                return;
-            }
-        }
-        
-        onGuardar({ 
+        onGuardar({
             formData: {
                 ...finalData,
-                solicitante_id: finalSolicitanteId
-            }, 
-            documentosSeleccionados: [], 
-            firmaTemp: null 
+                solicitante_id: solicitanteId
+            }
         });
     };
 
-    return (
-        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6 animate-fade-in">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* SECCIÓN 1: INFORMACIÓN DEL SOLICITANTE */}
-                <div className="space-y-6">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 pb-2">
-                        <User size={16} className="text-blue-600"/> Información del Solicitante
-                    </h3>
-                    
-                    {isAdmin && (
-                        <div className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm space-y-4 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
-                            <div className="flex justify-between items-center">
-                                <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <ShieldCheck size={16} className="text-blue-600"/> Panel de Control
-                                </label>
-                                <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold uppercase">Modo Admin</span>
-                            </div>
-                            
-                            <div className="relative">
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Buscar Usuario</label>
-                                <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        className="w-full pl-10 pr-24 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-sm disabled:opacity-60 transition-all"
-                                        placeholder="Buscar por nombre o correo..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        disabled={isManualEntry} 
-                                    />
-                                    <Search className="absolute left-3 top-3 text-slate-400" size={16} />
-                                    
-                                    {isManualEntry && (
-                                        <button 
-                                            onClick={handleCancelManual}
-                                            className="absolute right-2 top-2 text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded-md text-slate-700 font-medium transition-colors"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
-                                </div>
-                                {showSuggestions && !isManualEntry && (
-                                    <div className="absolute z-10 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto">
-                                        {filteredUsers.map(user => (
-                                            <div key={user.id} onClick={() => selectUser(user)} className="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors group">
-                                                <p className="font-bold text-slate-700 text-sm group-hover:text-blue-700">{user.nombre_completo}</p>
-                                                <p className="text-xs text-slate-500">{user.email}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+    // --- COMPONENTES INTERNOS (Para limpieza visual) ---
 
-                            {!isManualEntry && (
-                                <div className="flex items-center justify-end pt-2 border-t border-slate-100">
-                                    <button 
-                                        onClick={handleNewApplicant}
-                                        className="text-xs flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-bold transition-colors"
+    // Tarjeta colapsable de información de usuario
+    const ApplicantCard = () => (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+            {/* Cabecera Compacta (Siempre visible) */}
+            <div className="p-4 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <User size={20} />
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Solicitante</p>
+                        <h3 className="text-sm font-bold text-slate-800">{formData.nombre_solicitante}</h3>
+                        <p className="text-xs text-slate-500 truncate max-w-[200px]">{formData.sub_gerencia || "Sin área asignada"}</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => setExpandUserDetails(!expandUserDetails)}
+                    className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                    title={expandUserDetails ? "Ocultar detalles" : "Ver detalles de contacto"}
+                >
+                    {expandUserDetails ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </button>
+            </div>
+
+            {/* Detalles Expandibles (Ocultos por defecto) */}
+            {expandUserDetails && (
+                <div className="px-4 pb-4 pt-0 bg-slate-50/50 animate-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-200">
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Mail size={14} className="text-slate-400"/> {formData.email}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Phone size={14} className="text-slate-400"/> {formData.movil || "Sin móvil"}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Building2 size={14} className="text-slate-400"/> {formData.entidad}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    return (
+        <div className="flex flex-col lg:flex-row gap-6 animate-fade-in">
+            
+            {/* SECCIÓN 1: CONTEXTO (Izquierda) */}
+            <div className="w-full lg:w-1/3 space-y-4">
+                
+                {/* 1. Selector de Modo (Solo Admin) */}
+                {isAdmin && (
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Configuración</span>
+                        <button 
+                            onClick={toggleBehalfMode}
+                            className={`text-xs flex items-center gap-1 font-bold transition-colors ${isBehalfMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <UserCheck size={14} />
+                            {isBehalfMode ? "Solicitando para otro" : "Solicitar para mí"}
+                        </button>
+                    </div>
+                )}
+
+                {/* 2. Buscador (Visible solo si es necesario) */}
+                {isBehalfMode && (
+                    <div className="relative animate-in zoom-in-95 duration-200">
+                        <input 
+                            type="text" 
+                            className="w-full pl-9 pr-4 py-2.5 bg-white border border-blue-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none shadow-sm"
+                            placeholder="Buscar usuario..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                        />
+                        <Search className="absolute left-3 top-3 text-blue-400" size={16} />
+                        
+                        {/* Dropdown de Resultados */}
+                        {showSuggestions && (
+                            <div className="absolute z-50 w-full bg-white border border-slate-200 rounded-xl shadow-xl mt-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                {filteredUsers.map(user => (
+                                    <div 
+                                        key={user.id} 
+                                        onClick={() => handleSelectUser(user)} 
+                                        className="p-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
                                     >
-                                        <UserPlus size={14} /> Registrar Nuevo Usuario
+                                        <p className="font-bold text-slate-700 text-sm group-hover:text-blue-700">{user.nombre_completo}</p>
+                                        <p className="text-xs text-slate-400">{user.sub_gerencia}</p>
+                                    </div>
+                                ))}
+                                <div className="p-2 bg-slate-50 sticky bottom-0 text-center">
+                                    <button 
+                                        onClick={() => setShowUserModal(true)} 
+                                        className="text-xs text-blue-600 font-bold hover:underline flex items-center justify-center gap-1 w-full"
+                                    >
+                                        <UserPlus size={12} /> Registrar Nuevo Usuario
                                     </button>
                                 </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* CAMPOS DEL USUARIO */}
-                    <div className={`p-5 rounded-xl border space-y-4 relative transition-all duration-300 ${isManualEntry ? 'bg-white border-amber-200 shadow-md ring-1 ring-amber-100' : 'bg-white border-slate-200'}`}>
-                        
-                        <div className="absolute top-4 right-4 text-slate-400" title={areFieldsLocked ? "Campos bloqueados (Solo lectura)" : "Edición habilitada"}>
-                            {areFieldsLocked ? <Lock size={16}/> : <Unlock size={16} className="text-amber-500"/>}
-                        </div>
-
-                        <InputField 
-                            label="Nombre Completo" 
-                            icon={User}
-                            value={formData.nombre_solicitante} 
-                            onChange={(e) => setFormData({...formData, nombre_solicitante: e.target.value})}
-                            disabled={areFieldsLocked}
-                            placeholder={isManualEntry ? "Ingrese nombre completo..." : ""}
-                            className={areFieldsLocked ? "bg-slate-50 text-slate-500" : ""}
-                        />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField 
-                                label="Sub Gerencia / Área" 
-                                value={formData.sub_gerencia} 
-                                onChange={(e) => setFormData({...formData, sub_gerencia: e.target.value})}
-                                disabled={areFieldsLocked}
-                                className={areFieldsLocked ? "bg-slate-50 text-slate-500" : ""}
-                            />
-                            <InputField 
-                                label="Entidad" 
-                                value={formData.entidad} 
-                                onChange={(e) => setFormData({...formData, entidad: e.target.value})}
-                                disabled={areFieldsLocked}
-                                className={areFieldsLocked ? "bg-slate-50 text-slate-500" : ""}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField 
-                                label="Email Corporativo" 
-                                value={formData.email} 
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                disabled={areFieldsLocked}
-                                className={areFieldsLocked ? "bg-slate-50 text-slate-500" : ""}
-                            />
-                            <InputField 
-                                label="Móvil / Teléfono" 
-                                icon={Phone}
-                                value={formData.movil} 
-                                onChange={(e) => setFormData({...formData, movil: e.target.value})}
-                                disabled={areFieldsLocked}
-                                placeholder={isManualEntry ? "Ingrese número..." : ""}
-                                className={areFieldsLocked ? "bg-slate-50 text-slate-500" : ""}
-                            />
-                        </div>
-
-                        {isManualEntry && (
-                            <div className="pt-4 mt-2 border-t border-amber-100 flex justify-end">
-                                <button 
-                                    onClick={handleSaveNewUser}
-                                    disabled={savingUser}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
-                                >
-                                    <Save size={16} /> {savingUser ? "Guardando..." : "Guardar Usuario"}
-                                </button>
                             </div>
                         )}
                     </div>
+                )}
+
+                {/* 3. Tarjeta de Usuario (Información Progresiva) */}
+                <ApplicantCard />
+
+                {/* 4. Tips Contextuales (Estáticos para UX) */}
+                <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 hidden lg:block">
+                    <h4 className="text-xs font-bold text-blue-700 mb-2 flex items-center gap-2">
+                        <Info size={14}/> Importante
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                        Las solicitudes registradas antes de las 16:00 serán atendidas el mismo día, previa autorización del Responsable de Documentos. Para consultas externas, asegúrese de contar con la autorización de Gerencia.
+                    </p>
                 </div>
+            </div>
 
-                {/* SECCIÓN 2: DETALLES DE LA SOLICITUD */}
-                <div className="space-y-6">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2 border-b border-slate-200 pb-2">
-                        <Briefcase size={16} className="text-blue-600"/> Detalle del Requerimiento
-                    </h3>
+            {/* SECCIÓN 2: ACCIÓN PRINCIPAL (Derecha) */}
+            <div className="w-full lg:w-2/3">
+                <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+                    
+                    <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <FileText className="text-blue-600" size={20}/> 
+                            Nueva Solicitud
+                        </h2>
+                        <span className="text-xs font-medium px-2 py-1 bg-slate-100 text-slate-500 rounded-md border border-slate-200">
+                            {today}
+                        </span>
+                    </div>
 
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
-                        <TextareaField 
-                            label="Motivo de la Solicitud *" 
-                            placeholder="Describa detalladamente el propósito de la consulta..."
-                            value={formData.motivo_solicitud}
-                            onChange={(value) => setFormData({...formData, motivo_solicitud: value})}
-                            rows={5}
-                        />
+                    <div className="space-y-6 flex-1">
+                        {/* Motivo: Campo Principal */}
+                        <div>
+                            <TextareaField 
+                                label="Motivo de la Solicitud" 
+                                placeholder="Describa brevemente qué documentos necesita y para qué finalidad..."
+                                value={formData.motivo_solicitud}
+                                onChange={(val) => handleInputChange("motivo_solicitud", val)}
+                                rows={4}
+                                className="resize-none"
+                            />
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Modalidad</label>
-                                <div className="relative">
+                        {/* Configuración de Servicio */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide ml-1">Modalidad de Servicio</label>
+                                <div className="relative group">
                                     <select 
-                                        className="w-full p-3 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white appearance-none cursor-pointer"
+                                        className="w-full p-3 pl-10 border border-slate-300 rounded-xl text-sm bg-white appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer hover:border-blue-300 outline-none"
                                         value={formData.modalidad_servicio}
-                                        onChange={(e) => setFormData({...formData, modalidad_servicio: e.target.value})}
+                                        onChange={(e) => handleInputChange("modalidad_servicio", e.target.value)}
                                     >
-                                        <option value="prestamo_original">Préstamo de Original</option>
-                                        <option value="copia_simple">Copia Simple</option>
-                                        <option value="copia_certificada">Copia Certificada</option>
-                                        <option value="consulta_sala">Consulta en Sala</option>
-                                        <option value="digitalizacion">Digitalización</option>
+                                        {MODALIDADES.map(mod => (
+                                            <option key={mod.value} value={mod.value}>{mod.label}</option>
+                                        ))}
                                     </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
+                                    <Briefcase className="absolute left-3 top-3.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
+                                    <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
                                 </div>
                             </div>
-                            
-                            {formData.modalidad_servicio === 'prestamo_original' && (
+
+                            {/* Campo Condicional con Animación */}
+                            <div className={`transition-all duration-300 ${formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' ? 'opacity-100 translate-y-0' : 'opacity-50 grayscale cursor-not-allowed'}`}>
                                 <InputField 
-                                    label="Fecha Devolución Prevista" 
+                                    label="Fecha Devolución Estimada" 
                                     icon={Calendar}
                                     type="date" 
                                     value={formData.fecha_devolucion_prevista}
-                                    onChange={(e) => {
-                                        const val = e?.target ? e.target.value : e;
-                                        setFormData({...formData, fecha_devolucion_prevista: val});
-                                    }}
-                                    min={minDate} 
-                                    className="bg-white"
+                                    onChange={(e) => handleInputChange("fecha_devolucion_prevista", e.target.value)}
+                                    min={today} 
+                                    disabled={formData.modalidad_servicio !== 'PRESTAMO_ORIGINAL'}
+                                    className={formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' ? "border-blue-200 bg-blue-50/30" : "bg-slate-100"}
                                 />
-                            )}
+                            </div>
                         </div>
 
-                        <div className="pt-6 mt-4 border-t border-slate-100">
-                            <button 
-                                onClick={handleSubmit}
-                                className="w-full py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-3 text-sm uppercase tracking-wide"
-                            >
-                                <FileText size={18} />
-                                Registrar Solicitud
-                            </button>
-                        </div>
+                        {/* Alerta Contextual (Aparece solo si es necesario) */}
+                        {formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' && (
+                            <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
+                                <Info className="text-amber-600 mt-0.5 shrink-0" size={16} />
+                                <div className="text-xs text-amber-800">
+                                    <span className="font-bold">Política de Préstamos:</span> El plazo máximo para originales es de 5 días habiles. La no devolución a tiempo generará una alerta a su jefatura inmediata.
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer de Acciones */}
+                    <div className="pt-6 mt-8 border-t border-slate-100 flex justify-end">
+                        <button 
+                            onClick={handleSubmit}
+                            className="px-8 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg shadow-blue-700/20 transition-all flex items-center gap-2 transform active:scale-95 hover:-translate-y-0.5"
+                        >
+                            <FileText size={18} /> 
+                            Registrar Solicitud
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Modales Auxiliares */}
+            <UserModal 
+                isOpen={showUserModal}
+                onClose={() => setShowUserModal(false)}
+                onSave={() => { setShowUserModal(false); onMensaje("Usuario creado", "success"); }}
+                userToEdit={null}
+                onToast={onMensaje}
+            />
         </div>
     );
 }
