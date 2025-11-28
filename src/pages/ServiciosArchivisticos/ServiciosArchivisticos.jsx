@@ -17,7 +17,7 @@ import {
 // 3. Pestañas de Contenido (Módulos Locales)
 import NuevaSolicitudTab from "./components/NuevaSolicitudTab";
 import PendientesTab from "./components/PendientesTab";
-import PrestamosActivosTab from "./components/PrestamosActivosTab";
+import PrestamosActivosTab from "./components/PrestamosTab";
 import HistorialTab from "./components/HistorialTab";
 
 // --- SUB-COMPONENTE DE UI: Badge de Estado ---

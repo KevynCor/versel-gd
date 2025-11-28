@@ -38,60 +38,66 @@ const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
 // 2. Fila de Historial (Diseño de Tarjeta Horizontal)
 const HistoryRow = React.memo(({ solicitud, onViewDetail, onPrint }) => {
     return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-all duration-200 p-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
-            
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:border-blue-300 transition-all duration-200 p-4 flex flex-col md:flex-row gap-4 items-start md:items-center w-full">
             {/* Bloque Izquierdo: Icono y Estado */}
-            <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full">
+                {/* Icono Principal */}
                 <div className="p-3 bg-slate-100 text-slate-500 rounded-xl shrink-0">
                     <History size={20} />
-                </div>
-                
+                </div>                
+                {/* Contenido de Texto */}
                 <div className="min-w-0 flex-1">
+                    {/* Meta Data (ID, Badge, Fecha) */}
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                        <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 whitespace-nowrap">
                             #{solicitud.numero_solicitud || solicitud.id.substring(0,8)}
                         </span>
                         <EstadoBadge estado={solicitud.estado} />
-                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium ml-1">
-                            <Calendar size={12}/> {new Date(solicitud.fecha_solicitud).toLocaleDateString()}
+                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium ml-1 whitespace-nowrap">
+                            <Calendar size={12} className="shrink-0"/> 
+                            {new Date(solicitud.fecha_solicitud).toLocaleDateString()}
                         </span>
-                    </div>
-                    
+                    </div>                    
+                    {/* Título Principal */}
                     <h4 className="font-bold text-slate-800 text-sm truncate pr-2">
                         {solicitud.motivo_solicitud}
-                    </h4>
-                    
+                    </h4>                    
+                    {/* Footer Data (Usuario, Área, Devolución) */}
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-slate-500">
-                        <span className="flex items-center gap-1 hover:text-slate-700">
-                            <User size={12} className="text-blue-400"/> {solicitud.nombre_solicitante}
+                        <span className="flex items-center gap-1 hover:text-slate-700 truncate max-w-[150px] sm:max-w-none">
+                            <User size={12} className="text-blue-400 shrink-0"/> 
+                            {solicitud.nombre_solicitante}
                         </span>
-                        <span className="flex items-center gap-1 hover:text-slate-700">
-                            <Building2 size={12} className="text-slate-400"/> {solicitud.sub_gerencia}
+                        <span className="flex items-center gap-1 hover:text-slate-700 truncate max-w-[150px] sm:max-w-none">
+                            <Building2 size={12} className="text-slate-400 shrink-0"/> 
+                            {solicitud.sub_gerencia}
                         </span>
                         {solicitud.fecha_devolucion_real && (
-                            <span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded">
-                                <CheckCircle2 size={10}/> Devuelto: {new Date(solicitud.fecha_devolucion_real).toLocaleDateString()}
+                            <span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-1.5 rounded whitespace-nowrap mt-1 sm:mt-0">
+                                <CheckCircle2 size={10} className="shrink-0"/> 
+                                Devuelto: {new Date(solicitud.fecha_devolucion_real).toLocaleDateString()}
                             </span>
                         )}
                     </div>
                 </div>
             </div>
-
             {/* Bloque Derecho: Acciones */}
-            <div className="flex items-center gap-2 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 mt-1 md:mt-0">
+            <div className="flex items-center gap-2 w-full md:w-auto border-t border-slate-100 md:border-t-0 pt-3 md:pt-0 mt-1 md:mt-0">
                 <button 
                     onClick={() => onViewDetail(solicitud)}
-                    className="flex-1 md:flex-none py-2 px-3 bg-white border border-slate-300 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                    className="flex-1 md:flex-none py-2 px-3 bg-white border border-slate-300 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm h-9 md:h-auto"
                     title="Ver detalles completos"
                 >
-                    <Eye size={16}/> <span className="md:hidden">Ver Detalle</span>
+                    <Eye size={16} className="shrink-0"/> 
+                    <span className="md:hidden">Ver Detalle</span>
                 </button>
                 <button 
                     onClick={() => onPrint(solicitud)}
-                    className="flex-1 md:flex-none py-2 px-3 bg-slate-800 text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                    className="flex-1 md:flex-none py-2 px-3 bg-slate-800 text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm h-9 md:h-auto"
                     title="Imprimir Cargo PDF"
                 >
-                    <Printer size={16}/> <span className="md:hidden">Imprimir</span>
+                    <Printer size={16} className="shrink-0"/> 
+                    <span className="md:hidden">Imprimir</span>
                 </button>
             </div>
         </div>

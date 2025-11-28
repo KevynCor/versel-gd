@@ -7,29 +7,25 @@ export const DigitalSignature = ({
     title = "Firma Electrónica",
     required = false,
     disabled = false,
-    fullScreenMode = true // Controla si se debe mostrar el botón de Pantalla Completa
+    fullScreenMode = true 
 }) => {
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(!!value);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 }); // Inicia en 0 para cálculo
+    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 }); 
 
-    // --- LÓGICA DE TAMAÑO RESPONSIVO Y CANVAS (Optimización de Espacio) ---
-    
-    // Calcula el tamaño óptimo del canvas basado en el contenedor o la pantalla completa.
+    // --- LÓGICA DE TAMAÑO ---
     const setupCanvasSize = useCallback(() => {
         if (isFullScreen) {
-            // Modo Fullscreen: Toma casi toda la ventana
             const width = window.innerWidth * 0.9;
             const height = window.innerHeight * 0.7;
             setCanvasSize({ width, height });
         } else if (containerRef.current) {
-            // Modo Normal: Responsivo al ancho del padre (Embed)
             const containerWidth = containerRef.current.offsetWidth;
             const width = containerWidth || 600;
-            const height = 220; // Altura fija para la firma en modo embed
+            const height = 220; 
             setCanvasSize({ width, height });
         }
     }, [isFullScreen]);
@@ -37,12 +33,10 @@ export const DigitalSignature = ({
     useEffect(() => {
         setupCanvasSize();
         window.addEventListener('resize', setupCanvasSize);
-        return () => {
-            window.removeEventListener('resize', setupCanvasSize);
-        };
+        return () => window.removeEventListener('resize', setupCanvasSize);
     }, [setupCanvasSize]);
 
-    // Lógica para inicializar/redibujar el canvas
+    // --- INICIALIZACIÓN DEL CANVAS ---
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || canvasSize.width === 0) return;
@@ -51,8 +45,7 @@ export const DigitalSignature = ({
         canvas.width = canvasSize.width;
         canvas.height = canvasSize.height;
         
-        // Estilos DocuFlow: Tinta Azul Oscuro
-        ctx.strokeStyle = '#1e3a8a'; // blue-900
+        ctx.strokeStyle = '#1e3a8a'; 
         ctx.lineWidth = isFullScreen ? 4 : 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -74,8 +67,8 @@ export const DigitalSignature = ({
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
         
-        // Línea guía estilo DocuFlow
-        ctx.strokeStyle = '#cbd5e1'; // slate-300
+        // Línea guía
+        ctx.strokeStyle = '#cbd5e1'; 
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(w * 0.1, h * 0.8);
@@ -87,12 +80,11 @@ export const DigitalSignature = ({
         setHasSignature(false);
     };
 
-    // --- HANDLERS DE FIRMA ---
+    // --- HANDLERS ---
     const getCanvasCoordinates = (clientX, clientY) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
-        // Evita divisiones por cero
         const scaleX = canvas.width / (rect.width || canvas.width); 
         const scaleY = canvas.height / (rect.height || canvas.height); 
         return {
@@ -144,16 +136,13 @@ export const DigitalSignature = ({
         if (!canvas) return;
         const signatureData = canvas.toDataURL('image/png');
         onChange(signatureData);
-        // Cierra el modo fullscreen automáticamente al guardar (Mejora UX)
         if (isFullScreen) setIsFullScreen(false); 
     };
 
-    // Wrappers para Touch Events
     const handleTouchStart = (e) => { e.preventDefault(); startDrawing(e); };
     const handleTouchMove = (e) => { e.preventDefault(); draw(e); };
-    const handleTouchEnd = (e) => { stopDrawing(); }; // No necesita preventDefault aquí
+    const handleTouchEnd = (e) => { stopDrawing(); };
 
-    // Bloquea el scroll del body en modo dibujo (evita firmas incompletas)
     useEffect(() => {
         document.body.style.overflow = isDrawing ? 'hidden' : 'unset';
         return () => { document.body.style.overflow = 'unset'; };
@@ -163,12 +152,11 @@ export const DigitalSignature = ({
         setIsFullScreen(!isFullScreen);
     };
 
-    // --- VISTA FULLSCREEN (Flujo Modal) ---
+    // --- VISTA FULLSCREEN ---
     if (isFullScreen) {
         return (
             <div className="fixed inset-0 z-[60] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
                 <div className="bg-white w-full h-full max-w-7xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-                    {/* Barra superior: Título + Acción principal */}
                     <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-100 rounded-lg">
@@ -176,16 +164,11 @@ export const DigitalSignature = ({
                             </div>
                             <h2 className="text-xl font-bold text-slate-800">Firma Electrónica (Lienzo Ampliado)</h2>
                         </div>
-                        <button
-                            onClick={toggleFullScreen}
-                            className="p-2 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Salir de pantalla completa"
-                        >
+                        <button onClick={toggleFullScreen} className="p-2 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
                             <Minimize2 size={24} />
                         </button>
                     </div>
                     
-                    {/* Lienzo Principal (Canvas Area Fullscreen) */}
                     <div className="flex-1 p-6 bg-slate-100 overflow-hidden flex items-center justify-center">
                         <div className="relative w-full h-full border-2 border-dashed border-blue-300 rounded-xl bg-white shadow-inner overflow-hidden">
                             <canvas
@@ -208,37 +191,16 @@ export const DigitalSignature = ({
                         </div>
                     </div>
 
-                    {/* Footer Fullscreen (Acciones Destacadas - Max 3 visibles) */}
                     <div className="p-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row justify-between gap-3 items-center flex-shrink-0">
-                        {/* 1. Limpiar (Secundario) */}
-                         <button
-                            type="button"
-                            onClick={clearSignature}
-                            disabled={disabled || !hasSignature}
-                            className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition-colors disabled:opacity-50 font-medium w-full sm:w-auto"
-                        >
-                            <RotateCcw size={20} />
-                            Limpiar Lienzo
+                        <button type="button" onClick={clearSignature} disabled={disabled || !hasSignature} className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg transition-colors disabled:opacity-50 font-medium w-full sm:w-auto">
+                            <RotateCcw size={20} /> Limpiar Lienzo
                         </button>
                         <div className="flex gap-3 w-full sm:w-auto">
-                            {/* 2. Cancelar/Cerrar (Secundario) */}
-                            <button
-                                type="button"
-                                onClick={toggleFullScreen}
-                                className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-medium flex-1 sm:flex-none"
-                            >
-                                <X size={20} />
-                                Cerrar
+                            <button type="button" onClick={toggleFullScreen} className="flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors font-medium flex-1 sm:flex-none">
+                                <X size={20} /> Cerrar
                             </button>
-                            {/* 3. Confirmar Firma (Principal) */}
-                            <button
-                                type="button"
-                                onClick={saveSignature}
-                                disabled={(required && !hasSignature) || disabled}
-                                className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-700 text-white hover:bg-blue-800 rounded-lg transition-colors disabled:opacity-50 shadow-md font-bold flex-1 sm:flex-none"
-                            >
-                                <Check size={20} />
-                                Confirmar Firma
+                            <button type="button" onClick={saveSignature} disabled={(required && !hasSignature) || disabled} className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-700 text-white hover:bg-blue-800 rounded-lg transition-colors disabled:opacity-50 shadow-md font-bold flex-1 sm:flex-none">
+                                <Check size={20} /> Confirmar Firma
                             </button>
                         </div>
                     </div>
@@ -249,11 +211,10 @@ export const DigitalSignature = ({
 
     // --- VISTA NORMAL (Embed) ---
     return (
-        // Se elimina el contenedor externo de fondo para que se integre en el modal/tarjeta padre.
         <div className="w-full" ref={containerRef}>
-            {/* Header (Simplificación Visual) */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3 pt-8">
+                <div className="flex items-center gap-3 pt-2">
                     <div className="flex items-center gap-2">
                         <Pen className="text-blue-700" size={16} />
                         <h3 className="text-sm font-bold text-slate-700">{title}</h3>
@@ -264,15 +225,15 @@ export const DigitalSignature = ({
                     <button
                         onClick={toggleFullScreen}
                         className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Ampliar Lienzo (Mejor para táctil)"
+                        title="Ampliar Lienzo"
                         disabled={disabled}
                     >
-                        <Maximize2 size={18} />
+                        <Maximize2 size={16} />
                     </button>
                 )}
             </div>
 
-            {/* Canvas Container (Optimización de Espacio) */}
+            {/* Canvas Container */}
             <div 
                 className={`
                     border-2 border-dashed rounded-xl p-0.5 bg-slate-100 transition-colors
@@ -300,13 +261,13 @@ export const DigitalSignature = ({
                 </div>
             </div>
 
-            {/* Footer Controls (Simplificación Visual) */}
-            <div className="flex justify-end gap-3 mt-3">
-                 <button
+            {/* Footer Controls (EMBED - PEQUEÑOS) */}
+            <div className="flex justify-end gap-2 mt-2">
+                <button
                     type="button"
                     onClick={clearSignature}
                     disabled={disabled || !hasSignature}
-                    className="flex items-center justify-center gap-1 px-3 py-1 bg-white border border-slate-300 hover:bg-red-50 text-red-600 rounded-lg transition-colors disabled:opacity-50 text-xs font-medium"
+                    className="flex items-center justify-center gap-1 px-3 py-1 bg-white border border-slate-300 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50 text-xs font-medium"
                     title="Borrar Firma"
                 >
                     <RotateCcw size={14} />
@@ -315,10 +276,12 @@ export const DigitalSignature = ({
                 <button
                     type="button"
                     onClick={saveSignature}
-                    disabled={(required && !hasSignature) || disabled || !hasSignature}
-                    className="hidden" // Se oculta en el modo embed, se asume que la acción de guardado final la realiza el modal padre
+                    disabled={(required && !hasSignature) || disabled}
+                    className="flex items-center justify-center gap-1 px-3 py-1 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 text-xs font-bold shadow-sm"
+                    title="Confirmar Firma"
                 >
-                    Guardar
+                    <Check size={14} />
+                    Confirmar
                 </button>
             </div>
             

@@ -106,28 +106,32 @@ const RequestRow = React.memo(({ solicitud, onProcess, onReject }) => {
             {/* Detalles Expandibles (Acordeón) */}
             {isExpanded && (
                 <div className="px-4 pb-4 pt-0 border-t border-slate-100 bg-slate-50/50 rounded-b-lg animate-in slide-in-from-top-2">
-                    <div className="pt-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="pt-3 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         <div className="md:col-span-2 space-y-3">
-                            {/* Información secundaria relevante */}
-                            <div className="flex items-center gap-4 text-xs">
-                                <p className="font-bold text-slate-500 uppercase flex items-center gap-1">
-                                    <Building2 size={12} className="text-slate-400"/> Sección: <span className='text-slate-700 font-medium'>{solicitud.sub_gerencia}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs">
+                                <p className="font-bold text-slate-500 uppercase flex items-center gap-1 min-w-0">
+                                    <Building2 size={12} className="text-slate-400 shrink-0"/> 
+                                    <span className="whitespace-nowrap">Sección:</span>
+                                    <span className='text-slate-700 font-medium truncate block'>{solicitud.sub_gerencia}</span>
                                 </p>
-                                <p className="font-bold text-slate-500 uppercase flex items-center gap-1">
-                                    <Users size={12} className="text-slate-400"/> Contacto: <span className='text-slate-700 font-medium'>{solicitud.email || solicitud.movil} {solicitud.movil || solicitud.email}</span>
+                                <p className="font-bold text-slate-500 uppercase flex items-center gap-1 min-w-0">
+                                    <Users size={12} className="text-slate-400 shrink-0"/> 
+                                    <span className="whitespace-nowrap">Contacto:</span>
+                                    <span className='text-slate-700 font-medium truncate block'>{solicitud.movil || solicitud.email}</span>
                                 </p>
                             </div>
-                            <p className="text-xs font-bold text-slate-500 uppercase">Motivo del Requerimiento</p>
-                            <p className="text-sm text-slate-700 bg-white p-3 rounded border border-slate-200 leading-relaxed">
-                                {solicitud.motivo_solicitud}
-                            </p>
+                            <div>
+                                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Motivo del Requerimiento</p>
+                                <p className="text-sm text-slate-700 bg-white p-3 rounded border border-slate-200 leading-relaxed break-words">
+                                    {solicitud.motivo_solicitud}
+                                </p>
+                            </div>
                         </div>
-                        {/* Acción secundaria (Rechazar) se mueve al detalle */}
-                        <div className="flex flex-col justify-end gap-2">
-                             <span className="text-xs font-bold text-slate-500 uppercase mb-1">Acciones Adicionales</span>
+                        <div className="flex flex-col justify-end gap-2 mt-2 md:mt-0">
+                            <span className="text-xs font-bold text-slate-500 uppercase mb-1 md:block hidden">Acciones Adicionales</span>
                             <button 
                                 onClick={(e) => { e.stopPropagation(); onReject(solicitud); }}
-                                className="w-full py-2.5 bg-white border border-slate-300 text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                className="w-full py-2.5 bg-white border border-slate-300 text-slate-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 text-sm font-bold rounded-lg flex items-center justify-center gap-2 transition-colors active:scale-95"
                             >
                                 <Ban size={16} /> Rechazar Solicitud
                             </button>
