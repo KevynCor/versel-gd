@@ -67,7 +67,7 @@ export default function ServiciosArchivisticos() {
     const rol = currentUser.rol || '';
     return {
       canManage: ['Admin', 'Supervisor', 'Archivero'].includes(rol),
-      canCreate: ['Admin', 'Supervisor', 'Usuario'].includes(rol)
+      canCreate: ['Admin', 'Supervisor', 'Archivero', 'Usuario'].includes(rol)
     };
   }, [state.currentUser]);
 
