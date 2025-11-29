@@ -11,7 +11,7 @@ import { supabase } from "../../utils/supabaseClient";
 import { CrudLayout } from "../../components/layout/CrudLayout";   
 import { SparkleLoader } from "../../components/ui/SparkleLoader"; 
 import { EmptyState } from "../../components/ui/EmptyState";       
-import ModalDetalleDocumento from "../../components/form/ModalDetalle"; 
+import ModalDetalleDocumento from "../../components/form/ModalDetalleDocumento"; 
 
 /* ===================================================================================
    ESTILOS Y CONFIGURACIÓN DE LA TABLA (DISEÑO TIPO IMAGEN)

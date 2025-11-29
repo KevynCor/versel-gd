@@ -1,22 +1,19 @@
 import React, { useState } from "react";
-import { Filter, RefreshCw, Scan } from "lucide-react";
-// Asumo la ruta a QRScanner y otros componentes basados en el contexto de un proyecto React.
+import { Filter, RefreshCw, Scan, Search } from "lucide-react";
 import QRScanner from "./QRScanner"; 
 import { SearchBar } from "../controls/SearchBar";
 
 export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  // Estado para controlar la visibilidad del escáner QR
   const [showScanner, setShowScanner] = useState(false); 
 
   const updateFilter = (key, value) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  // Nueva función para manejar el resultado del escaneo
   const handleScanResult = (code) => {
-    // Cuando el QRScanner detecta un código, actualizamos el filtro 'search'
     updateFilter('search', code);
+    setShowScanner(false); // Cerrar scanner al encontrar código
   };
 
   const clearFilters = () => {
@@ -24,52 +21,52 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
   };
 
   const activeFiltersCount = Object.keys(filters).filter(
-    key => filters[key] && filters[key] !== ""
+    key => filters[key] !== null && filters[key] !== "" && filters[key] !== false
   ).length;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
-      {/* Header Filtros */}
+      {/* --- Header Filtros --- */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wide">
           <Filter className="w-4 h-4 text-blue-600" />
           Filtros Avanzados
           {activeFiltersCount > 0 && (
-            <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full animate-in zoom-in">
               {activeFiltersCount}
             </span>
           )}
         </h3>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-xs font-bold text-blue-700 hover:text-blue-900 hover:underline transition-colors"
+          className="text-xs font-bold text-blue-700 hover:text-blue-900 hover:underline transition-colors focus:outline-none"
         >
           {isExpanded ? 'Contraer opciones' : 'Mostrar más filtros'}
         </button>
       </div>
 
-      {/* Grid de Filtros */}
+      {/* --- Grid de Filtros Principales (Siempre visibles) --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         
-        {/* Búsqueda general con Escáner QR integrado */}
+        {/* 1. Búsqueda general + QR */}
         <div className="col-span-1 md:col-span-2 xl:col-span-1">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-            Búsqueda General (ID, Descripción o QR)
+            Búsqueda General
           </label>
           <div className="flex gap-2">
             <div className="flex-1">
               <SearchBar
                 value={filters.search || ""}
                 onChange={(value) => updateFilter('search', value)}
-                placeholder="Buscar por ID, descripción..."
+                placeholder="ID, descripción, código..."
               />
             </div>
             <button
                 onClick={() => setShowScanner(true)}
-                className={`p-2 rounded-md transition-colors shadow-sm w-10 h-10 flex items-center justify-center 
+                className={`p-2 rounded-lg transition-colors shadow-sm w-10 h-10 flex items-center justify-center border
                   ${loading
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-300'
                   }`}
                 title="Escanear código QR"
                 disabled={loading}
@@ -79,7 +76,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
           </div>
         </div>
 
-        {/* Área responsable */}
+        {/* 2. Área responsable */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
             Sección / Área
@@ -97,7 +94,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
           </select>
         </div>
 
-        {/* Serie documental */}
+        {/* 3. Serie documental */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
             Serie Documental
@@ -115,7 +112,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
           </select>
         </div>
 
-        {/* Año */}
+        {/* 4. Año */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
             Año
@@ -131,11 +128,12 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
-        </div> 	
+        </div>   
 
+        {/* --- Filtros Expandibles --- */}
         {isExpanded && (
-        <> 		
-          {/* Frecuencia de consulta */}
+        <>      
+          {/* Frecuencia */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
               Frecuencia Consulta
@@ -147,13 +145,13 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
               disabled={loading}
             >
               <option value="">Todas</option>
-              {filterOptions?.frecuencias_consulta?.map(frecuencia => (
-                <option key={frecuencia} value={frecuencia}>{frecuencia}</option>
+              {filterOptions?.frecuencias_consulta?.map(f => (
+                <option key={f} value={f}>{f}</option>
               ))}
             </select>
           </div>
 
-          {/* Número de caja */}
+          {/* N° Caja */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
               N° Caja
@@ -168,7 +166,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
             />
           </div>
 
-          {/* NUEVO: Número de Tomo */}
+          {/* N° Tomo */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
               N° Tomo
@@ -183,7 +181,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
             />
           </div>
 
-          {/* NUEVO: Número de Folios */}
+          {/* N° Folios */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
               N° Folios
@@ -198,22 +196,34 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
             />
           </div>
 
-          {/* Tomo Faltante */}
+          {/* --- TOMO FALTANTE (SWITCH BOOLEANO) --- */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-              Tomo Faltante
+              Estado Físico
             </label>
-            <select
-              value={filters.tomoFaltante || ""}
-              onChange={(e) => updateFilter('tomoFaltante', e.target.value)}
-              className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-              disabled={loading}
-            >
-              <option value="">Todos</option>
-              {filterOptions?.tomo_faltante?.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            <label className={`
+                flex items-center justify-between w-full p-2 border rounded-lg cursor-pointer transition-all duration-200 select-none
+                ${filters.tomoFaltante 
+                  ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-200' 
+                  : 'bg-white border-slate-300 hover:bg-slate-50'
+                }
+                ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+            `}>
+              <span className={`text-sm font-semibold ${filters.tomoFaltante ? 'text-orange-700' : 'text-slate-500'}`}>
+                {filters.tomoFaltante ? "Solo Faltantes" : "Todos"}
+              </span>
+
+              <div className="relative inline-flex items-center">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer"
+                  checked={!!filters.tomoFaltante}
+                  onChange={(e) => updateFilter('tomoFaltante', e.target.checked)}
+                  disabled={loading}
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+              </div>
+            </label>
           </div>
 
           {/* Tipo Unidad Conservación */}
@@ -346,19 +356,19 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
       )}
       </div>
 
-      {/* Botones de acción Filtros */}
+      {/* --- Footer Acciones --- */}
       <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
         <button
           onClick={clearFilters}
           disabled={activeFiltersCount === 0 || loading}
-          className="px-4 py-2 text-sm bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
+          className="px-4 py-2 text-sm bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
         >
           <RefreshCw className="w-4 h-4" />
           Limpiar Filtros
         </button>
       </div>
 
-      {/* Componente QR Scanner */}
+      {/* Componente QR Scanner Modal */}
       <QRScanner 
         isOpen={showScanner} 
         onClose={() => setShowScanner(false)} 

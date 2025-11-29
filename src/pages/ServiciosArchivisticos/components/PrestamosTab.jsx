@@ -440,7 +440,7 @@ export default function PrestamosActivosTab({ solicitudes = [], currentUser, onR
 
     // RENDER
     return (
-        <div className="space-y-6">
+        <div>
             
             {/* Componente PDF Invisible (se monta solo cuando hay datos para imprimir) */}
             {printData && (

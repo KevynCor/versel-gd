@@ -638,7 +638,7 @@ export default function PendientesTab({ solicitudes, currentUser, onReload, onMe
     
     // RENDER: Se mantiene la estructura principal (Header y Lista)
     return (
-        <div className="space-y-6">
+        <div>
             
             {/* 1. Header y Contador (Simplificación Visual) */}
             <div className="flex items-center justify-between">

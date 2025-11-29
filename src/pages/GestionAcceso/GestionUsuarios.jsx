@@ -13,7 +13,7 @@ import { Pagination } from '../../components/data/Pagination';
 import { SearchBar } from '../../components/controls/SearchBar';
 import { Toast } from '../../components/ui/Toast';
 import { SparkleLoader } from '../../components/ui/SparkleLoader';
-import { ModalGenerico } from '../../components/form/ModalGenerico.jsx'; // Para el modal de contraseña
+import { ModalGenerico } from '../../components/form/ModalGenerico.jsx'; 
 
 // Componentes Locales
 import UserModal from './components/UserModal';
@@ -30,7 +30,7 @@ export default function GestionUsuarios() {
   // Estados de Interfaz
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // Usuario seleccionado para editar/pass
+  const [currentUser, setCurrentUser] = useState(null); 
   const [processing, setProcessing] = useState(false);
 
   // --- CARGA DE DATOS ---
@@ -43,7 +43,7 @@ export default function GestionUsuarios() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      setUsers((data || []).filter(u => u !== null));
     } catch (error) {
       console.error("Error cargando usuarios:", error);
       setToast({ mensaje: "Error al cargar la lista de usuarios: " + error.message, tipo: "error" });
@@ -58,12 +58,24 @@ export default function GestionUsuarios() {
 
   // --- LÓGICA DE FILTRADO Y PAGINACIÓN ---
   const filteredUsers = useMemo(() => {
+    // CORRECCIÓN PRINCIPAL: Validación robusta dentro del filtro
+    if (!users) return [];
+    
     const lowerTerm = searchTerm.toLowerCase();
-    return users.filter(u => 
-      u.nombre_completo?.toLowerCase().includes(lowerTerm) ||
-      u.email?.toLowerCase().includes(lowerTerm) ||
-      u.rol?.toLowerCase().includes(lowerTerm)
-    );
+    
+    return users.filter(u => {
+      // 1. Si el usuario es nulo, lo saltamos
+      if (!u) return false;
+
+      // 2. Usamos (valor || "") para asegurar que siempre sea string antes de toLowerCase()
+      const nombre = (u.nombre_completo || "").toLowerCase();
+      const email = (u.email || "").toLowerCase();
+      const rol = (u.rol || "").toLowerCase();
+
+      return nombre.includes(lowerTerm) ||
+             email.includes(lowerTerm) ||
+             rol.includes(lowerTerm);
+    });
   }, [users, searchTerm]);
 
   const paginatedUsers = useMemo(() => {
@@ -79,17 +91,22 @@ export default function GestionUsuarios() {
     setIsModalOpen(true);
   };
 
-  // Helper para notificaciones desde componentes hijos
   const showToast = (mensaje, tipo) => {
     setToast({ mensaje, tipo });
   };
 
   // Guardar Usuario (Lógica Principal)
   const handleSaveUser = async (formData) => {
+    // CORRECCIÓN: Validación por si formData llega undefined
+    if (!formData) {
+        console.error("Error: formData es undefined en handleSaveUser");
+        return;
+    }
+
     setProcessing(true);
     try {
       if (currentUser) {
-        // 1. ACTUALIZAR USUARIO (DB Pública)
+        // ACTUALIZAR USUARIO 
         const { error } = await supabase
           .from('usuarios')
           .update({
@@ -107,7 +124,7 @@ export default function GestionUsuarios() {
         setToast({ mensaje: "Usuario actualizado correctamente.", tipo: "success" });
 
       } else {
-        // 2. CREAR NUEVO USUARIO (Auth + DB Pública)
+        // CREAR NUEVO USUARIO 
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -119,7 +136,6 @@ export default function GestionUsuarios() {
         if (authError) throw authError;
 
         if (authData.user) {
-           // Insertar en tabla pública usando el ID de Auth
            const { error: dbError } = await supabase
              .from('usuarios')
              .insert([{
@@ -141,7 +157,7 @@ export default function GestionUsuarios() {
       }
 
       setIsModalOpen(false);
-      fetchUsers(); // Recargar lista
+      fetchUsers();
 
     } catch (error) {
       console.error(error);
@@ -198,7 +214,7 @@ export default function GestionUsuarios() {
             <Users size={20} />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-slate-800 text-sm truncate">{row.nombre_completo}</p>
+            <p className="font-bold text-slate-800 text-sm truncate">{row.nombre_completo || "Sin Nombre"}</p>
             <p className="text-xs text-slate-500 flex items-center gap-1 font-medium truncate">
               <Mail size={10} /> {row.email}
             </p>
@@ -221,7 +237,7 @@ export default function GestionUsuarios() {
         const style = roleStyles[row.rol] || roleStyles['Usuario'];
         return (
             <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border ${style}`}>
-                {row.rol}
+                {row.rol || 'N/A'}
             </span>
         );
       }
@@ -280,9 +296,9 @@ export default function GestionUsuarios() {
   // Estadísticas Memoizadas
   const stats = useMemo(() => ({
     total: users.length,
-    activos: users.filter(u => u.activo).length,
-    admins: users.filter(u => u.rol === 'Admin').length,
-    archiveros: users.filter(u => u.rol === 'Archivero').length
+    activos: users.filter(u => u?.activo).length,
+    admins: users.filter(u => u?.rol === 'Admin').length,
+    archiveros: users.filter(u => u?.rol === 'Archivero').length
   }), [users]);
 
   return (
@@ -356,7 +372,7 @@ export default function GestionUsuarios() {
         onToast={showToast}
       />
 
-      {/* --- MODAL CAMBIO DE CONTRASEÑA (Simple, se mantiene aquí) --- */}
+      {/* --- MODAL CAMBIO DE CONTRASEÑA --- */}
       {isPasswordModalOpen && (
          <ModalGenerico title="Gestión de Seguridad" onClose={() => setIsPasswordModalOpen(false)}>
             <div className="space-y-6 p-2">

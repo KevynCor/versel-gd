@@ -57,7 +57,6 @@ const ModuleCard = ({ item, onClick }) => (
 );
 
 // --- 2. COMPONENTE PRINCIPAL ---
-
 const Dashboard = ({ userRole }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('operaciones');
@@ -77,8 +76,8 @@ const Dashboard = ({ userRole }) => {
       label: 'Operaciones',
       icon: LayoutGrid,
       items: [
-        { id: 'busqueda', title: "Búsqueda Global", desc: "Búsqueda avanzada de expedientes y metadatos.", icon: Search, path: "/busqueda", roles: ['Admin', 'Supervisor'] },
-        { id: 'solicitud', title: "Servicios Archivísticos", desc: "Gestión de préstamos y consultas.", icon: ClipboardCheck, path: "/solicitud", roles: ['Admin', 'Supervisor', 'Usuario'] },
+        { id: 'busqueda', title: "Búsqueda Documental", desc: "Búsqueda avanzada de expedientes y metadatos.", icon: Search, path: "/busqueda", roles: ['Admin', 'Archivero', 'Supervisor'] },
+        { id: 'solicitud', title: "Servicios Archivísticos", desc: "Gestión de préstamos y consultas.", icon: ClipboardCheck, path: "/solicitud", roles: ['Admin', 'Archivero', 'Supervisor', 'Usuario'] },
         { id: 'vouchers', title: "Busqueda Vouchers", desc: "Trazabilidad de documentos financieros.", icon: FileText, path: "/vouchers", roles: ['Admin', 'Supervisor'] },
       ]
     },
@@ -128,16 +127,14 @@ const Dashboard = ({ userRole }) => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       
-      {/* 1. CABECERA CORPORATIVA */}
+      {/* 1. CABECERA */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">            
             {/* Título de Sección */}
             <div>
               <h1 className="text-xl font-bold text-slate-800 tracking-tight">Panel de Control</h1>
-            </div>
-            
+            </div>            
             {/* Buscador Integrado */}
             <div className="relative w-full md:w-96">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -155,8 +152,7 @@ const Dashboard = ({ userRole }) => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">        
         {/* 2. KPIS OPERATIVOS (Solo visible sin búsqueda) */}
         {!searchQuery && (
           <motion.section 

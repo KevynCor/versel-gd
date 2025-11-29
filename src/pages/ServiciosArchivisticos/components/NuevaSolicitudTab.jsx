@@ -161,7 +161,7 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
                             className={`text-xs flex items-center gap-1 font-bold transition-colors ${isBehalfMode ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                             <UserCheck size={14} />
-                            {isBehalfMode ? "Solicitando para otro" : "Solicitar para mí"}
+                            {isBehalfMode ? "Solicitar para mí" : "Solicitando para otro"}
                         </button>
                     </div>
                 )}

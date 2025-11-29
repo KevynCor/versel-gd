@@ -18,12 +18,12 @@ import { ViewToggle } from "../../components/layout/ViewToggle";
 import { 
   BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, 
   BarChart3, CheckCircle, Download, Upload, RefreshCw, 
-  Plus, Box, Info, Activity, TrendingUp
+  Plus, Box, Info, Activity, TrendingUp, Eye, Edit
 } from "lucide-react";
 // Componentes Internos Refactorizados
 import { FrequencyBar } from "./components/FrequencyBar";
 import { SimpleBarChart } from "./components/SimpleBarChart";
-import { DocumentModal } from "./components/DocumentModal";
+import { ModalDetalleDocumento } from "../../components/form/ModalDetalleDocumento";
 
 export default function InventarioDocumental() {
   // Estados principales
@@ -33,7 +33,8 @@ export default function InventarioDocumental() {
     mensaje: null, 
     selectedDoc: null, 
     page: 0, 
-    total: 0 
+    total: 0,
+    viewOnly: false
   });
 
   // Referencia para el scroll al paginar
@@ -45,9 +46,10 @@ export default function InventarioDocumental() {
 
   // Filtros avanzados y opciones
   const [filters, setFilters] = useState({});
+  // CORRECCIÓN 1: Eliminado 'tomo_faltante' de las opciones ya que ahora es un switch lógico
   const [filterOptions, setFilterOptions] = useState({
     areas: [], series_documentales: [], frecuencias_consulta: [],
-    tomo_faltante: [], tipo_unidad_conservacion: [], soporte: [],
+    tipo_unidad_conservacion: [], soporte: [],
     estante: [], cuerpo: [], balda: [],
     analistas: [], contratistas: [], ambientes: []
   });
@@ -75,8 +77,9 @@ export default function InventarioDocumental() {
         p_serie: currentFilters.serie || null,
         p_frecuencia: currentFilters.frecuencia || null,
         p_numero_caja: currentFilters.numeroCaja || null,
-        p_anio: currentFilters.anio ? parseInt(currentFilters.anio) : null,
-        p_tomo_faltante: currentFilters.tomoFaltante || null,
+        p_numero_entregable: currentFilters.numeroEntregable || null,
+        p_anio: currentFilters.anio ? parseInt(currentFilters.anio) : null,        
+        p_tomo_faltante: currentFilters.tomoFaltante ? 'true' : null,        
         p_tipo_unidad_conservacion: currentFilters.tipoUnidadConservacion || null,
         p_soporte: currentFilters.soporte || null,
         p_estante: currentFilters.estante || null,
@@ -85,10 +88,10 @@ export default function InventarioDocumental() {
         p_analista: currentFilters.analista || null,
         p_fecha_inventario: currentFilters.fechaInventario || null,
         p_contratista: currentFilters.contratista || null,
-        p_ambiente: currentFilters.ambiente || null,
-        p_numero_entregable: currentFilters.numeroEntregable || null
+        p_ambiente: currentFilters.ambiente || null
       };
 
+      // Limpieza de parámetros vacíos
       const cleanedParams = {};
       Object.keys(statsParams).forEach(key => {
         const value = statsParams[key];
@@ -103,38 +106,39 @@ export default function InventarioDocumental() {
 
       const statsData = statsResult?.[0] || {};
 
-      setStats({
-        total: Number(statsData.total_documentos) || 0,
-        conCaja: Number(statsData.con_caja) || 0,
-        altaConsulta: Number(statsData.alta_consulta) || 0,
-        mediaConsulta: Number(statsData.media_consulta) || 0,
-        bajaConsulta: Number(statsData.baja_consulta) || 0,
-        series: Number(statsData.series_documentales) || 0,
-        areas: Number(statsData.areas_responsables) || 0,
-        folios: Number(statsData.total_folios) || 0,
-        cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
-        tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
-        digitalizados: 0,
-        rangoFechas: statsData.rango_fechas || {},
-        totalEmpastado: Number(statsData.total_empastado) || 0,
-        totalArchivadores: Number(statsData.total_archivadores) || 0,
-        totalOtrosTipos: Number(statsData.total_otros_tipos) || 0
-      });
+      if (statsData) {
+        setStats({
+            total: Number(statsData.total_documentos) || 0,
+            conCaja: Number(statsData.con_caja) || 0,
+            altaConsulta: Number(statsData.alta_consulta) || 0,
+            mediaConsulta: Number(statsData.media_consulta) || 0,
+            bajaConsulta: Number(statsData.baja_consulta) || 0,
+            series: Number(statsData.series_documentales) || 0,
+            areas: Number(statsData.areas_responsables) || 0,
+            folios: Number(statsData.total_folios) || 0,
+            cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
+            tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
+            digitalizados: 0,
+            rangoFechas: statsData.rango_fechas || {},
+            totalEmpastado: Number(statsData.total_empastado) || 0,
+            totalArchivadores: Number(statsData.total_archivadores) || 0,
+            totalOtrosTipos: Number(statsData.total_otros_tipos) || 0
+        });
 
-      const volumenAnual = statsData.volumen_por_anio || [];
-      if (volumenAnual.length > 0) {
-        const currentYear = new Date().getFullYear();
-        const cutoffYear = currentYear - 9; 
-        const formattedYears = volumenAnual
+        const volumenAnual = statsData.volumen_por_anio || [];
+        if (volumenAnual.length > 0) {
+            const currentYear = new Date().getFullYear();
+            const cutoffYear = currentYear - 9; 
+            const formattedYears = volumenAnual
             .filter(item => Number(item.anio) >= cutoffYear)
             .map(item => ({
                 label: item.anio || 'S/F',
                 value: Number(item.cantidad)
             }));
-
-        setYearsData(formattedYears);
-      } else {
-        setYearsData([]);
+            setYearsData(formattedYears);
+        } else {
+            setYearsData([]);
+        }
       }
       
     } catch (error) {
@@ -161,7 +165,7 @@ export default function InventarioDocumental() {
               p_analista: filters.analista || null,
               p_soporte: filters.soporte || null,              
               p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
-              p_tomo_faltante: filters.tomoFaltante || null,
+              p_tomo_faltante: filters.tomoFaltante ? 'true' : null,
               p_estante: filters.estante || null,
               p_cuerpo: filters.cuerpo || null,
               p_balda: filters.balda || null,
@@ -237,7 +241,6 @@ export default function InventarioDocumental() {
             series_documentales: normalizeArray(opt?.series_documentales),
             years: normalizeArray(opt?.years),
             frecuencias_consulta: normalizeArray(opt?.frecuencias_consulta),
-            tomo_faltante: normalizeArray(opt?.tomo_faltante),
             tipo_unidad_conservacion: normalizeArray(opt?.tipo_unidad_conservacion),
             soporte: normalizeArray(opt?.soporte),
             estante: normalizeArray(opt?.estante),
@@ -255,7 +258,7 @@ export default function InventarioDocumental() {
     };
 
     loadOptions();
-  }, [filters.area, filters.anio]);
+  }, [filters.area]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -346,7 +349,7 @@ export default function InventarioDocumental() {
           p_ambiente: filters.ambiente || null,
           p_tipo_unidad_conservacion: filters.tipoUnidadConservacion || null,
           p_soporte: filters.soporte || null,
-          p_tomo_faltante: filters.tomoFaltante || null,
+          p_tomo_faltante: filters.tomoFaltante ? 'true' : null,          
           p_frecuencia: filters.frecuencia || null,
           p_analista: filters.analista || null,
           p_contratista: filters.contratista || null,
@@ -357,7 +360,6 @@ export default function InventarioDocumental() {
           p_order_direction: 'asc'
       };
 
-      // 2. Bucle para descargar por lotes (Batching)
       while (hasMore) {
           const { data: result, error } = await supabase.rpc('get_documentos_filtrados', {
               ...baseParams,
@@ -365,11 +367,8 @@ export default function InventarioDocumental() {
               p_offset: offset
           });
 
-          if (error) {
-              console.error("Error detallado de Supabase:", error);
-              throw error;
-          }
-          // Validación robusta de la respuesta (Soluciona el error "is not iterable")
+          if (error) throw error;
+
           let rawData = result?.[0]?.documentos;
           let batchDocs = [];
 
@@ -402,8 +401,7 @@ export default function InventarioDocumental() {
         return;
       }
 
-      // 3. Generar Excel con TODOS los campos de la tabla
-      const wb = XLSX.utils.book_new();      
+      const wb = XLSX.utils.book_new();       
       const cleanData = allDocs.map(doc => ({
           'Código (ID)': doc.id,
           'Unidad Orgánica': doc.Unidad_Organica,
@@ -417,7 +415,7 @@ export default function InventarioDocumental() {
           'N° Folios': doc.Numero_Folios,
           'Tipo Unidad Conservación': doc.Tipo_Unidad_Conservacion,
           'Soporte': doc.Soporte,
-          'Tomo Faltante': doc.Tomo_Faltante,
+          'Tomo Faltante': doc.Tomo_Faltante ? 'SÍ' : 'NO',
           'Frecuencia Consulta': doc.Frecuencia_Consulta,
           'Ambiente': doc.Ambiente,
           'Estante': doc.Estante,
@@ -431,8 +429,6 @@ export default function InventarioDocumental() {
       }));
 
       const ws = XLSX.utils.json_to_sheet(cleanData);
-      
-      // Ajuste automático de ancho de columnas (opcional, mejora legibilidad)
       const wscols = Object.keys(cleanData[0] || {}).map(() => ({ wch: 20 }));
       ws['!cols'] = wscols;
 
@@ -491,12 +487,11 @@ export default function InventarioDocumental() {
     }
   };
 
-  // Definición de columnas para la tabla
   const columns = useMemo(() => [
     { 
       label: "Código", 
       key: "id",
-      render: (doc) => (        
+      render: (doc) => (         
         <div className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block">
           {doc.id || 'S/C'}
         </div>
@@ -587,6 +582,12 @@ export default function InventarioDocumental() {
               {doc.Tipo_Unidad_Conservacion}
             </span>
           )}
+          {/* Indicador visual de Tomo Faltante si aplica */}
+          {doc.Tomo_Faltante && (
+             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200">
+               <AlertTriangle size={10} /> FALTANTE
+             </span>
+          )}
           {(doc.Numero_Tomo || doc.Numero_Folios) && (
             <span className="text-[10px] text-slate-400">
               {doc.Numero_Tomo && `T: ${doc.Numero_Tomo}`}
@@ -602,20 +603,25 @@ export default function InventarioDocumental() {
   const renderActions = useCallback((doc) => (
     <div className="flex items-center gap-1">
       <button
-        onClick={() => setState(s => ({ ...s, selectedDoc: doc }))}
-        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+        onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: true }))}
+        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        title="Ver detalles (Solo lectura)"
+      >
+        <Eye size={18} />
+      </button>
+      <button
+        onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
+        className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
         title="Editar documento"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
+        <Edit size={18} />
       </button>
     </div>
   ), []);
 
   const renderCard = useCallback((doc) => (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-blue-300 transition-all duration-200 group relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+    <div className={`bg-white border rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative overflow-hidden ${doc.Tomo_Faltante ? 'border-red-200' : 'border-slate-200 hover:border-blue-300'}`}>
+      <div className={`absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity ${doc.Tomo_Faltante ? 'bg-red-500' : 'bg-blue-600'}`}></div>
       
       <div className="flex justify-between items-start mb-3 pl-2">
         <div className="flex-1">
@@ -663,15 +669,23 @@ export default function InventarioDocumental() {
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
-          {doc.Frecuencia_Consulta && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-              doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
-              doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-              'bg-slate-50 text-slate-600 border border-slate-200'
-            }`}>
-              {doc.Frecuencia_Consulta}
-            </span>
-          )}
+          <div className="flex gap-1">
+            {doc.Frecuencia_Consulta && (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+                doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                'bg-slate-50 text-slate-600 border border-slate-200'
+                }`}>
+                {doc.Frecuencia_Consulta}
+                </span>
+            )}
+            {/* Tag visual en Card si falta tomo */}
+            {doc.Tomo_Faltante && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200" title="Tomo Reportado Faltante">
+                   <AlertTriangle size={8} className="mr-1"/> Faltante
+                </span>
+            )}
+          </div>
           
           {doc.Ubicacion_Fisica && (
             <span className="text-[10px] font-mono text-slate-400">
@@ -699,11 +713,11 @@ export default function InventarioDocumental() {
         )}
 
         {/* Encabezado de estadísticas */}
-        <div className="flex items-center justify-between mb-6 px-1">          
+        <div className="flex items-center justify-between mb-6 px-1">           
           <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 uppercase tracking-tight">
             <BarChart3 className="w-5 h-5 text-blue-700" />
             Métricas Archivisticas
-          </h3>         
+          </h3>          
           <div className="hidden sm:block text-xs font-medium text-slate-400">
             Actualizado: {new Date().toLocaleTimeString()}
           </div>
@@ -760,8 +774,8 @@ export default function InventarioDocumental() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <StatCard title="Total Folios" value={stats.folios?.toLocaleString("es-PE")} icon={FileText} color="slate" />
           <StatCard title="Unidades Documentales" value={stats.total?.toLocaleString("es-PE")} icon={FileText} color="blue" />
-          <StatCard title="Secciones Activas" value={stats.areas?.toLocaleString("es-PE")} icon={CheckCircle} color="green" />          
-          <StatCard title="Series Documentales" value={stats.series?.toLocaleString("es-PE")} icon={Building2} color="indigo" />          
+          <StatCard title="Secciones Activas" value={stats.areas?.toLocaleString("es-PE")} icon={CheckCircle} color="green" />           
+          <StatCard title="Series Documentales" value={stats.series?.toLocaleString("es-PE")} icon={Building2} color="indigo" />           
           <StatCard title="Cajas Archiveras" value={stats.cajasporunidad?.toLocaleString("es-PE")} icon={Box} color="red" />
           <StatCard title="Unidades Faltantes" value={stats.tomosfaltantes?.toLocaleString("es-PE")} icon={AlertTriangle} color="yellow" />
         </div>
@@ -903,9 +917,10 @@ export default function InventarioDocumental() {
 
       {/* Modal de documento */}
       {state.selectedDoc && (
-        <DocumentModal
+        <ModalDetalleDocumento
           doc={state.selectedDoc}
-          onClose={() => setState(s => ({ ...s, selectedDoc: null }))}
+          readOnly={state.viewOnly} 
+          onClose={() => setState(s => ({ ...s, selectedDoc: null, viewOnly: false }))}
           onSave={saveDocument}
           onDelete={deleteDocument}
         />
