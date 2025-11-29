@@ -3,10 +3,8 @@ import { supabase } from "../../utils/supabaseClient";
 import * as XLSX from "xlsx";
 // Componentes UI base
 import { Toast } from "../../components/ui/Toast";
-import { StatCard } from "../../components/ui/StatCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
-import { AdvancedFilters } from "../../components/ui/AdvancedFilters";
 // Componentes de datos
 import { DataTable } from "../../components/data/DataTable";
 import { DataCardGrid } from "../../components/data/DataCardGrid";
@@ -14,6 +12,7 @@ import { Pagination } from "../../components/data/Pagination";
 // Componentes de layout
 import { CrudLayout } from "../../components/layout/CrudLayout";
 import { ViewToggle } from "../../components/layout/ViewToggle";
+import DocumentModal from "../../components/form/ModalDetalle";
 // Iconos
 import { 
   BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, 
@@ -21,9 +20,7 @@ import {
   Plus, Box, Info, Activity, TrendingUp
 } from "lucide-react";
 // Componentes Internos Refactorizados
-import { FrequencyBar } from "./components/FrequencyBar";
-import { SimpleBarChart } from "./components/SimpleBarChart";
-import { DocumentModal } from "./components/DocumentModal";
+import { AdvancedFilters } from "../../components/ui/AdvancedFilters";
 
 export default function InventarioDocumental() {
   // Estados principales
@@ -686,7 +683,7 @@ export default function InventarioDocumental() {
   return (
     <>
       <CrudLayout 
-        title="Inventario del Fondo Documental" 
+        title="Busqueda General" 
         icon={BookOpen}
         description="Gestión centralizada de expedientes, ubicación topográfica y control de acervo."
       >
@@ -697,74 +694,6 @@ export default function InventarioDocumental() {
             onClose={() => setState(s => ({ ...s, mensaje: null }))} 
           />
         )}
-
-        {/* Encabezado de estadísticas */}
-        <div className="flex items-center justify-between mb-6 px-1">          
-          <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 uppercase tracking-tight">
-            <BarChart3 className="w-5 h-5 text-blue-700" />
-            Métricas Archivisticas
-          </h3>         
-          <div className="hidden sm:block text-xs font-medium text-slate-400">
-            Actualizado: {new Date().toLocaleTimeString()}
-          </div>
-        </div>
-        
-        {/* Panel de estadísticas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Card 1: Distribución por Frecuencia */}
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-              <Activity className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Frecuencia de Consulta</h4>
-            </div>
-            <div className="space-y-2">
-              <FrequencyBar 
-                label="Alta (2015-2025)" 
-                count={stats.altaConsulta} 
-                total={stats.total} 
-                colorClass="bg-orange-500"
-                bgClass="bg-orange-100"
-              />
-              <FrequencyBar 
-                label="Media (2000-2014)" 
-                count={stats.mediaConsulta} 
-                total={stats.total} 
-                colorClass="bg-blue-500"
-                bgClass="bg-blue-100"
-              />
-              <FrequencyBar 
-                label="Baja (1984-1999)" 
-                count={stats.bajaConsulta} 
-                total={stats.total} 
-                colorClass="bg-slate-500"
-                bgClass="bg-slate-100"
-              />
-            </div>
-          </div>
-
-          {/* Card 2: Evolución por Años */}
-          <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between gap-2 mb-2 border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-                <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wide">Volumen Documental por Año</h4>
-              </div>
-              <div className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">Últimos 10 periodos</div>
-            </div>
-            <div className="flex-1 flex items-end">
-               <SimpleBarChart data={yearsData} />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-          <StatCard title="Total Folios" value={stats.folios?.toLocaleString("es-PE")} icon={FileText} color="slate" />
-          <StatCard title="Unidades Documentales" value={stats.total?.toLocaleString("es-PE")} icon={FileText} color="blue" />
-          <StatCard title="Secciones Activas" value={stats.areas?.toLocaleString("es-PE")} icon={CheckCircle} color="green" />          
-          <StatCard title="Series Documentales" value={stats.series?.toLocaleString("es-PE")} icon={Building2} color="indigo" />          
-          <StatCard title="Cajas Archiveras" value={stats.cajasporunidad?.toLocaleString("es-PE")} icon={Box} color="red" />
-          <StatCard title="Unidades Faltantes" value={stats.tomosfaltantes?.toLocaleString("es-PE")} icon={AlertTriangle} color="yellow" />
-        </div>
 
         {/* Filtros avanzados */}
         <AdvancedFilters 
@@ -902,14 +831,7 @@ export default function InventarioDocumental() {
       </CrudLayout>
 
       {/* Modal de documento */}
-      {state.selectedDoc && (
-        <DocumentModal
-          doc={state.selectedDoc}
-          onClose={() => setState(s => ({ ...s, selectedDoc: null }))}
-          onSave={saveDocument}
-          onDelete={deleteDocument}
-        />
-      )}
+      {state.selectedDoc && <DocumentModal doc={state.selectedDoc} onClose={() => setState(prevState => ({ ...prevState, selectedDoc: null }))} />}
     </>
   );
 }

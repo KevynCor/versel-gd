@@ -5,7 +5,7 @@ import {
 import { supabase } from '../../../utils/supabaseClient';
 
 // Importaciones de UI
-import { ModalGenerico } from '../../../components/form/ModalGenerico.jsx';
+import { ModalGenerico } from '../../../components/form/ModalGenerico';
 import { InputField } from '../../../components/ui/InputField.jsx';
 import { SelectInput } from '../../../components/ui/SelectInput.jsx';
 import { ToggleSwitch } from '../../../components/ui/ToggleSwitch.jsx';
@@ -91,8 +91,7 @@ export default function UserModal({ isOpen, onClose, onSave, userToEdit, onToast
       } else {
         // --- CREACIÓN (CREATE) ---
         // Delegamos la creación del perfil al Trigger de Base de Datos
-        // Enviamos todos los datos extra en 'options.data'
-        
+        // Enviamos todos los datos extra en 'options.data'        
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,

@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { motion } from 'framer-motion';
 
 import { supabase } from './utils/supabaseClient';
-import Navbar from './components/Navbar';
+import Navbar from './pages/Dashboard/Navbar';
 import Auth from './pages/Login/Auth';
-import Profile from './pages/Perfil/Profile';
+import Profile from './pages/Perfil/Perfil';
 import Dashboard from './pages/Dashboard/Dashboard';
-import BusquedaDocumento from './pages/Busqueda/BusquedaDocumento';
+import BusquedaDocumento from './pages/Busqueda/Busqueda';
 import InventarioDocumental from './pages/Inventario/InventarioDocumental';
 import ServiciosArchivisticos from './pages/ServiciosArchivisticos/ServiciosArchivisticos';
 import EliminacionDocumental from './pages/Eliminacion/EliminacionDocumental';

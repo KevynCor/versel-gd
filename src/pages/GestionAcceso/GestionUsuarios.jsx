@@ -13,7 +13,7 @@ import { Pagination } from '../../components/data/Pagination';
 import { SearchBar } from '../../components/controls/SearchBar';
 import { Toast } from '../../components/ui/Toast';
 import { SparkleLoader } from '../../components/ui/SparkleLoader';
-import { ModalGenerico } from '../../components/form/ModalGenerico'; // Para el modal de contraseña
+import { ModalGenerico } from '../../components/form/ModalGenerico.jsx'; // Para el modal de contraseña
 
 // Componentes Locales
 import UserModal from './components/UserModal';

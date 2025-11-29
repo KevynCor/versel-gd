@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Filter, RefreshCw, Scan } from "lucide-react";
 // Asumo la ruta a QRScanner y otros componentes basados en el contexto de un proyecto React.
-import QRScanner from "../../../components/ui/QRScanner"; 
-import { SearchBar } from "../../../components/controls/SearchBar";
+import QRScanner from "./QRScanner"; 
+import { SearchBar } from "../controls/SearchBar";
 
 export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
   const [isExpanded, setIsExpanded] = useState(false);

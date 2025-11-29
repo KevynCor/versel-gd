@@ -5,7 +5,7 @@ import {
   Hash, Layers, Archive, Shield 
 } from "lucide-react";
 import { InputField } from "../../../components/ui/InputField";
-import { TextareaField } from "../../../components/ui/TextareaField"; // Ajusta la ruta si está en /form/
+import { TextareaField } from "../../../components/ui/TextareaField";
 
 export const DocumentModal = ({ doc, onClose, onSave, onDelete }) => {
   const [formData, setFormData] = useState(() => {
