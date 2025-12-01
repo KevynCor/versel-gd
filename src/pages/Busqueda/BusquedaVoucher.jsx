@@ -368,7 +368,7 @@ export default function BusquedaVoucher() {
   return (
     <CrudLayout 
       title="Búsqueda de Vouchers" 
-      icon={Search}
+      icon={FileText}
       description="Consulta masiva de comprobantes contables y su ubicación topográfica."
     >
       {/* Panel de Instrucciones */}

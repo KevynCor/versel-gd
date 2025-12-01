@@ -1,320 +1,457 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  User, LogOut, LogIn, Menu, X, FolderTree, Bell, 
-  Home, AlertCircle, ChevronDown, Settings 
+  Menu, X, Search, Bell, User, LogOut, ChevronRight, 
+  FolderTree, BookOpen, FileText, ArrowRightLeft, 
+  ClipboardCheck, FileBarChart, ShieldCheck, Home, Settings, AlertCircle 
 } from "lucide-react";
-
 import { supabase } from "../../utils/supabaseClient";
 
-// --- HOOKS AUXILIARES ---
+// --- CONSTANTES DE ROLES (Basado en App.jsx) ---
+const ROLES_ADMIN = ['Admin', 'Archivero', 'Supervisor'];
+const ROL_SUPER_ADMIN = ['Admin'];
 
-// Hook para detectar clics fuera de un elemento (Cierra dropdowns)
-const useClickOutside = (ref, handler) => {
-  useEffect(() => {
-    const listener = (event) => {
-      if (!ref.current || ref.current.contains(event.target)) return;
-      handler(event);
-    };
-    document.addEventListener("mousedown", listener);
-    document.addEventListener("touchstart", listener);
-    return () => {
-      document.removeEventListener("mousedown", listener);
-      document.removeEventListener("touchstart", listener);
-    };
-  }, [ref, handler]);
-};
+// --- DATOS DEL MENÚ CON CONTROL DE ACCESO ---
+// Se añade la propiedad 'allowedRoles'. Si no existe, es accesible para todos los usuarios logueados.
+const MENU_STRUCTURE = [
+  {
+    label: 'OPERACIONES',
+    items: [
+      { 
+        id: 'busqueda', 
+        title: "Búsqueda Documental", 
+        icon: Search, 
+        path: "/busqueda",
+        allowedRoles: ROLES_ADMIN 
+      },
+      { 
+        id: 'solicitud', 
+        title: "Servicios Archivísticos", 
+        icon: ClipboardCheck, 
+        path: "/solicitud"
+        // Sin allowedRoles = Acceso para 'Usuario', 'Admin', etc.
+      },
+      { 
+        id: 'vouchers', 
+        title: "Búsqueda Vouchers", 
+        icon: FileText, 
+        path: "/vouchers",
+        allowedRoles: ROLES_ADMIN
+      },
+    ]
+  },
+  {
+    label: 'GESTIÓN',
+    items: [
+      { 
+        id: 'inventario', 
+        title: "Inventario & Topografía", 
+        icon: BookOpen, 
+        path: "/inventario",
+        allowedRoles: ROLES_ADMIN
+      },
+      { 
+        id: 'transferencia', 
+        title: "Transferencias", 
+        icon: ArrowRightLeft, 
+        path: "/transferencia",
+        allowedRoles: ROLES_ADMIN
+      },
+      { 
+        id: 'ccf', 
+        title: "Cuadro Clasificación", 
+        icon: FolderTree, 
+        path: "/ccf",
+        allowedRoles: ROLES_ADMIN
+      },
+      { 
+        id: 'eliminacion', 
+        title: "Eliminación Documental", 
+        icon: ArrowRightLeft, 
+        path: "/eliminacion",
+        allowedRoles: ROLES_ADMIN
+      },
+    ]
+  },
+  {
+    label: 'CONTROL',
+    items: [
+      { 
+        id: 'reportes', 
+        title: "Reportes & KPIs", 
+        icon: FileBarChart, 
+        path: "/reportes",
+        allowedRoles: ROLES_ADMIN
+      },
+      { 
+        id: 'pcda', 
+        title: "Auditoría (PCDA)", 
+        icon: ShieldCheck, 
+        path: "/pcda",
+        allowedRoles: ROLES_ADMIN
+      },
+      { 
+        id: 'accesos', 
+        title: "Gestión de Accesos", 
+        icon: Settings, 
+        path: "/accesos",
+        allowedRoles: ROL_SUPER_ADMIN // Solo Admin
+      },
+    ]
+  }
+];
 
-// --- SUB-COMPONENTES ATÓMICOS ---
-
-// 1. Botón de Notificaciones (Badge solo si es necesario)
-const NotificationBtn = () => (
-  <button className="relative p-2 text-slate-400 hover:text-white transition-colors rounded-full hover:bg-slate-800">
-    <Bell size={20} />
-    {/* En un caso real, renderizar condicionalmente si count > 0 */}
-    <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-blue-500 rounded-full border-2 border-slate-900"></span>
+// --- COMPONENTE DE ITEM DE MENÚ ---
+const MenuItem = ({ item, isCollapsed, isActive, onClick }) => (
+  <button 
+    onClick={onClick}
+    title={isCollapsed ? item.title : ''}
+    className={`
+      w-full flex items-center gap-3 px-3 py-2.5 mb-1 rounded-lg transition-all duration-200 group relative
+      ${isActive 
+        ? "bg-blue-50 text-blue-700 font-medium shadow-sm" 
+        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"}
+      ${isCollapsed ? "justify-center px-0" : ""}
+    `}
+  >
+    <div className={`
+      flex items-center justify-center transition-colors flex-shrink-0
+      ${isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"}
+    `}>
+      <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+    </div>
+    
+    {!isCollapsed && (
+      <span className="truncate text-sm transition-opacity duration-300">{item.title}</span>
+    )}
+    
+    {/* Indicador lateral azul activo */}
+    {isActive && (
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full" />
+    )}
   </button>
 );
 
-// 2. Dropdown de Usuario (Escritorio) - Diseño Progresivo
-const UserDropdown = ({ user, userName, role, error, onLogout }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  
-  useClickOutside(dropdownRef, () => setIsOpen(false));
-
-  // Estado visual de error
-  const avatarRingColor = error ? "ring-red-500" : "ring-slate-700 group-hover:ring-blue-500";
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 group focus:outline-none"
-      >
-        <div className="text-right hidden lg:block">
-          <p className="text-sm font-medium text-white leading-none mb-1">
-            {userName || "Usuario"}
-          </p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-            {role || "Invitado"}
-          </p>
-        </div>
-        
-        <div className={`h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 ring-2 ${avatarRingColor} transition-all overflow-hidden`}>
-          {/* Aquí podría ir una imagen real del usuario */}
-          <User size={18} />
-        </div>
-        
-        <ChevronDown size={14} className={`text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 overflow-hidden"
-          >
-            {/* Cabecera del Dropdown */}
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Cuenta</p>
-              <p className="text-sm font-semibold text-slate-800 truncate">{user.email}</p>
-              {error && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-red-600 bg-red-50 p-1.5 rounded border border-red-100">
-                  <AlertCircle size={12} />
-                  <span>Error de sincronización</span>
-                </div>
-              )}
-            </div>
-
-            {/* Opciones */}
-            <div className="py-1">
-              <Link 
-                to="/profile" 
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-              >
-                <Settings size={16} /> Configuración de Perfil
-              </Link>
-            </div>
-
-            {/* Footer con Acción Crítica */}
-            <div className="border-t border-slate-100 mt-1 py-1">
-              <button
-                onClick={onLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut size={16} /> Cerrar Sesión
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-// 3. Enlace Móvil Optimizado
-const MobileLink = ({ to, icon: Icon, label, onClick, active = false }) => (
-  <Link
-    to={to}
-    onClick={onClick}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all font-medium ${
-      active 
-        ? "bg-blue-600 text-white shadow-md shadow-blue-900/20" 
-        : "text-slate-400 hover:bg-slate-800 hover:text-white"
-    }`}
-  >
-    <Icon size={20} /> {label}
-  </Link>
-);
-
-// --- COMPONENTE PRINCIPAL ---
-
-const Navbar = ({ user, role, userName, error }) => {
+// --- LAYOUT PRINCIPAL (NAVBAR + SIDEBAR) ---
+const Navbar = ({ children, user, role, userName, error }) => {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  
-  // Lógica de Scroll (Mantenida intacta)
+  const location = useLocation();
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 1. Filtrado del menú por ROL (Seguridad visual)
+  const menuByRole = useMemo(() => {
+    // Si no hay rol definido aún (cargando), mostramos solo lo básico o nada.
+    // Asumimos que si role es undefined, tratamos como invitado o usuario básico hasta que cargue.
+    return MENU_STRUCTURE.map(section => ({
+      ...section,
+      items: section.items.filter(item => {
+        // Si no tiene allowedRoles, es público (para usuarios autenticados)
+        if (!item.allowedRoles) return true;
+        // Si tiene allowedRoles, verificamos si el rol del usuario está incluido
+        return item.allowedRoles.includes(role);
+      })
+    })).filter(section => section.items.length > 0); // Eliminamos secciones vacías
+  }, [role]);
+
+  // 2. Filtrado del menú por BÚSQUEDA (sobre el menú ya filtrado por rol)
+  const filteredMenu = useMemo(() => {
+    if (!searchTerm) return menuByRole;
+    return menuByRole.map(section => ({
+      ...section,
+      items: section.items.filter(item => 
+        item.title.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    })).filter(section => section.items.length > 0);
+  }, [searchTerm, menuByRole]);
+
+  // 3. Lógica para el Título Dinámico (Breadcrumb)
+  const currentPageTitle = useMemo(() => {
+    if (location.pathname === '/' || location.pathname === '/dashboard') return 'Panel Principal';
+    if (location.pathname === '/profile') return 'Perfil de Usuario';
+    
+    // Buscar en la estructura completa (para que el título aparezca aunque el usuario no tenga permiso, si accedió por URL)
+    // Opcionalmente podrías buscar en 'menuByRole' si quieres ser estricto.
+    for (const section of MENU_STRUCTURE) {
+      const foundItem = section.items.find(item => item.path === location.pathname);
+      if (foundItem) return foundItem.title;
+    }
+    return 'Sistema DocuFlow';
+  }, [location.pathname]);
+
+  // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY < 10) {
-        setIsVisible(true);
-        lastScrollY = currentScrollY;
-        return;
-      }
-      setIsVisible(currentScrollY <= lastScrollY);
-      lastScrollY = currentScrollY;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error("Error logout:", error.message);
-    setMenuOpen(false);
-    navigate("/login");
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   return (
-    <>
-      <motion.nav
-        initial={{ y: 0 }}
-        animate={{ y: isVisible ? 0 : "-100%" }}
-        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-        className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-opacity-95"
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
+      
+      {/* 1. SIDEBAR IZQUIERDO (Fijo en escritorio) */}
+      <aside 
+        className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-full transition-all duration-300 ease-in-out z-30 flex-shrink-0
+          ${isSidebarOpen ? 'w-64' : 'w-20'}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            
-            {/* SECCIÓN 1: Identidad (Logo) */}
-            <Link 
-              to="/" 
-              className="flex items-center gap-3 group focus:outline-none"
-              onClick={() => setMenuOpen(false)}
-            >
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-1.5 rounded-lg text-white shadow-lg shadow-blue-900/50 group-hover:scale-105 transition-transform duration-300">
-                <FolderTree size={24} strokeWidth={2.5} />
+        {/* Logo Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 flex-shrink-0">
+           <div className={`flex items-center gap-3 overflow-hidden ${!isSidebarOpen && 'justify-center w-full'}`}>
+              <div className="bg-blue-600 p-1.5 rounded-lg text-white flex-shrink-0 shadow-lg shadow-blue-200">
+                <FolderTree size={20} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-white font-bold text-lg leading-tight tracking-wide group-hover:text-blue-200 transition-colors">DocuFlow</span>
-                <span className="text-slate-500 text-[10px] font-bold tracking-widest uppercase">Enterprise</span>
-              </div>
-            </Link>
-
-            {/* SECCIÓN 2: Acciones Desktop (Ocultas en móvil) */}
-            <div className="hidden md:flex items-center gap-4">
-              {user ? (
-                <>
-                  {/* Priorización: Notificaciones separadas */}
-                  <NotificationBtn />
-                  
-                  {/* Separador Visual */}
-                  <div className="h-6 w-px bg-slate-800 mx-1"></div>
-
-                  {/* Agrupación: Menú de Usuario Todo-en-Uno */}
-                  <UserDropdown 
-                    user={user}
-                    userName={userName}
-                    role={role}
-                    error={error}
-                    onLogout={handleLogout}
-                  />
-                </>
-              ) : (
-                <Link 
-                  to="/login" 
-                  className="px-5 py-2 rounded-full bg-slate-800 text-slate-200 text-sm font-medium hover:bg-slate-700 hover:text-white transition-all border border-slate-700"
-                >
-                  <span className="flex items-center gap-2"><LogIn size={16}/> Iniciar Sesión</span>
-                </Link>
+              {isSidebarOpen && (
+                <div className="flex flex-col min-w-0 transition-opacity duration-300">
+                  <span className="font-bold text-slate-800 leading-none truncate">DocuFlow</span>
+                  <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">Enterprise</span>
+                </div>
               )}
-            </div>
-
-            {/* Botón Menú Móvil */}
-            <button 
-              className="md:hidden p-2 text-slate-400 hover:text-white active:scale-95 transition-transform" 
-              onClick={() => setMenuOpen(true)}
-              aria-label="Abrir menú"
-            >
-              <Menu size={24} />
-            </button>
-          </div>
+           </div>
         </div>
-      </motion.nav>
 
-      {/* SECCIÓN 3: Navegación Móvil (Drawer) */}
-      <AnimatePresence>
-        {menuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMenuOpen(false)}
-              className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm md:hidden"
+        {/* Buscador (Solo si está abierto el sidebar) */}
+        {isSidebarOpen && (
+          <div className="p-4 pb-2">
+            <div className="relative group">
+              <Search size={14} className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Buscar módulo..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-xs focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-400 text-slate-700"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Lista de Navegación (Scrollable) */}
+        <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar space-y-6">
+          {/* Link Fijo al Dashboard */}
+          <div>
+            <MenuItem 
+               item={{ title: "Panel Principal", icon: Home }} 
+               isCollapsed={!isSidebarOpen} 
+               isActive={location.pathname === "/"} 
+               onClick={() => navigate("/")}
             />
+          </div>
 
-            {/* Drawer Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 350, damping: 35 }}
-              className="fixed right-0 top-0 h-full w-[80%] max-w-sm bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col md:hidden"
+          {filteredMenu.map((section, idx) => (
+            <div key={idx}>
+              {isSidebarOpen ? (
+                <h4 className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                  {section.label}
+                </h4>
+              ) : (
+                <div className="h-px bg-slate-100 mx-2 my-4" />
+              )}
+              
+              {section.items.map(item => (
+                <MenuItem 
+                  key={item.id}
+                  item={item}
+                  isCollapsed={!isSidebarOpen}
+                  isActive={location.pathname === item.path}
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+
+          {/* Mensaje si la búsqueda no arroja resultados */}
+          {searchTerm && filteredMenu.length === 0 && (
+             <div className="text-center py-4">
+                <p className="text-xs text-slate-400">No se encontraron módulos.</p>
+             </div>
+          )}
+        </div>
+
+        {/* Footer Sidebar (Logout) */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+          <button 
+            onClick={handleLogout}
+            className={`
+              flex items-center gap-3 text-slate-500 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all w-full
+              ${!isSidebarOpen && 'justify-center'}
+            `}
+            title="Cerrar Sesión"
+          >
+            <LogOut size={18} />
+            {isSidebarOpen && <span className="text-sm font-medium">Salir</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* 2. ÁREA DE CONTENIDO PRINCIPAL (Derecha) */}
+      <div className="flex-1 flex flex-col min-w-0 h-full bg-slate-50 relative">
+        
+        {/* Header Superior (TopBar) */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 flex-shrink-0">
+          <div className="flex items-center gap-4">
+            {/* Botón Toggle Sidebar (Desktop) */}
+            <button 
+              onClick={() => setSidebarOpen(!isSidebarOpen)}
+              className="hidden md:flex p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
-              {/* Drawer Header: Perfil Móvil */}
-              <div className="p-6 border-b border-slate-800 bg-slate-950/30">
-                <div className="flex justify-between items-start mb-6">
-                  {user ? (
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/40">
-                        {userName ? userName.charAt(0).toUpperCase() : <User size={20}/>}
+              <Menu size={20} />
+            </button>
+             {/* Botón Menú (Móvil) */}
+             <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+            >
+              <Menu size={20} />
+            </button>
+
+            {/* BREADCRUMB / TÍTULO DINÁMICO */}
+            <div className="flex items-center gap-2 text-sm overflow-hidden whitespace-nowrap">
+              <span className="text-slate-400 hidden sm:inline">Sistema</span>
+              <ChevronRight size={14} className="text-slate-300 hidden sm:inline" />
+              <span className="font-bold text-slate-700 truncate">{currentPageTitle}</span>
+            </div>
+          </div>
+
+          {/* Área de Usuario y Notificaciones */}
+          <div className="flex items-center gap-4">
+            {/* Alerta si hay error de DB */}
+            {error && (
+              <div className="hidden sm:flex items-center gap-1 text-xs text-red-500 bg-red-50 px-2 py-1 rounded-full border border-red-100">
+                <AlertCircle size={12} />
+                <span>Sin conexión</span>
+              </div>
+            )}
+
+            <button className="relative p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+              <Bell size={18} />
+              {/* Badge de notificación */}
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white ring-1 ring-white"></span>
+            </button>
+            
+            {/* Info Usuario */}
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+              <div className="hidden sm:block text-right">
+                <p className="text-xs font-bold text-slate-700 truncate max-w-[150px]">
+                  {userName || user?.email || 'Usuario'}
+                </p>
+                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                  {role || 'Invitado'}
+                </p>
+              </div>
+              <button 
+                onClick={() => navigate('/profile')}
+                className="group focus:outline-none transition-transform active:scale-95"
+                title="Ir a mi perfil"
+              >
+                <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 ring-2 ring-white shadow-sm border border-blue-200">
+                  <User size={18} />
+                </div>
+              </button>              
+            </div>
+          </div>
+        </header>
+
+        {/* CONTENEDOR DE PÁGINAS (Children) */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+          <div className="w-full max-w-7xl mx-auto animate-in fade-in duration-300">
+             {children}
+          </div>
+        </main>
+
+      </div>
+
+      {/* =========================================================
+          3. MENÚ MÓVIL (Overlay) - Solo pantallas pequeñas
+         ========================================================= */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop Oscuro */}
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden"
+            />
+            {/* Panel Deslizante */}
+            <motion.div
+              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-[85%] max-w-xs bg-white shadow-2xl z-50 md:hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                 <div className="flex items-center gap-2">
+                    <div className="bg-blue-600 p-1 rounded text-white"><FolderTree size={16}/></div>
+                    <span className="font-bold text-slate-800">DocuFlow</span>
+                 </div>
+                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-500 hover:text-red-500"><X size={20}/></button>
+              </div>
+              
+              {/* Info usuario móvil */}
+              <div className="p-4 bg-slate-50/50 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                        <User size={20} />
                       </div>
                       <div>
-                        <p className="text-white font-bold truncate max-w-[150px]">
-                          {userName || "Usuario"}
-                        </p>
-                        <p className="text-xs text-slate-400 font-medium bg-slate-800 px-2 py-0.5 rounded-full inline-block mt-1">
-                          {role || "Invitado"}
-                        </p>
+                        <p className="text-sm font-bold text-slate-800 truncate max-w-[180px]">{userName || 'Usuario'}</p>
+                        <p className="text-xs text-slate-500">{role || 'Invitado'}</p>
                       </div>
-                    </div>
-                  ) : (
-                    <span className="text-white font-bold text-xl">Menú</span>
-                  )}
-                  
-                  <button onClick={() => setMenuOpen(false)} className="text-slate-500 hover:text-white p-1">
-                    <X size={24} />
-                  </button>
-                </div>
-
-                {error && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
-                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                    <p className="text-xs leading-relaxed">Error sincronizando datos del perfil.</p>
                   </div>
-                )}
               </div>
 
-              {/* Drawer Body: Links */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                <MobileLink to="/" icon={Home} label="Panel Principal" onClick={() => setMenuOpen(false)} active />
-                {user ? (
-                  <MobileLink to="/profile" icon={Settings} label="Configuración" onClick={() => setMenuOpen(false)} />
-                ) : (
-                  <MobileLink to="/login" icon={LogIn} label="Iniciar Sesión" onClick={() => setMenuOpen(false)} />
-                )}
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                 <button 
+                    onClick={() => navigate("/")}
+                    className="w-full flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg mb-4 bg-white border border-slate-200"
+                 >
+                    <Home size={18} className="text-blue-500" /> Panel Principal
+                 </button>
+
+                 {/* Usamos 'menuByRole' aquí para que el móvil también respete los permisos */}
+                 {menuByRole.map((section, i) => (
+                    <div key={i} className="mb-6">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{section.label}</p>
+                      {section.items.map(item => (
+                        <button 
+                          key={item.id} 
+                          onClick={() => navigate(item.path)}
+                          className={`w-full flex items-center gap-3 px-3 py-3 text-sm rounded-lg mb-1 transition-colors
+                            ${location.pathname === item.path ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}
+                          `}
+                        >
+                          <item.icon size={18} strokeWidth={location.pathname === item.path ? 2 : 1.5} /> 
+                          {item.title}
+                        </button>
+                      ))}
+                    </div>
+                 ))}
               </div>
 
-              {/* Drawer Footer: Logout */}
-              {user && (
-                <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-bold text-sm"
-                  >
-                    <LogOut size={18} /> Cerrar Sesión
-                  </button>
-                  <p className="text-center text-[10px] text-slate-600 mt-4 uppercase tracking-widest font-bold">
-                    DocuFlow Mobile v2.1
-                  </p>
-                </div>
-              )}
+              <div className="p-4 border-t border-slate-100">
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 w-full p-3 text-red-600 bg-red-50 rounded-lg font-medium hover:bg-red-100 transition-colors"
+                >
+                  <LogOut size={18} /> Cerrar Sesión
+                </button>
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 

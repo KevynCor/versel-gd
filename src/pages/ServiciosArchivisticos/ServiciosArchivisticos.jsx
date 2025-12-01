@@ -11,7 +11,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 // 2. Iconografía (Lucide React)
 import { 
   FileText, Plus, Clock, AlertTriangle, 
-  Download, FileCheck, Shield, History 
+  Download, FileCheck, Shield, History, ClipboardCheck 
 } from "lucide-react";
 
 // 3. Pestañas de Contenido (Módulos Locales)
@@ -202,7 +202,7 @@ export default function ServiciosArchivisticos() {
     <>
       <CrudLayout 
         title="Servicios Archivísticos" 
-        icon={Shield}
+        icon={ClipboardCheck}
         description="Plataforma centralizada para la gestión de solicitudes, préstamos documentales y consultas de usuarios."
       >
         {/* Notificaciones */}

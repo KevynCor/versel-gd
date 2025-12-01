@@ -71,11 +71,11 @@ export default function App() {
 
       if (error) {
         console.error("Error Supabase:", error.message);
-        setUserRole('Usuario'); // Fallback actualizado a Mayúscula
+        setUserRole('Usuario'); 
         setUserName("Usuario"); 
         setDbError(error.message);
       } else {
-        setUserRole(data?.rol || 'Usuario'); // Fallback actualizado a Mayúscula
+        setUserRole(data?.rol || 'Usuario'); 
         setUserName(data?.nombre_completo || 'Usuario'); 
         setDbError(null);
         lastProcessedUserId.current = userId;
@@ -150,7 +150,7 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center">
              <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-700 rounded-full mb-4 animate-spin" />
-             <span className="text-slate-600 font-medium text-sm animate-pulse">Cargando DocuFlow...</span>
+             <span className="text-slate-600 font-medium text-sm animate-pulse">Cargando Sistema...</span>
         </div>
       </div>
     );
@@ -160,22 +160,21 @@ export default function App() {
 
   return (
     <Router>
-      {/* NUEVO: Componente Monitor de Sesión Se activa solo si hay sesión (session es true/objeto) */}
       <SessionTimeout isActive={!!session} />
 
       <Routes>
         <Route path="/login" element={!session ? <Auth /> : <Navigate to="/" replace />} />
 
+        {/* --- CORRECCIÓN CLAVE AQUÍ --- */}
         <Route element={
-            <>
-              <Navbar 
-                user={session?.user} 
-                role={userRole} 
-                userName={userName}
-                error={dbError} 
-              />
+            <Navbar 
+              user={session?.user} 
+              role={userRole} 
+              userName={userName}
+              error={dbError} 
+            >
               <Outlet />
-            </>
+            </Navbar>
         }>
           <Route path="/" element={<ProtectedRoute user={session?.user} userRole={userRole} loading={loadingSession}><Dashboard userRole={userRole} /></ProtectedRoute>} />
           <Route path="/solicitud" element={<ProtectedRoute user={session?.user} userRole={userRole} loading={loadingSession}><ServiciosArchivisticos /></ProtectedRoute>} />
