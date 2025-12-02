@@ -27,7 +27,6 @@ const CargoPrestamoPDF = ({ isReady, solicitud, documentos, onAfterPrint }) => {
     const firmaArchivoCentral = devolucionData?.firma_receptor || null;
 
     // 3. Extraemos el nombre del usuario receptor
-    // Nota: Dependiendo de tu consulta, esto puede venir como 'usuario' o 'usuarios'
     // Se intenta acceder de forma segura a ambas posibilidades.
     const nombreReceptor = devolucionData?.usuario?.nombre_completo 
                         || devolucionData?.usuarios?.nombre_completo 

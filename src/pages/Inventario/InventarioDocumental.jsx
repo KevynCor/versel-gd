@@ -620,44 +620,56 @@ export default function InventarioDocumental() {
   ), []);
 
   const renderCard = useCallback((doc) => (
-    <div className={`bg-white border rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative overflow-hidden ${doc.Tomo_Faltante ? 'border-red-200' : 'border-slate-200 hover:border-blue-300'}`}>
+    <div className={`bg-white border rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative overflow-hidden flex flex-col justify-between ${doc.Tomo_Faltante ? 'border-red-200' : 'border-slate-200 hover:border-blue-300'}`}>
+      {/* Barra decorativa lateral */}
       <div className={`absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity ${doc.Tomo_Faltante ? 'bg-red-500' : 'bg-blue-600'}`}></div>
       
-      <div className="flex justify-between items-start mb-3 pl-2">
-        <div className="flex-1">
-          <div className="font-mono text-xs font-bold text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded mb-1.5">
-            {doc.id || 'S/C'}
+      <div>
+        <div className="flex justify-between items-start mb-3 pl-2">
+          <div className="flex-1 pr-2">
+            <div className="font-mono text-xs font-bold text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded mb-1.5">
+              {doc.id || 'S/C'}
+            </div>
+            <h3 className="font-bold text-slate-800 text-sm line-clamp-2 group-hover:text-blue-800 transition-colors" title={doc.Descripcion}>
+              {doc.Descripcion}
+            </h3>
           </div>
-          <h3 className="font-bold text-slate-800 text-sm line-clamp-2 group-hover:text-blue-800 transition-colors">
-            {doc.Descripcion}
-          </h3>
+          
+          {/* Contenedor de Acciones (Ver y Editar) */}
+          <div className="flex gap-1 shrink-0 bg-white/80 backdrop-blur-sm p-1 rounded-lg border border-transparent group-hover:border-slate-100 transition-all">
+            <button
+              onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: true }))}
+              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="Ver Detalle (Solo lectura)"
+            >
+              <Eye size={18} />
+            </button>
+            <button
+              onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
+              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+              title="Editar información"
+            >
+              <Edit size={18} />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setState(s => ({ ...s, selectedDoc: doc }))}
-          className="text-slate-400 hover:text-blue-600 p-1 hover:bg-blue-50 rounded transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-          </svg>
-        </button>
-      </div>
 
-      <div className="space-y-2 pl-2">
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <Building2 className="w-3.5 h-3.5 text-slate-400" />
-          <span className="font-medium">{doc.Unidad_Organica || 'N/A'}</span>
-        </div>
-        
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <FileText className="w-3.5 h-3.5 text-slate-400" />
-          <span className="truncate">{doc.Serie_Documental || 'Sin serie'}</span>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2 mt-2">
+        <div className="space-y-2 pl-2">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="font-medium truncate">{doc.Unidad_Organica || 'N/A'}</span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="truncate">{doc.Serie_Documental || 'Sin serie'}</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 mt-2">
             {doc.Numero_Caja && (
             <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-100">
                 <Package className="w-3.5 h-3.5 text-slate-500" />
-                <span className="font-bold">Caja: {doc.Numero_Caja}</span>
+                <span className="font-bold truncate">Caja: {doc.Numero_Caja}</span>
             </div>
             )}
             {doc.Fecha_Inicial && (
@@ -666,33 +678,34 @@ export default function InventarioDocumental() {
                 <span>{new Date(doc.Fecha_Inicial).getFullYear()}</span>
             </div>
             )}
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
-          <div className="flex gap-1">
-            {doc.Frecuencia_Consulta && (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
-                doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                'bg-slate-50 text-slate-600 border border-slate-200'
-                }`}>
-                {doc.Frecuencia_Consulta}
-                </span>
-            )}
-            {/* Tag visual en Card si falta tomo */}
-            {doc.Tomo_Faltante && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200" title="Tomo Reportado Faltante">
-                   <AlertTriangle size={8} className="mr-1"/> Faltante
-                </span>
-            )}
           </div>
-          
-          {doc.Ubicacion_Fisica && (
-            <span className="text-[10px] font-mono text-slate-400">
-              {doc.Ubicacion_Fisica}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3 pl-2">
+        <div className="flex gap-1 flex-wrap">
+          {doc.Frecuencia_Consulta && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+              doc.Frecuencia_Consulta === 'Alta' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+              doc.Frecuencia_Consulta === 'Media' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+              'bg-slate-50 text-slate-600 border border-slate-200'
+            }`}>
+              {doc.Frecuencia_Consulta}
+            </span>
+          )}
+          {/* Tag visual en Card si falta tomo */}
+          {doc.Tomo_Faltante && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200" title="Tomo Reportado Faltante">
+               <AlertTriangle size={8} className="mr-1"/> Faltante
             </span>
           )}
         </div>
+        
+        {doc.Ubicacion_Fisica && (
+          <span className="text-[10px] font-mono text-slate-400 truncate max-w-[100px]" title={doc.Ubicacion_Fisica}>
+            {doc.Ubicacion_Fisica}
+          </span>
+        )}
       </div>
     </div>
   ), []);

@@ -174,9 +174,10 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
   // 5. Renderizado del Componente
   return (
     // RESPONSIVE: p-2 en móvil, p-4 en escritorio. Backdrop blur.
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-200">
-      {/* RESPONSIVE: max-h-[95vh] para móviles. Ancho completo. */}
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-200"
+          onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
+          onClick={(e) => e.stopPropagation()}>
         
         {/* --- Header --- */}
         <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
