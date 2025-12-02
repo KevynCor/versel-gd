@@ -202,7 +202,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
             <div className="bg-slate-50 px-4 sm:px-6 py-2 border-b border-slate-100 flex gap-4 sm:gap-6 text-xs font-medium text-slate-600 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-hide">
                 {doc?.id && <div className="flex items-center gap-1"><Hash size={12} className="text-blue-500"/> ID: <span className="text-slate-900">{doc.id}</span></div>}
                 {formData.Numero_Caja && <div className="flex items-center gap-1"><Box size={12} className="text-blue-500"/> Caja: <span className="text-slate-900">{formData.Numero_Caja}</span></div>}
-                {formData.Tomo_Faltante && <div className="flex items-center gap-1 text-orange-600"><HelpCircle size={12}/> Tomo Faltante</div>}
+                {formData.Tomo_Faltante && <div className="flex items-center gap-1 text-red-600"><HelpCircle size={12}/> Tomo Faltante</div>}
             </div>
         )}
 
@@ -250,18 +250,18 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                 </div>
 
                 {/* 4. Características */}
-                <div className={`p-3 sm:p-4 rounded-xl border transition-all duration-300 ${formData.Tomo_Faltante ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`p-3 sm:p-4 rounded-xl border transition-all duration-300 ${formData.Tomo_Faltante ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-100 pb-2 gap-2">
                         <div className="flex items-center gap-2">
-                            <Archive size={16} className={formData.Tomo_Faltante ? "text-orange-500" : "text-slate-500"}/>
-                            <h3 className={`text-sm font-bold uppercase tracking-wide ${formData.Tomo_Faltante ? "text-orange-700" : "text-slate-700"}`}>
+                            <Archive size={16} className={formData.Tomo_Faltante ? "text-red-500" : "text-slate-500"}/>
+                            <h3 className={`text-sm font-bold uppercase tracking-wide ${formData.Tomo_Faltante ? "text-red-700" : "text-slate-700"}`}>
                                 Características
                             </h3>
                         </div>
                         
                         <label className={`flex items-center gap-2 ${readOnly ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} select-none`}>
-                            <span className={`text-xs font-bold uppercase ${formData.Tomo_Faltante ? 'text-orange-600' : 'text-slate-400'}`}>
-                                {formData.Tomo_Faltante ? "¿No Ubicada?" : "¿Unidad No Ubicada?"}
+                            <span className={`text-xs font-bold uppercase ${formData.Tomo_Faltante ? 'text-red-600' : 'text-slate-400'}`}>
+                                {formData.Tomo_Faltante ? "¿Unidad Ubicada?" : "¿Unidad No Ubicada?"}
                             </span>
                             <div className="relative">
                                 <input 
@@ -271,7 +271,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                                     disabled={readOnly}
                                     onChange={(e) => handleChange("Tomo_Faltante", e.target.checked)}
                                 />
-                                <div className={`w-9 h-5 rounded-full peer peer-focus:ring-2 peer-focus:ring-offset-1 transition-colors ${formData.Tomo_Faltante ? 'bg-orange-500 peer-focus:ring-orange-300' : 'bg-slate-200 hover:bg-slate-300'}`}></div>
+                                <div className={`w-9 h-5 rounded-full peer peer-focus:ring-2 peer-focus:ring-offset-1 transition-colors ${formData.Tomo_Faltante ? 'bg-red-500 peer-focus:ring-red-300' : 'bg-slate-200 hover:bg-slate-300'}`}></div>
                                 <div className={`absolute top-1 left-1 bg-white border border-gray-300 w-3 h-3 rounded-full transition-transform ${formData.Tomo_Faltante ? 'translate-x-full border-white' : ''}`}></div>
                             </div>
                         </label>
@@ -287,7 +287,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                         </div>
 
                         {formData.Tomo_Faltante && (
-                             <div className="flex gap-2 text-xs text-orange-700 bg-orange-100/50 p-2 rounded border border-orange-100">
+                             <div className="flex gap-2 text-xs text-red-700 bg-red-100/50 p-2 rounded border border-red-100">
                                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                                  <span className="font-medium">Atención: Documento marcado como no localizado.</span>
                              </div>
@@ -393,7 +393,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                     className="w-full sm:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-                {saving ? "Guardando..." : "Guardar Expediente"}
+                {saving ? "Guardando..." : "Guardar"}
                 </button>
             )}
           </div>

@@ -18,7 +18,7 @@ import { ViewToggle } from "../../components/layout/ViewToggle";
 import { 
   BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, 
   BarChart3, CheckCircle, Download, Upload, RefreshCw, 
-  Plus, Box, Info, Activity, TrendingUp, Eye, Edit, Search 
+  Plus, Box, Info, Activity, TrendingUp, Eye, Edit
 } from "lucide-react";
 // Componentes Internos Refactorizados
 import { ModalDetalleDocumento } from "../../components/form/ModalDetalleDocumento";
@@ -52,6 +52,15 @@ export default function InventarioDocumental() {
     analistas: [], contratistas: [], ambientes: []
   });
 
+  const [stats, setStats] = useState({
+    total: 0, activos: 0, altaConsulta: 0, conCaja: 0,
+    digitalizados: 0, series: 0, areas: 0,
+    mediaConsulta: 0, bajaConsulta: 0, folios: 0,
+    cajasporunidad: 0, tomosfaltantes: 0, rangoFechas: {},
+    totalEmpastado: 0, totalArchivadores: 0, totalOtrosTipos: 0
+  });
+
+  const [yearsData, setYearsData] = useState([]);
 
   // Función para mostrar mensajes
   const showMessage = (mensaje, tipo) => 
@@ -92,6 +101,43 @@ export default function InventarioDocumental() {
       const { data: statsResult, error } = await supabase.rpc('get_inventario_stats', cleanedParams);
       
       if (error) throw error;
+
+      const statsData = statsResult?.[0] || {};
+
+      if (statsData) {
+        setStats({
+            total: Number(statsData.total_documentos) || 0,
+            conCaja: Number(statsData.con_caja) || 0,
+            altaConsulta: Number(statsData.alta_consulta) || 0,
+            mediaConsulta: Number(statsData.media_consulta) || 0,
+            bajaConsulta: Number(statsData.baja_consulta) || 0,
+            series: Number(statsData.series_documentales) || 0,
+            areas: Number(statsData.areas_responsables) || 0,
+            folios: Number(statsData.total_folios) || 0,
+            cajasporunidad: Number(statsData.cajas_por_unidad) || 0,
+            tomosfaltantes: Number(statsData.con_tomo_faltante) || 0,
+            digitalizados: 0,
+            rangoFechas: statsData.rango_fechas || {},
+            totalEmpastado: Number(statsData.total_empastado) || 0,
+            totalArchivadores: Number(statsData.total_archivadores) || 0,
+            totalOtrosTipos: Number(statsData.total_otros_tipos) || 0
+        });
+
+        const volumenAnual = statsData.volumen_por_anio || [];
+        if (volumenAnual.length > 0) {
+            const currentYear = new Date().getFullYear();
+            const cutoffYear = currentYear - 9; 
+            const formattedYears = volumenAnual
+            .filter(item => Number(item.anio) >= cutoffYear)
+            .map(item => ({
+                label: item.anio || 'S/F',
+                value: Number(item.cantidad)
+            }));
+            setYearsData(formattedYears);
+        } else {
+            setYearsData([]);
+        }
+      }
       
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -446,6 +492,12 @@ export default function InventarioDocumental() {
       render: (doc) => (         
         <div className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block">
           {doc.id || 'S/C'}
+          {/* Indicador visual de Tomo Faltante si aplica */}
+          {doc.Tomo_Faltante && (
+             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200">
+               <AlertTriangle size={10} /> FALTANTE
+             </span>
+          )}
         </div>
       ) 
     },
@@ -462,7 +514,6 @@ export default function InventarioDocumental() {
               {doc.Serie_Documental && <span className="font-medium uppercase text-slate-400">{doc.Serie_Documental}</span>}
               {doc.Observaciones && (
                 <div className="flex items-start gap-1 text-amber-600 bg-amber-50 p-1 rounded">
-                   <Info size={10} className="mt-0.5" />
                    <span className="line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{doc.Observaciones}</span>
                 </div>
               )}
@@ -524,7 +575,7 @@ export default function InventarioDocumental() {
       render: (doc) => (
         <div className="flex flex-col gap-1 items-start">
           {doc.Tipo_Unidad_Conservacion && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border whitespace-nowrap ${
               doc.Tipo_Unidad_Conservacion === 'SIN UNIDAD' ? 'bg-red-50 text-red-700 border-red-100' :
               doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-blue-50 text-blue-700 border-blue-100' :
               doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
@@ -533,13 +584,7 @@ export default function InventarioDocumental() {
             }`}>
               {doc.Tipo_Unidad_Conservacion}
             </span>
-          )}
-          {/* Indicador visual de Tomo Faltante si aplica */}
-          {doc.Tomo_Faltante && (
-             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200">
-               <AlertTriangle size={10} /> FALTANTE
-             </span>
-          )}
+          )}          
           {(doc.Numero_Tomo || doc.Numero_Folios) && (
             <span className="text-[10px] text-slate-400">
               {doc.Numero_Tomo && `T: ${doc.Numero_Tomo}`}
@@ -651,9 +696,9 @@ export default function InventarioDocumental() {
   return (
     <>
       <CrudLayout 
-        title="Busqueda Documental" 
-        icon={Search}
-        description="Busqueda del Patrimonio Documental"
+        title="Busqueda General" 
+        icon={BookOpen}
+        description="Busqueda en el Patrimonio Documental"
       >
         {/* Toast de notificaciones */}
         {state.mensaje && (
@@ -746,7 +791,7 @@ export default function InventarioDocumental() {
 
           {/* Paginación */}
           {data.documentos.length > 0 && (
-            <div className="mt-6">
+            <div>
               <Pagination
                 page={state.page}
                 total={state.total}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, ArrowUpDown, Eye, Edit, Trash2, FileText, AlertTriangle } from "lucide-react";
+import { ChevronUp, ChevronDown, ArrowUpDown, FileText, AlertTriangle } from "lucide-react";
 
 export const DataTable = ({ 
   columns, 
@@ -13,23 +13,46 @@ export const DataTable = ({
 
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return data;
+
+    // Buscamos la definición de la columna activa para ver si tiene un sortValue personalizado
+    const currentColumn = columns.find(col => col.key === sortConfig.key);
+
     const sorted = [...data].sort((a, b) => {
-      const valA = a[sortConfig.key];
-      const valB = b[sortConfig.key];
+      // 1. OBTENCIÓN DEL VALOR
+      // Si la columna tiene 'sortValue', usamos esa función. Si no, usamos la key directa.
+      let valA, valB;
 
-      if (valA == null) return 1;
-      if (valB == null) return -1;
+      if (currentColumn && typeof currentColumn.sortValue === "function") {
+        valA = currentColumn.sortValue(a);
+        valB = currentColumn.sortValue(b);
+      } else {
+        valA = a[sortConfig.key];
+        valB = b[sortConfig.key];
+      }
 
+      // 2. NORMALIZACIÓN (evitar crashes con nulos)
+      if (valA === null || valA === undefined) valA = '';
+      if (valB === null || valB === undefined) valB = '';
+
+      // 3. COMPARACIÓN NUMÉRICA
       if (typeof valA === "number" && typeof valB === "number") {
         return sortConfig.direction === "asc" ? valA - valB : valB - valA;
       }
 
-      return sortConfig.direction === "asc"
-        ? String(valA).localeCompare(String(valB))
-        : String(valB).localeCompare(String(valA));
+      // 4. COMPARACIÓN DE TEXTO (Natural Sort)
+      const strA = String(valA).trim();
+      const strB = String(valB).trim();
+
+      const comparison = strA.localeCompare(strB, 'es', { 
+        numeric: true, 
+        sensitivity: 'base' 
+      });
+
+      return sortConfig.direction === "asc" ? comparison : -comparison;
     });
+
     return sorted;
-  }, [data, sortConfig]);
+  }, [data, sortConfig, columns]); // Agregamos 'columns' a las dependencias
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -49,7 +72,6 @@ export const DataTable = ({
       : <ChevronDown size={14} className="text-blue-600 font-bold" />;
   };
 
-  // Función para verificar si hay tomo faltante - CONSERVADA EXACTAMENTE
   const hasMissingTomo = (row) => {
     const tomoFaltante = row.Tomo_Faltante;
     return tomoFaltante && 
@@ -85,6 +107,7 @@ export const DataTable = ({
                     ${col.sortable !== false ? 'cursor-pointer hover:bg-slate-100 transition-colors' : ''}
                     ${col.className || ''}
                   `}
+                  style={col.width ? { width: col.width } : {}}
                 >
                   {col.sortable !== false ? (
                     <button
@@ -106,32 +129,27 @@ export const DataTable = ({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {sortedData.map((row, i) => (
               <tr 
                 key={i} 
-                className={`
-                  transition-colors duration-150 ease-in-out
+                className={`transition-colors duration-150 ease-in-out
                   ${hasMissingTomo(row) 
                     ? 'bg-red-50/50 hover:bg-red-50 border-l-4 border-l-red-500' 
-                    : 'hover:bg-slate-50 border-l-4 border-l-transparent hover:border-l-blue-500'
+                    : 'hover:bg-slate-100 border-l-4 border-l-transparent hover:border-l-blue-500'
                   }
                 `}
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-slate-600">
                     <div className="flex items-center gap-2">
-                      {/* Icono de advertencia para tomo faltante */}
                       {hasMissingTomo(row) && col.key === columns[0].key && (
                         <AlertTriangle size={16} className="text-red-500 flex-shrink-0 animate-pulse" />
                       )}
                       <div className="flex-1">
                         {col.render ? col.render(row) : (
                           <span className={`
-                            ${hasMissingTomo(row) 
-                              ? 'text-red-700 font-semibold' 
-                              : 'text-slate-700'
-                            }
+                            ${hasMissingTomo(row) ? 'text-red-700 font-semibold' : 'text-slate-700'}
                           `}>
                             {row[col.key]}
                           </span>
@@ -167,7 +185,6 @@ export const DataTable = ({
             `}
           >
             <div className="p-4 space-y-4">
-              {/* Indicador de tomo faltante en mobile */}
               {hasMissingTomo(row) && (
                 <div className="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-2 rounded-md border border-red-100 mb-3">
                   <AlertTriangle size={16} />
@@ -176,7 +193,6 @@ export const DataTable = ({
               )}
 
               <div className="space-y-4">
-                {/* Primeras 3 columnas (Información Principal) */}
                 {columns.slice(0, 3).map((col) => (
                   <div key={col.key} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
                     <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">{col.label}</p>
@@ -186,7 +202,6 @@ export const DataTable = ({
                   </div>
                 ))}
                 
-                {/* Columnas restantes en Grid de 2 columnas */}
                 <div className="grid grid-cols-2 gap-4 pt-2 bg-slate-50/50 p-3 rounded-lg -mx-2">
                   {columns.slice(3).map((col) => (
                     <div key={col.key}>
@@ -210,7 +225,6 @@ export const DataTable = ({
         ))}
       </div>
 
-      {/* Empty State */}
       {sortedData.length === 0 && !loading && (
         <div className="p-16 text-center bg-white">
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
@@ -223,45 +237,5 @@ export const DataTable = ({
         </div>
       )}
     </div>
-  );
-};
-
-// Componente de botón para acciones actualizado al estilo Corporativo
-export const TableActionButton = ({ 
-  variant = "ghost", 
-  size = "icon", 
-  onClick, 
-  title, 
-  children,
-  className = "",
-  ...props 
-}) => {
-  const baseClasses = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:pointer-events-none";
-  
-  const variantClasses = {
-    ghost: "text-slate-500 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-100",
-    destructive: "text-red-500 hover:bg-red-50 hover:text-red-700 border border-transparent hover:border-red-100",
-    primary: "bg-blue-700 text-white hover:bg-blue-800 shadow-sm" // Variante adicional útil
-  };
-
-  const sizeClasses = {
-    icon: "h-8 w-8",
-    sm: "h-8 px-3 text-xs"
-  };
-
-  return (
-    <button
-      className={`
-        ${baseClasses}
-        ${variantClasses[variant] || variantClasses.ghost}
-        ${sizeClasses[size] || sizeClasses.icon}
-        ${className}
-      `}
-      onClick={onClick}
-      title={title}
-      {...props}
-    >
-      {children}
-    </button>
   );
 };

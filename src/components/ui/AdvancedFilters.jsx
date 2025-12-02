@@ -25,9 +25,9 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
   ).length;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-3">
       {/* --- Header Filtros --- */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wide">
           <Filter className="w-4 h-4 text-blue-600" />
           Filtros Avanzados
@@ -46,7 +46,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
       </div>
 
       {/* --- Grid de Filtros Principales (Siempre visibles) --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         
         {/* 1. Búsqueda general + QR */}
         <div className="col-span-1 md:col-span-2 xl:col-span-1">
@@ -204,12 +204,12 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
             <label className={`
                 flex items-center justify-between w-full p-2 border rounded-lg cursor-pointer transition-all duration-200 select-none
                 ${filters.tomoFaltante 
-                  ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-200' 
+                  ? 'bg-red-50 border-red-200 ring-1 ring-red-200' 
                   : 'bg-white border-slate-300 hover:bg-slate-50'
                 }
                 ${loading ? 'opacity-50 cursor-not-allowed' : ''}
             `}>
-              <span className={`text-sm font-semibold ${filters.tomoFaltante ? 'text-orange-700' : 'text-slate-500'}`}>
+              <span className={`text-sm font-semibold ${filters.tomoFaltante ? 'text-red-700' : 'text-slate-500'}`}>
                 {filters.tomoFaltante ? "Solo Faltantes" : "Todos"}
               </span>
 
@@ -221,7 +221,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
                   onChange={(e) => updateFilter('tomoFaltante', e.target.checked)}
                   disabled={loading}
                 />
-                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500"></div>
               </div>
             </label>
           </div>
@@ -357,7 +357,7 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
       </div>
 
       {/* --- Footer Acciones --- */}
-      <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
         <button
           onClick={clearFilters}
           disabled={activeFiltersCount === 0 || loading}

@@ -293,17 +293,15 @@ export default function HistorialTab({ solicitudes, onMensaje }) {
         else if (onMensaje) onMensaje("Sin documentos para imprimir", "warning");
     }, [fetchFullData, onMensaje]);
 
-    // Columnas DataTable (Simplificadas visualmente)
+    // Columnas DataTable
     const columns = useMemo(() => [
         {
-            label: "ID / Código",
+            label: "Código",
             key: "codigo",
+            sortValue: (sol) => sol.numero_solicitud || sol.id,
             render: (sol) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                        <Hash size={14} />
-                    </div>
-                    <span className="font-mono text-xs font-bold text-slate-700">
+                    <span className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block">
                         {sol.numero_solicitud || sol.id.substring(0,6)}
                     </span>
                 </div>
@@ -312,6 +310,7 @@ export default function HistorialTab({ solicitudes, onMensaje }) {
         {
             label: "Solicitante",
             key: "solicitante",
+            sortValue: (sol) => sol.nombre_solicitante,
             render: (sol) => (
                 <div className="min-w-[180px]">
                     <div className="font-bold text-slate-700 text-sm">{sol.nombre_solicitante}</div>
@@ -324,6 +323,7 @@ export default function HistorialTab({ solicitudes, onMensaje }) {
         {
             label: "Motivo / Fecha",
             key: "contexto",
+            sortValue: (sol) => sol.fecha_solicitud,
             render: (sol) => (
                 <div className="min-w-[200px]">
                     <div className="text-sm text-slate-600 line-clamp-1 mb-1" title={sol.motivo_solicitud}>
@@ -339,6 +339,7 @@ export default function HistorialTab({ solicitudes, onMensaje }) {
         {
             label: "Estado",
             key: "estado",
+            sortValue: (sol) => sol.estado,
             render: (sol) => (
                 <div className="w-32 flex justify-center">
                     <EstadoBadge estado={sol.estado} />

@@ -6,7 +6,6 @@ import { CrudLayout } from "../../components/layout/CrudLayout";
 import { Toast } from "../../components/ui/Toast";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
 import { StatCard } from "../../components/ui/StatCard";
-import { EmptyState } from "../../components/ui/EmptyState";
 
 // 2. Iconografía (Lucide React)
 import { 
@@ -214,7 +213,7 @@ export default function ServiciosArchivisticos() {
         )}
 
         {/* Dashboard de Métricas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
            <StatCard 
              title="Mis Solicitudes" 
              value={state.solicitudes.filter(s => s.solicitante_id === state.currentUser?.id).length} 
@@ -242,7 +241,7 @@ export default function ServiciosArchivisticos() {
         </div>
 
         {/* Navegación por Pestañas */}
-        <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-2 shadow-sm overflow-x-auto mb-0">
+        <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-4 pt-2 shadow-sm overflow-x-auto">
           {tabs.map(tab => (
             <button 
               key={tab.id} 

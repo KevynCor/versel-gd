@@ -290,7 +290,7 @@ const Navbar = ({ children, user, role, userName, error }) => {
             title="Cerrar Sesión"
           >
             <LogOut size={18} />
-            {isSidebarOpen && <span className="text-sm font-medium">Salir</span>}
+            {isSidebarOpen && <span className="text-sm font-medium">Cerrar Sesión</span>}
           </button>
         </div>
       </aside>

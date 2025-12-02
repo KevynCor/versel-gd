@@ -4,7 +4,7 @@ export const CrudLayout = ({ children, title, icon: Icon, description }) => (
   <div className="min-h-screen bg-slate-50">
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header Corporativo */}
-      <div className="bg-white border-b border-slate-200 mb-6 rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-white border-b border-slate-200 mb-3 rounded-xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-4 p-5">
           {/* Icono con sombra corporativa */}
           <div className="w-12 h-12 bg-blue-700 rounded-lg shadow-lg shadow-blue-900/20 flex items-center justify-center flex-shrink-0">
