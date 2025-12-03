@@ -221,9 +221,9 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
 
             {/* SECCIÓN 2: ACCIÓN PRINCIPAL (Derecha) */}
             <div className="w-full lg:w-2/3">
-                <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+                <div className="bg-white p-6 sm:p-5 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
                     
-                    <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                             <FileText className="text-blue-600" size={20}/> 
                             Nueva Solicitud
@@ -247,42 +247,67 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
                         </div>
 
                         {/* Configuración de Servicio */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide ml-1">Modalidad de Servicio</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                            {/* Modalidad de Servicio */}
+                            <div className="space-y-1.5 sm:order-1">
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide ml-1">
+                                Modalidad de Servicio
+                                </label>
+
                                 <div className="relative group">
-                                    <select 
-                                        className="w-full p-3 pl-10 border border-slate-300 rounded-xl text-sm bg-white appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer hover:border-blue-300 outline-none"
-                                        value={formData.modalidad_servicio}
-                                        onChange={(e) => handleInputChange("modalidad_servicio", e.target.value)}
-                                    >
-                                        {MODALIDADES.map(mod => (
-                                            <option key={mod.value} value={mod.value}>{mod.label}</option>
-                                        ))}
-                                    </select>
-                                    <Briefcase className="absolute left-3 top-3.5 text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
-                                    <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
+                                <select
+                                    className="w-full p-3 pl-10 border border-slate-300 rounded-xl text-sm bg-white
+                                            appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                                            transition-all cursor-pointer hover:border-blue-300 outline-none"
+                                    value={formData.modalidad_servicio}
+                                    onChange={(e) => handleInputChange("modalidad_servicio", e.target.value)}
+                                >
+                                    {MODALIDADES.map(mod => (
+                                    <option key={mod.value} value={mod.value}>{mod.label}</option>
+                                    ))}
+                                </select>
+
+                                <Briefcase
+                                    className="absolute left-3 top-3.5 text-slate-400 group-hover:text-blue-500 transition-colors"
+                                    size={16}
+                                />
+                                <ChevronDown
+                                    className="absolute right-3 top-3.5 text-slate-400 pointer-events-none"
+                                    size={16}
+                                />
                                 </div>
                             </div>
-
-                            {/* Campo Condicional con Animación */}
-                            <div className={`transition-all duration-300 ${formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' ? 'opacity-100 translate-y-0' : 'opacity-50 grayscale cursor-not-allowed'}`}>
-                                <InputField 
-                                    label="Fecha Devolución Estimada" 
-                                    icon={Calendar}
-                                    type="date" 
-                                    value={formData.fecha_devolucion_prevista}
-                                    onChange={(e) => handleInputChange("fecha_devolucion_prevista", e.target.value)}
-                                    min={today} 
-                                    disabled={formData.modalidad_servicio !== 'PRESTAMO_ORIGINAL'}
-                                    className={formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' ? "border-blue-200 bg-blue-50/30" : "bg-slate-100"}
+                            {/* Fecha de Devolución Estimada (campo condicional con transición mejorada) */}
+                            <div
+                                className={`
+                                transition-all duration-300 
+                                ${formData.modalidad_servicio === "PRESTAMO_ORIGINAL"
+                                    ? "opacity-100 translate-y-0"
+                                    : "opacity-50 grayscale cursor-not-allowed"
+                                }
+                                sm:order-2
+                                `}
+                            >
+                                <InputField
+                                label="Fecha Devolución Estimada"
+                                icon={Calendar}
+                                type="date"
+                                value={formData.fecha_devolucion_prevista}
+                                onChange={(e) => handleInputChange("fecha_devolucion_prevista", e.target.value)}
+                                min={today}
+                                disabled={formData.modalidad_servicio !== "PRESTAMO_ORIGINAL"}
+                                className={`${
+                                    formData.modalidad_servicio === "PRESTAMO_ORIGINAL"
+                                    ? "border-blue-200 bg-blue-50/30"
+                                    : "bg-slate-100"
+                                }`}
                                 />
                             </div>
                         </div>
 
                         {/* Alerta Contextual (Aparece solo si es necesario) */}
                         {formData.modalidad_servicio === 'PRESTAMO_ORIGINAL' && (
-                            <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex items-start gap-3 p-2 bg-amber-50 rounded-lg border border-amber-100 animate-in fade-in slide-in-from-bottom-2">
                                 <Info className="text-amber-600 mt-0.5 shrink-0" size={16} />
                                 <div className="text-xs text-amber-800">
                                     <span className="font-bold">Política de Préstamos:</span> El plazo máximo para originales es de 5 días habiles. La no devolución a tiempo generará una alerta a su jefatura inmediata.
@@ -292,7 +317,7 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
                     </div>
 
                     {/* Footer de Acciones */}
-                    <div className="pt-6 mt-8 border-t border-slate-100 flex justify-end">
+                    <div className="pt-3 border-t border-slate-100 flex justify-end">
                         <button 
                             onClick={handleSubmit}
                             className="px-8 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg shadow-blue-700/20 transition-all flex items-center gap-2 transform active:scale-95 hover:-translate-y-0.5"

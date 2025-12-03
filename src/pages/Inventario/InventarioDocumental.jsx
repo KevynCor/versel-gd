@@ -506,7 +506,7 @@ export default function InventarioDocumental() {
     { 
       label: "Descripción del Documento", 
       key: "descripcion",
-      // Sort por el campo real 'Descripcion'
+
       sortValue: (doc) => doc.Descripcion,
       render: (doc) => (
         <div className="group">
