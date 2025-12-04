@@ -7,9 +7,12 @@ import { Toast } from "../../components/ui/Toast";
 import { StatCard } from "../../components/ui/StatCard";
 import { DataTable } from "../../components/data/DataTable";
 import { Pagination } from "../../components/data/Pagination";
+// Asumiendo que estos existen en tu proyecto basándonos en GestionUsuarios
+import { SearchBar } from "../../components/controls/SearchBar";
+import { SparkleLoader } from "../../components/ui/SparkleLoader";
 
 // --- 2. MODULES & ICONS ---
-import { EstadoBadge} from "./components/Shared";
+import { EstadoBadge } from "./components/Shared";
 import CargoPrestamoPDF from './components/CargoPrestamoPDF';
 import NuevaSolicitud from "./components/ModalNuevaSolicitud";
 import ModalDetalleSolicitud from "./components/ModalDetalleSolicitud";
@@ -17,10 +20,13 @@ import ModalAtenderSolicitud from "./components/ModalAtenderSolicitud";
 import ModalRechazarSolicitud from "./components/ModalRechazarSolicitud";
 import ModalDevolucionSolicitud from "./components/ModalDevolucionSolicitud";
 
-import { FileText, Plus, Clock, AlertTriangle, FileCheck, ClipboardCheck, X, Search, Filter, RefreshCw, Eye, Printer, ChevronDown, Check, Ban, RotateCcw
+import { 
+  FileText, Plus, Clock, AlertTriangle, FileCheck, ClipboardCheck, X, 
+  Filter, RefreshCw, Eye, Printer, ChevronDown, Check, Ban, RotateCcw,
+  User, Building
 } from "lucide-react";
 
-// Modal Genérico Wrapper
+// Modal Genérico Wrapper (Mantenido localmente)
 const ModalWrapper = ({ isOpen, onClose, title, icon: Icon, children, size = "xl" }) => {
   if (!isOpen) return null;
   const sizes = { md: "max-w-2xl", lg: "max-w-4xl", xl: "max-w-6xl" };
@@ -80,11 +86,12 @@ export default function ServiciosArchivisticos() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
-      const [userData, requestsData] = await Promise.all([
-        supabase.from("usuarios").select("*").eq("email", user.email).single(),
-        supabase.from("solicitudes_archivisticas")
-          .select(`*, solicitante:solicitante_id(nombre_completo, sub_gerencia)`)
-          .order("fecha_solicitud", { ascending: false })
+      const [userData, requestsData, allUsers] = await Promise.all([
+          supabase.from("usuarios").select("*").eq("email", user.email).single(),
+          supabase.from("solicitudes_archivisticas")
+              .select(`*, solicitante:solicitante_id(nombre_completo, sub_gerencia)`)
+              .order("fecha_solicitud", { ascending: false }),
+          supabase.from("usuarios").select("*")
       ]);
 
       if (userData.error) throw userData.error;
@@ -94,7 +101,8 @@ export default function ServiciosArchivisticos() {
         loading: false,
         refreshing: false,
         currentUser: userData.data,
-        solicitudes: requestsData.data || []
+        solicitudes: requestsData.data || [],
+        usuarios: allUsers.data || []
       }));
 
     } catch (error) {
@@ -126,7 +134,35 @@ export default function ServiciosArchivisticos() {
 
   // --- ACTIONS ---
   const showMessage = (msg, tipo) => setState(s => ({ ...s, mensaje: { mensaje: msg, tipo } }));
-  const handleReload = () => loadData(true);
+  const handleReload = async () => {
+    try {
+      setState(s => ({ ...s, refreshing: true }));
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      const [userData, requestsData] = await Promise.all([
+        supabase.from("usuarios").select("*").eq("email", user.email).single(),
+        supabase.from("solicitudes_archivisticas")
+          .select(`*, solicitante:solicitante_id(nombre_completo, sub_gerencia)`)
+          .order("fecha_solicitud", { ascending: false })
+      ]);
+
+      if (userData.error) throw userData.error;
+
+      setState(s => ({
+        ...s,
+        refreshing: false,
+        currentUser: userData.data,
+        usuarios: userData.data ? s.usuarios || [] : [],
+        solicitudes: requestsData.data || []
+      }));
+
+    } catch (error) {
+      console.error(error);
+      setState(s => ({ ...s, refreshing: false, mensaje: { mensaje: "Error cargando datos", tipo: "error" } }));
+    }
+  };
   
   // Handler Genérico para abrir acciones
   const handleAction = async (actionType, solicitud) => {
@@ -178,17 +214,33 @@ export default function ServiciosArchivisticos() {
     return ["TODOS", ...Array.from(statuses)];
   }, [state.solicitudes]);
 
+  const crearSolicitud = async (formData) => {
+    try {
+      const { data, error } = await supabase
+        .from('solicitudes_archivisticas')
+        .insert([formData]);
+
+      if (error) throw error;
+      showMessage("Solicitud registrada correctamente", "success");
+      await handleReload();
+      setState(s => ({ ...s, modalOpen: null }));
+
+    } catch (err) {
+      console.error(err);
+      showMessage("Error registrando la solicitud", "error");
+    }
+  };
+
   // AJUSTE: Métricas basadas en la lista filtrada por rol (baseList)
   const metrics = useMemo(() => {
     const list = state.solicitudes;
-    // Si es Admin, ve todo. Si es Usuario, solo lo suyo.
     const baseList = permissions.canManage ? list : list.filter(s => s.solicitante_id === state.currentUser?.id);
     
     return {
       total: baseList.length,
       pendientes: baseList.filter(s => s.estado === 'PENDIENTE').length,
-      activos: baseList.filter(s => ['PRESTADO', 'EN_PROCESO'].includes(s.estado)).length,
-      vencidos: baseList.filter(s => s.estado === 'PRESTADO' && new Date(s.fecha_devolucion_prevista) < new Date()).length
+      activos: baseList.filter(s => ['EN_PRESTAMO', 'EN_PROCESO'].includes(s.estado)).length,
+      vencidos: baseList.filter(s => s.estado === 'EN_PRESTAMO' && new Date(s.fecha_devolucion_prevista) < new Date()).length
     };
   }, [state.solicitudes, permissions.canManage, state.currentUser]);
 
@@ -197,7 +249,7 @@ export default function ServiciosArchivisticos() {
     {
         label: "Código", key: "codigo", sortValue: (sol) => sol.numero_solicitud,
         render: (sol) => (
-            <span className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block w-fit">
+            <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md inline-block border border-slate-200">
                 {sol.numero_solicitud || sol.codigo_solicitud || 'S/N'}
             </span>
         )
@@ -205,9 +257,17 @@ export default function ServiciosArchivisticos() {
     {
         label: "Solicitante", key: "solicitante", sortValue: (sol) => sol.nombre_solicitante,
         render: (sol) => (
-            <div className="min-w-[180px]">
-                <div className="font-bold text-slate-700 text-sm">{sol.nombre_solicitante}</div>
-                <div className="text-xs text-slate-400 mt-0.5 truncate max-w-[180px]">{sol.sub_gerencia}</div>
+            <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-200 shrink-0">
+                    <User size={16} />
+                </div>
+                <div className="min-w-[150px]">
+                    <div className="font-bold text-slate-700 text-sm line-clamp-1">{sol.nombre_solicitante}</div>
+                    <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                        <Building size={10} />
+                        <span className="truncate max-w-[180px]">{sol.sub_gerencia || 'N/A'}</span>
+                    </div>
+                </div>
             </div>
         )
     },
@@ -215,16 +275,19 @@ export default function ServiciosArchivisticos() {
         label: "Motivo / Fecha", key: "contexto", sortValue: (sol) => sol.fecha_solicitud,
         render: (sol) => (
             <div className="min-w-[200px]">
-                <div className="text-sm text-slate-600 line-clamp-1 mb-1" title={sol.motivo_solicitud}>{sol.motivo_solicitud}</div>
+                <div className="text-sm text-slate-700 font-medium line-clamp-1 mb-1" title={sol.motivo_solicitud}>{sol.motivo_solicitud}</div>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Clock size={12} /> {new Date(sol.fecha_solicitud).toLocaleDateString()}
+                    <Clock size={12} /> 
+                    {new Date(sol.fecha_solicitud).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                    <span className="text-slate-300">|</span>
+                    <span>{new Date(sol.fecha_solicitud).toLocaleTimeString(undefined, { hour: '2-digit', minute:'2-digit' })}</span>
                 </div>
             </div>
         )
     },
     {
         label: "Estado", key: "estado", sortValue: (sol) => sol.estado,
-        render: (sol) => (<div className="w-32 flex justify-center"><EstadoBadge estado={sol.estado} /></div>)
+        render: (sol) => (<div className="w-32 flex justify-start"><EstadoBadge estado={sol.estado} /></div>)
     }
   ], []);
 
@@ -245,7 +308,7 @@ export default function ServiciosArchivisticos() {
         )}
 
         {/* CASO 2: PRÉSTAMO ACTIVO (Solo Admin puede devolver) */}
-        {(sol.estado === 'PRESTADO' || sol.estado === 'EN_PROCESO') && permissions.canManage && (
+        {(sol.estado === 'EN_PRESTAMO' || sol.estado === 'EN_PROCESO') && permissions.canManage && (
             <button onClick={() => handleAction('RETURN', sol)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Registrar Devolución">
                 <RotateCcw size={18} />
             </button>
@@ -271,15 +334,15 @@ export default function ServiciosArchivisticos() {
       {state.mensaje && <Toast {...state.mensaje} onClose={() => setState(s => ({ ...s, mensaje: null }))} />}
       {printData && <CargoPrestamoPDF isReady={true} solicitud={printData.solicitud} documentos={printData.documentos} onAfterPrint={() => setPrintData(null)} />}
 
-      {/* MÉTRICAS (Datos filtrados por rol automáticamente en useMemo) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+      {/* MÉTRICAS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard title={permissions.canManage ? "Total Solicitudes" : "Mis Solicitudes"} value={metrics.total} icon={FileText} color="blue" />
         <StatCard 
             title="Por Atender" 
             value={metrics.pendientes} 
             icon={Clock} 
             color="amber" 
-            onClick={permissions.canManage ? () => setState(s => ({...s, modalOpen: 'PENDING_LIST'})) : undefined} 
+            onClick={permissions.canManage ? () => { setState(s => ({...s, modalOpen: 'PENDING_LIST'})); setStatusFilter('PENDIENTE'); } : undefined} 
             className={permissions.canManage ? "cursor-pointer hover:ring-2 ring-amber-100 transition-all" : ""} 
         />
         <StatCard 
@@ -287,62 +350,89 @@ export default function ServiciosArchivisticos() {
             value={metrics.activos} 
             icon={FileCheck} 
             color="emerald" 
-            onClick={permissions.canManage ? () => setState(s => ({...s, modalOpen: 'LOANS_LIST'})) : undefined} 
+            onClick={permissions.canManage ? () => { setState(s => ({...s, modalOpen: 'LOANS_LIST'})); setStatusFilter('EN_PRESTAMO'); } : undefined} 
             className={permissions.canManage ? "cursor-pointer hover:ring-2 ring-emerald-100 transition-all" : ""} 
         />
         <StatCard title="Vencidos" value={metrics.vencidos} icon={AlertTriangle} color="red" />
       </div>
 
-      {/* DASHBOARD CONTENT */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-        
-        {/* TOOLBAR */}
-        <div className="p-5 border-b border-slate-100 bg-white flex flex-col lg:flex-row gap-4 justify-between items-center">
-          {/* Filters */}
-          <div className="flex items-center gap-3 w-full lg:w-auto flex-1">
-            <div className="relative w-full lg:w-96 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
-              <input type="text" placeholder="Buscar por código, solicitante o motivo..." className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      {/* BARRA DE HERRAMIENTAS (Búsqueda y Filtros) */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="w-full sm:flex-1 flex flex-col sm:flex-row gap-3">
+            <div className="w-full sm:max-w-md relative">
+                <SearchBar 
+                    value={searchTerm} 
+                    onChange={setSearchTerm} 
+                    placeholder="Buscar por código, solicitante o motivo..." 
+                />
             </div>
-            <div className="relative sm:w-48 hidden sm:block">
-                <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select className="w-full pl-9 pr-8 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            
+            <div className="relative w-full sm:w-56">
+                <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <select 
+                    className="w-full pl-9 pr-8 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors text-slate-600 font-medium" 
+                    value={statusFilter} 
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
                     {uniqueStatuses.map(s => (<option key={s} value={s}>{s === "TODOS" ? "Todos los estados" : s.replace('_', ' ')}</option>))}
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
             </div>
-          </div>
+        </div>
 
-          {/* Actions (Globales) */}
-          <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-            <button onClick={handleReload} disabled={state.refreshing} className={`p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all ${state.refreshing ? 'animate-spin' : ''}`} title="Actualizar datos"><RefreshCw size={18} /></button>
-            <button onClick={() => setState(s => ({...s, modalOpen: 'NEW'}))} className="flex items-center gap-2 px-5 py-2.5 bg-blue-700 text-white hover:bg-blue-800 rounded-lg shadow-md hover:shadow-lg transition-all text-sm font-bold transform active:scale-95">
-              <Plus size={18} /> <span className="hidden sm:inline">Nueva Solicitud</span>
+        <div className="flex gap-2 w-full sm:w-auto">
+            <button 
+                onClick={handleReload} 
+                disabled={state.refreshing} 
+                className={`px-3 py-2.5 border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors`} 
+                title="Actualizar datos"
+            >
+                <RefreshCw size={18} className={state.refreshing ? 'animate-spin' : ''} />
             </button>
-          </div>
+            <button 
+                onClick={() => setState(s => ({...s, modalOpen: 'NEW'}))} 
+                className="flex-1 sm:flex-none px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95"
+            >
+                <Plus size={18} /> <span className="hidden sm:inline">Nueva Solicitud</span>
+                <span className="sm:hidden">Nueva</span>
+            </button>
         </div>
+      </div>
 
-        {/* INFO BAR & TABLE */}
-        <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500">
-          <span className="font-medium">Mostrando <strong className="text-slate-800">{filteredSolicitudes.length}</strong> registros</span>
-          <span>Última actualización: {new Date().toLocaleTimeString()}</span>
-        </div>
-        <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="overflow-x-auto flex-1 w-full">
+      {/* TABLA DE DATOS */}
+      {state.loading ? (
+        <SparkleLoader />
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[400px]">
+             {/* Header Informativo */}
+             <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                <span className="font-medium">Mostrando <strong className="text-slate-800">{filteredSolicitudes.length}</strong> registros</span>
+                <span>Actualizado: {new Date().toLocaleTimeString()}</span>
+             </div>
+
+            <div className="flex-1 overflow-x-auto">
                  <DataTable 
                     columns={columns} 
                     data={currentItems} 
                     renderActions={renderActions} 
-                    emptyMessage={state.solicitudes.length === 0 ? "El historial está vacío." : "No se encontraron coincidencias."} 
+                    emptyMessage={state.solicitudes.length === 0 ? "El historial está vacío." : "No se encontraron coincidencias con tu búsqueda."} 
                  />
             </div>
+            
+            {/* Paginación en Footer */}
             {filteredSolicitudes.length > 0 && (
-                <div className="border-t border-slate-100 bg-white p-2">
-                    <Pagination page={page} total={filteredSolicitudes.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(0); }} />
+                <div className="p-4 border-t border-slate-200 bg-slate-50">
+                    <Pagination 
+                        page={page} 
+                        total={filteredSolicitudes.length} 
+                        pageSize={pageSize} 
+                        onPageChange={setPage} 
+                        onPageSizeChange={(s) => { setPageSize(s); setPage(0); }} 
+                    />
                 </div>
             )}
         </div>
-      </div>
+      )}
 
       {/* ========================================== */}
       {/* GESTIÓN DE MODALES                         */}
@@ -350,10 +440,17 @@ export default function ServiciosArchivisticos() {
 
       {/* 1. Modal Creación */}
       <ModalWrapper isOpen={state.modalOpen === 'NEW'} onClose={() => setState(s => ({ ...s, modalOpen: null }))} title="Registrar Nueva Solicitud" icon={Plus}>
-        <div className="p-6"><NuevaSolicitud currentUser={state.currentUser} onGuardar={() => { setState(s => ({ ...s, modalOpen: null })); handleReload(); }} onMensaje={showMessage} /></div>
+        <div className="p-6">
+          <NuevaSolicitud 
+            currentUser={state.currentUser}
+            usuarios={state.usuarios}
+            onGuardar={crearSolicitud}
+            onMensaje={showMessage}
+          />
+        </div>
       </ModalWrapper>
 
-      {/* 3. Modales de Acción Específica (Desde Tabla) */}
+      {/* 2. Modales de Acción Específica (Desde Tabla) */}
       
       {/* Ver Detalle */}
       <ModalDetalleSolicitud 

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, Mail, Phone, Building, Key, AlertTriangle, Save, Loader2 
 } from 'lucide-react';
-import { supabase } from '../../../utils/supabaseClient';
+import { supabase } from '../../../utils/supabaseClient.js';
 
 // Importaciones de UI
-import { ModalGenerico } from '../../../components/form/ModalGenerico';
+import { ModalGenerico } from '../../../components/form/ModalGenerico.jsx';
 import { InputField } from '../../../components/ui/InputField.jsx';
 import { SelectInput } from '../../../components/ui/SelectInput.jsx';
 import { ToggleSwitch } from '../../../components/ui/ToggleSwitch.jsx';

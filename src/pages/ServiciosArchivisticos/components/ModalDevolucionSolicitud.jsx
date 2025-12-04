@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from "../../../utils/supabaseClient"; 
 import { 
     X, Check, Loader2, Box, CheckCircle, AlertCircle, 
-    Archive, FileText, MapPin, Hash 
+    Archive, FileText, MapPin, Hash, Book 
 } from "lucide-react";
 import { DigitalSignature } from "../../../components/ui/DigitalSignature";
 import { TextareaField } from "../../../components/ui/TextareaField";
@@ -52,7 +52,10 @@ const ItemsReturnPanel = ({ docsDevolucion, setDocsDevolucion, toggleAll, loadin
                                     <p className={`font-bold text-xs line-clamp-2 mb-1 ${!isActionable ? 'text-slate-500 line-through' : 'text-slate-700'}`}>{doc.idoc?.Descripcion || "Sin descripción"}</p>
                                     <div className="flex flex-wrap gap-x-3 text-[10px] text-slate-500 font-mono">
                                         <span className="flex items-center gap-1"><Hash size={10}/> ID: {doc.documento_id}</span>
-                                        <span className="flex items-center gap-1"><MapPin size={10}/> Amb: {doc.idoc?.Ambiente || '-'}</span>
+                                        <span className="flex items-center gap-1"><Box size={12}/>Caja: {doc.caja}</span>
+                                        <span className="flex items-center gap-1"><Book size={12}/>Tomo: {doc.numero_tomo}</span>
+                                        <span className="flex items-center gap-1"><FileText size={12}/>Folios: {doc.numero_folios}</span>
+                                        <span className="flex items-center gap-1"><MapPin size={12}/>{doc.ubicacion_topografica  || '-'}</span>
                                     </div>
                                     {doc.ya_devuelto && <span className="absolute top-2 right-2 text-[9px] font-bold bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">Devuelto</span>}
                                 </div>
@@ -78,7 +81,7 @@ const DevolucionConfigPanel = ({ firmaReceptor, setFirmaReceptor, obsGeneral, se
 
     return (
         <div className="flex-1 flex flex-col">
-            <div className="flex border-b border-slate-200 mb-4 flex-shrink-0">
+            <div className="flex border-b border-slate-200 mb-2 flex-shrink-0">
                 {tabs.map(tab => (
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-2 px-4 text-sm font-bold flex items-center gap-2 transition-colors ${activeTab === tab.id ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`}>
                         <tab.icon size={16}/> {tab.label}
@@ -95,8 +98,8 @@ const DevolucionConfigPanel = ({ firmaReceptor, setFirmaReceptor, obsGeneral, se
                 </div>
 
                 {activeTab === 'signature' && (
-                    <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2 min-h-[420px]">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Firma del Archivero (Receptor) *</label>
+                    <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm flex flex-col gap-2 min-h-[390px]">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Firma (Receptor) *</label>
                         <div className="flex-1 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 overflow-hidden relative">
                             <div className="absolute inset-0"><DigitalSignature value={firmaReceptor} onChange={setFirmaReceptor} /></div>
                         </div>
@@ -108,7 +111,7 @@ const DevolucionConfigPanel = ({ firmaReceptor, setFirmaReceptor, obsGeneral, se
                     <TextareaField label="Observaciones de Recepción" placeholder="Estado de conservación, incidencias, notas..." value={obsGeneral} onChange={setObsGeneral} rows={6} />
                 )}
             </div>
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 mt-auto flex-shrink-0">
+            <div className="flex flex-col gap-3 pt-3 border-t border-slate-100 mt-auto flex-shrink-0">
                 <button onClick={procesarDevolucion} disabled={processing || itemsSeleccionadosCount === 0 || !firmaReceptor} className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-lg shadow-emerald-700/20 transition-all flex items-center justify-center gap-2">
                     {processing ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} {processing ? "Procesando..." : `Confirmar Devolución`}
                 </button>
@@ -188,7 +191,7 @@ export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUse
             if (error) throw error;
 
             if (itemsPendientes.length === itemsAProcesar.length) {
-                 await supabase.from("solicitudes_archivisticas").update({ estado: 'DEVUELTO_TOTAL', updated_at: new Date().toISOString() }).eq("id", solicitud.id);
+                 await supabase.from("solicitudes_archivisticas").update({ estado: 'ATENTIDO', updated_at: new Date().toISOString() }).eq("id", solicitud.id);
             }
             
             onMensaje("Devolución registrada correctamente.", "success");
@@ -214,10 +217,10 @@ export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUse
                 </div>
                 <div className="p-0 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/30">
                     <div className="flex flex-col lg:flex-row h-full min-h-[500px]">
-                        <div className="w-full lg:w-5/12 bg-slate-50 border-r border-slate-200 flex flex-col p-5">
+                        <div className="w-full bg-slate-50 border-r border-slate-200 flex flex-col p-5">
                             <ItemsReturnPanel docsDevolucion={docsDevolucion} setDocsDevolucion={setDocsDevolucion} toggleAll={toggleAll} loading={loadingData} />
                         </div>
-                        <div className="w-full lg:w-7/12 p-6 flex flex-col">
+                        <div className="w-full p-5 pt-1 flex flex-col">
                             <DevolucionConfigPanel firmaReceptor={firmaReceptor} setFirmaReceptor={setFirmaReceptor} obsGeneral={obsGeneral} setObsGeneral={setObsGeneral} procesarDevolucion={procesarDevolucion} processing={processing} itemsSeleccionadosCount={docsDevolucion.filter(d => d.selected_return && !d.ya_devuelto).length} />
                         </div>
                     </div>

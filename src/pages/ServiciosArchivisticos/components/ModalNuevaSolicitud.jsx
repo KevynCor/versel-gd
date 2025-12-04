@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { InputField } from "../../../components/ui/InputField";
 import { TextareaField } from "../../../components/ui/TextareaField";
-import UserModal from '../../GestionAcceso/components/UserModal';
+import UserModal from '../../GestionAcceso/components/ModalUser';
 import { MODALIDADES} from "./Shared";
 
 export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, onMensaje }) {
@@ -32,7 +32,7 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
         sub_gerencia: currentUser?.sub_gerencia || "",
         entidad: currentUser?.entidad || "Electro Sur Este S.A.A.",
         motivo_solicitud: "",
-        modalidad_servicio: "PRESTAMO_ORIGINAL", // Default más común
+        modalidad_servicio: "PRESTAMO_ORIGINAL",
         fecha_devolucion_prevista: ""
     });
 
@@ -42,11 +42,14 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
             setShowSuggestions(false);
             return;
         }
+
         const lowerTerm = searchTerm.toLowerCase();
-        const filtered = usuarios.filter(u => 
+
+        const filtered = (usuarios ?? []).filter(u => 
             (u.nombre_completo || "").toLowerCase().includes(lowerTerm) || 
             (u.email || "").toLowerCase().includes(lowerTerm)
         );
+
         setFilteredUsers(filtered);
         setShowSuggestions(true);
     }, [searchTerm, usuarios, isBehalfMode]);
@@ -238,7 +241,7 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
                         <div>
                             <TextareaField 
                                 label="Motivo de la Solicitud" 
-                                placeholder="Describa brevemente qué documentos necesita y para qué finalidad..."
+                                placeholder="Describa detalldamente su solicitud, período de tiempo, qué documentos necesita y para qué finalidad..."
                                 value={formData.motivo_solicitud}
                                 onChange={(val) => handleInputChange("motivo_solicitud", val)}
                                 rows={4}
@@ -250,7 +253,7 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {/* Modalidad de Servicio */}
                             <div className="space-y-1.5 sm:order-1">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide ml-1">
+                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
                                 Modalidad de Servicio
                                 </label>
 

@@ -16,7 +16,7 @@ import { SparkleLoader } from '../../components/ui/SparkleLoader';
 import { ModalGenerico } from '../../components/form/ModalGenerico.jsx'; 
 
 // Componentes Locales
-import UserModal from './components/UserModal';
+import ModalUser from './components/ModalUser.jsx';
 
 export default function GestionUsuarios() {
   // --- ESTADOS ---
@@ -363,7 +363,7 @@ export default function GestionUsuarios() {
       )}
 
       {/* --- MODAL COMPONETIZADO (USUARIO) --- */}
-      <UserModal 
+      <ModalUser
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveUser}
