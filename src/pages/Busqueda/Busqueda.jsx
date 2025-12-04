@@ -647,13 +647,6 @@ export default function InventarioDocumental() {
       >
         <Eye size={18} />
       </button>
-      <button
-        onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
-        className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-        title="Editar documento"
-      >
-        <Edit size={18} />
-      </button>
     </div>
   ), []);
 
@@ -687,14 +680,7 @@ export default function InventarioDocumental() {
               title="Ver Detalle (Solo lectura)"
             >
               <Eye size={18} />
-            </button>
-            <button
-              onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
-              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-              title="Editar documento"
-            >
-              <Edit size={18} />
-            </button>
+            </button>            
           </div>
         </div>
 
@@ -756,9 +742,9 @@ export default function InventarioDocumental() {
   return (
     <>
       <CrudLayout 
-        title="Inventario del Fondo Documental" 
+        title="Busqueda del Fondo Documental" 
         icon={BookOpen}
-        description="Gestión centralizada de expedientes, ubicación topográfica y control de acervo."
+        description="Busqueda documental en el acervo."
       >
         {/* Toast de notificaciones */}
         {state.mensaje && (
@@ -792,26 +778,7 @@ export default function InventarioDocumental() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto justify-end">
-              <label className="px-4 py-2.5 bg-white border border-slate-300 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 rounded-lg transition-all cursor-pointer flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group">
-                <Upload className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Importar
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={importFromExcel}
-                  className="hidden"
-                />
-              </label>
-
-              <button
-                onClick={exportToExcel}
-                className="px-4 py-2.5 bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-lg transition-all flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group"
-              >
-                <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Exportar
-              </button>
-
+            <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto justify-end">            
               <button
                 onClick={() => {
                   fetchDocuments(state.page);
@@ -822,14 +789,6 @@ export default function InventarioDocumental() {
                 title="Actualizar datos"
               >
                 <RefreshCw className={`w-4 h-4 ${state.loading ? 'animate-spin' : ''}`} />
-              </button>
-
-              <button
-                onClick={() => setState(s => ({ ...s, selectedDoc: {} }))}
-                className="px-5 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-all flex items-center gap-2 text-sm font-bold shadow-md hover:shadow-lg transform active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-                Nuevo Registro
               </button>
             </div>
           </div>
