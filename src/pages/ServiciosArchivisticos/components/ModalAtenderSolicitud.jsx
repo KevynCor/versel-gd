@@ -71,7 +71,7 @@ const AtencionConfigPanel = ({
     const [activeTab, setActiveTab] = useState('signature'); // Nota: Considera iniciar en 'control' si quieres que vean la modalidad primero
     const tabs = useMemo(() => [
         { id: 'signature', label: requiresSignature ? 'Firma Requerida' : 'Observaciones', icon: requiresSignature ? Save : FileText },
-        { id: 'control', label: 'Datos Solicitud', icon: Book },
+        { id: 'control', label: 'Detalle Solicitud', icon: Book },
     ], [requiresSignature]);
 
     return (
@@ -109,57 +109,79 @@ const AtencionConfigPanel = ({
                     </div>
                 )}
                 
-                {/* --- TAB 2: CONTROL Y DATOS DE SOLICITUD (AQUÍ SE MOVIÓ LA MODALIDAD) --- */}
+                {/* --- TAB 2: CONTROL Y DATOS DE SOLICITUD --- */}
                 {activeTab === 'control' && (
-                    <div className="space-y-4">                        
-                        {/* DATOS DE LA SOLICITUD */}
+                    <div className="space-y-4">
+
+                        {/* RESUMEN DE SOLICITUD (Ahora incluye MODALIDAD) */}
                         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                             <h4 className='text-xs font-bold text-slate-500 mb-3 uppercase flex items-center gap-1 border-b border-slate-100 pb-2'>
+                            <h4 className='text-xs font-bold text-slate-500 mb-3 uppercase flex items-center gap-1 border-b border-slate-100 pb-2'>
                                 <FileText size={14}/> Resumen de Solicitud
-                             </h4>
-                             <div className="space-y-3">
+                            </h4>
+                            <div className="space-y-3">
+                                {/* Solicitante */}
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Solicitante</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                        Solicitante
+                                    </label>
                                     <p className="text-sm font-medium text-slate-800 break-words">
                                         {solicitud?.nombre_solicitante || solicitud?.profiles?.nombre_completo || "Usuario no identificado"}
                                     </p>
                                 </div>
+                                {/* Motivo */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Motivo</label>
                                     <div className="text-sm text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 whitespace-pre-line">
                                         {solicitud?.motivo_solicitud || "Sin motivo especificado"}
                                     </div>
                                 </div>
+                                {/* Fecha y Hora */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fecha Solicitud</label>
                                         <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
                                             <Book size={14} className="text-slate-400"/>
-                                            {solicitud?.created_at ? new Date(solicitud.created_at).toLocaleDateString() : '--/--/----'}
+                                            {solicitud?.created_at 
+                                                ? new Date(solicitud.created_at).toLocaleDateString() 
+                                                : '--/--/----'}
                                         </p>
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Hora</label>
                                         <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
                                             <RefreshCw size={14} className="text-slate-400"/>
-                                            {solicitud?.created_at ? new Date(solicitud.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}
+                                            {solicitud?.created_at 
+                                                ? new Date(solicitud.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) 
+                                                : '--:--'}
                                         </p>
                                     </div>
                                 </div>
-                             </div>
-                        </div>
-                        {/* SELECTOR DE MODALIDAD */}
-                        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Modalidad de Servicio</label>
-                            <div className="relative">
-                                <select value={modalidadTemp || ''} onChange={(e) => setModalidadTemp(e.target.value)} className={`w-full py-2.5 pl-3 pr-10 border rounded-lg text-sm transition-all focus:ring-2 ${requiresSignature ? 'border-amber-400 focus:border-amber-500 bg-amber-50/30' : 'border-slate-300 focus:border-blue-500 bg-white'}`}>
-                                    {MODALIDADES.map(mod => <option key={mod.value} value={mod.value}>{mod.label}</option>)}
-                                </select>                    
-                                {requiresSignature && <div className='absolute right-10 top-3 text-xs font-bold text-amber-700 flex items-center gap-1'><AlertCircle size={14}/> Requiere Firma</div>}
+                                {/* MODALIDAD EN MODO VISTA */}
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                                        Modalidad de Servicio
+                                    </label>
+
+                                    <div className={`text-sm font-medium p-2.5 rounded-lg border 
+                                        ${requiresSignature 
+                                            ? 'border-amber-400 bg-amber-50/50 text-amber-800' 
+                                            : 'border-slate-200 bg-slate-50 text-slate-700'
+                                        }`}
+                                    >
+                                        {MODALIDADES.find(m => m.value === modalidadTemp)?.label || 'No definido'}
+                                    </div>
+
+                                    {requiresSignature && (
+                                        <div className="text-[11px] font-bold text-amber-700 flex items-center gap-1 mt-1">
+                                            <AlertCircle size={14}/> Requiere Firma
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
+
             </div>
 
             {/* BOTONES DE ACCIÓN */}

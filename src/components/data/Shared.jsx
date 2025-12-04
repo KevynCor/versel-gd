@@ -47,7 +47,7 @@ export const ESTADO_DOC_STYLE = {
   EN_DIGITALIZACION:"bg-indigo-50 text-indigo-700 border-indigo-200",
   RESERVADO:        "bg-purple-50 text-purple-700 border-purple-200",
   RESTRINGIDO:      "bg-gray-200 text-gray-700 border-gray-300",
-  EN_SERVICIO_ARCHIVISTICO: "bg-slate-200 text-slate-700 border-slate-300",
+  EN_SERVICIO_ARCHIVISTICO: "bg-blue-100 text-blue-700 border-blue-300",
   DEFAULT:          "bg-slate-50 text-slate-600 border-slate-200"
 };
 
