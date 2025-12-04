@@ -18,10 +18,11 @@ import { ViewToggle } from "../../components/layout/ViewToggle";
 import { 
   BookOpen, FileText, Package, Calendar, AlertTriangle, Building2, 
   BarChart3, CheckCircle, Download, Upload, RefreshCw, 
-  Plus, Box, Info, Activity, TrendingUp, Eye, Edit
+  Plus, Box, Info, Activity, TrendingUp, Eye, Edit, Shield, Archive
 } from "lucide-react";
 // Componentes Internos Refactorizados
 import { ModalDetalleDocumento } from "../../components/form/ModalDetalleDocumento";
+import { ESTADO_DOC_STYLE, getEstadoDocumentoLabel, getEstadoGestionLabel  } from "../../components/data/Shared";
 
 export default function InventarioDocumental() {
   // Estados principales
@@ -44,12 +45,13 @@ export default function InventarioDocumental() {
 
   // Filtros avanzados y opciones
   const [filters, setFilters] = useState({});
-  // CORRECCIÓN 1: Eliminado 'tomo_faltante' de las opciones ya que ahora es un switch lógico
   const [filterOptions, setFilterOptions] = useState({
     areas: [], series_documentales: [], frecuencias_consulta: [],
     tipo_unidad_conservacion: [], soporte: [],
     estante: [], cuerpo: [], balda: [],
-    analistas: [], contratistas: [], ambientes: []
+    analistas: [], contratistas: [], ambientes: [],
+    // NUEVOS CAMPOS
+    estados_documento: [], estados_gestion: []
   });
 
   const [stats, setStats] = useState({
@@ -86,7 +88,9 @@ export default function InventarioDocumental() {
         p_analista: currentFilters.analista || null,
         p_fecha_inventario: currentFilters.fechaInventario || null,
         p_contratista: currentFilters.contratista || null,
-        p_ambiente: currentFilters.ambiente || null
+        p_ambiente: currentFilters.ambiente || null,
+        p_estado_documento: currentFilters.estadoDocumento || null,
+        p_estado_gestion: currentFilters.estadoGestion || null
       };
 
       // Limpieza de parámetros vacíos
@@ -169,7 +173,10 @@ export default function InventarioDocumental() {
               p_balda: filters.balda || null,
               p_ambiente: filters.ambiente || null,
               p_numero_tomo: filters.numeroTomo || null,
-              p_numero_folios: filters.numeroFolios ? Number(filters.numeroFolios) : null,              
+              p_numero_folios: filters.numeroFolios ? Number(filters.numeroFolios) : null,
+              p_estado_documento: filters.estadoDocumento || null,
+              p_estado_gestion: filters.estadoGestion || null,
+
               p_limit: pageSize,
               p_offset: offset,
               p_order_by: 'id',
@@ -189,7 +196,6 @@ export default function InventarioDocumental() {
           let documents_data = result[0].documentos || [];
           const total_records = result[0].total || 0;
           
-          // Validación robusta de array
           if (!Array.isArray(documents_data)) {
               if (documents_data && documents_data.data && Array.isArray(documents_data.data)) {
                   documents_data = documents_data.data;
@@ -246,7 +252,10 @@ export default function InventarioDocumental() {
             balda: normalizeArray(opt?.balda),
             analistas: normalizeArray(opt?.analistas),
             contratistas: normalizeArray(opt?.contratistas),
-            ambientes: normalizeArray(opt?.ambientes)
+            ambientes: normalizeArray(opt?.ambientes),
+            // CARGA DE NUEVAS OPCIONES
+            estados_documento: normalizeArray(opt?.estados_documento),
+            estados_gestion: normalizeArray(opt?.estados_gestion)
           });
         }
       } catch (error) {
@@ -354,6 +363,9 @@ export default function InventarioDocumental() {
           p_numero_entregable: filters.numeroEntregable || null,
           p_anio: filters.anio ? parseInt(filters.anio) : null,
           p_fecha_inventario: filters.fechaInventario || null,
+          p_estado_documento: filters.estadoDocumento || null,
+          p_estado_gestion: filters.estadoGestion || null,
+          
           p_order_by: 'id',
           p_order_direction: 'asc'
       };
@@ -403,7 +415,7 @@ export default function InventarioDocumental() {
       const cleanData = allDocs.map(doc => ({
           'Código (ID)': doc.id,
           'Unidad Orgánica': doc.Unidad_Organica,
-          'Sigla': doc.Sigla,
+          'Sigla': doc.Sigla || '',
           'Serie Documental': doc.Serie_Documental,
           'Descripción': doc.Descripcion,
           'Fecha Inicial': doc.Fecha_Inicial,
@@ -414,6 +426,8 @@ export default function InventarioDocumental() {
           'Tipo Unidad Conservación': doc.Tipo_Unidad_Conservacion,
           'Soporte': doc.Soporte,
           'Tomo Faltante': doc.Tomo_Faltante ? 'SÍ' : 'NO',
+          'Estado Documento': doc.Estado_Documento,
+          'Estado Gestión': doc.Estado_Gestion,
           'Frecuencia Consulta': doc.Frecuencia_Consulta,
           'Ambiente': doc.Ambiente,
           'Estante': doc.Estante,
@@ -444,6 +458,7 @@ export default function InventarioDocumental() {
   };
 
   const importFromExcel = async (event) => {
+    // ... (El código de importación se mantiene igual, Supabase mapeará columnas por nombre)
     const file = event.target.files[0];
     if (!file) return;
 
@@ -485,17 +500,20 @@ export default function InventarioDocumental() {
     }
   };
 
+  // DEFINICIÓN DE COLUMNAS ACTUALIZADA
   const columns = useMemo(() => [
     { 
       label: "Código", 
       key: "id",
-      render: (doc) => (         
-        <div className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block">
-          {doc.id || 'S/C'}
-          {/* Indicador visual de Tomo Faltante si aplica */}
+      sortValue: (doc) => doc.id,
+      render: (doc) => (        
+        <div className="flex flex-col items-start gap-1">
+          <div className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-1 py-1 rounded-md inline-block">
+            {doc.id || 'S/C'}
+          </div>
           {doc.Tomo_Faltante && (
-             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200">
-               <AlertTriangle size={10} /> FALTANTE
+             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200">
+               <AlertTriangle size={8} /> FALTANTE
              </span>
           )}
         </div>
@@ -503,49 +521,58 @@ export default function InventarioDocumental() {
     },
     { 
       label: "Descripción del Documento", 
-      key: "descripcion", 
+      key: "descripcion",
+      sortValue: (doc) => doc.Descripcion,
       render: (doc) => (
-        <div className="group">
+        <div className="group max-w-xs">
           <div className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors group-hover:line-clamp-none transition-all duration-200">
             {doc.Descripcion}
           </div>
-          {(doc.Serie_Documental || doc.Observaciones) && (
-            <div className="mt-1 text-xs text-slate-500 flex flex-col gap-0.5">
-              {doc.Serie_Documental && <span className="font-medium uppercase text-slate-400">{doc.Serie_Documental}</span>}
-              {doc.Observaciones && (
-                <div className="flex items-start gap-1 text-amber-600 bg-amber-50 p-1 rounded">
-                   <span className="line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{doc.Observaciones}</span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="mt-1 text-xs text-slate-500 flex flex-col gap-0.5">
+            {doc.Serie_Documental && <span className="font-medium uppercase text-slate-400">{doc.Serie_Documental}</span>}
+            {doc.Observaciones && (
+              <div className="flex items-start gap-1 text-amber-600 bg-amber-50 p-1 rounded">
+                 <span className="line-clamp-1 group-hover:line-clamp-none transition-all duration-200 italic">{doc.Observaciones}</span>
+              </div>
+            )}
+          </div>
         </div>
       )
     },
     { 
       label: "Sección", 
-      key: "seccion", 
+      key: "seccion",
+      sortValue: (doc) => doc.Unidad_Organica,
       render: (doc) => (
         <div className="text-xs text-slate-600">
           <div className="font-bold uppercase">
             {doc.Unidad_Organica || '-'}
           </div>
+          {doc.Sigla && <div className="text-slate-400 font-mono text-[10px]">{doc.Sigla}</div>}
+        </div>
+      )
+    },
+    {
+      label: "Periodo",
+      key: "periodo",
+      sortValue: (doc) => doc.Fecha_Inicial,
+      render: (doc) => (
+        <div className="flex flex-col gap-0.5 min-w-[90px]">
+          <div className="flex items-center gap-2 text-xs text-slate-700" title="Fecha Inicial">
+            <Calendar size={10} className="text-emerald-500 shrink-0" />
+            <span className="font-mono">{doc.Fecha_Inicial || '---'}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-700" title="Fecha Final">
+            <Calendar size={10} className="text-red-400 shrink-0" />
+            <span className="font-mono">{doc.Fecha_Final || '---'}</span>
+          </div>
         </div>
       )
     },
     { 
-      label: "Periodo", 
-      key: "fechasExtremas", 
-      render: (doc) => (
-        <div className="text-xs text-slate-500 flex flex-col gap-1">
-          <span className="flex items-center gap-1">{doc.Fecha_Inicial || '-'}</span>
-          <span className="flex items-center gap-1">{doc.Fecha_Final || '-'}</span>
-        </div>
-      )
-    },    
-    { 
       label: "Ubicación Topográfica", 
-      key: "ubicacion", 
+      key: "ubicacion",
+      sortValue: (doc) => `${String(doc.Numero_Caja || '').padStart(5, '0')}-${doc.Estante || ''}-${doc.Cuerpo || ''}`,
       render: (doc) => (
         <div className="text-xs">
           <div className="flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded mb-1 w-fit">
@@ -570,16 +597,15 @@ export default function InventarioDocumental() {
       )
     },
     { 
-      label: "Estado", 
-      key: "tipoUnidad", 
+      label: "Tipo Unidad", 
+      key: "tipoUnidad",
+      sortValue: (doc) => doc.Tipo_Unidad_Conservacion,
       render: (doc) => (
         <div className="flex flex-col gap-1 items-start">
           {doc.Tipo_Unidad_Conservacion && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border whitespace-nowrap ${
-              doc.Tipo_Unidad_Conservacion === 'SIN UNIDAD' ? 'bg-red-50 text-red-700 border-red-100' :
               doc.Tipo_Unidad_Conservacion === 'EMPASTADO' ? 'bg-blue-50 text-blue-700 border-blue-100' :
               doc.Tipo_Unidad_Conservacion === 'ARCHIVADOR' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-              doc.Tipo_Unidad_Conservacion === 'FOLDER MANILA' ? 'bg-amber-50 text-amber-700 border-amber-100' :              
               'bg-slate-50 text-slate-600 border-slate-200'
             }`}>
               {doc.Tipo_Unidad_Conservacion}
@@ -595,6 +621,21 @@ export default function InventarioDocumental() {
         </div>
       )
     },
+    {
+      label: "Estado & Gestión",
+      key: "estado",
+      sortValue: (doc) => doc.Estado_Documento,
+      render: (doc) => (
+        <div className="flex flex-col gap-1 items-start text-center">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${ESTADO_DOC_STYLE[doc.Estado_Documento] || ESTADO_DOC_STYLE.DEFAULT}`}>
+            {getEstadoDocumentoLabel(doc.Estado_Documento)}
+          </span>
+          <span className={`text-[10px] font-medium uppercase ${doc.Estado_Gestion === 'VIGENTE' ? 'text-slate-500' : 'text-red-500'}`}>
+            {getEstadoGestionLabel(doc.Estado_Gestion)}
+          </span>
+        </div>
+      )
+    },
   ], []);
 
   const renderActions = useCallback((doc) => (
@@ -606,26 +647,39 @@ export default function InventarioDocumental() {
       >
         <Eye size={18} />
       </button>
+      <button
+        onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
+        className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+        title="Editar documento"
+      >
+        <Edit size={18} />
+      </button>
     </div>
   ), []);
 
   const renderCard = useCallback((doc) => (
     <div className={`bg-white border rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative overflow-hidden flex flex-col justify-between ${doc.Tomo_Faltante ? 'border-red-200' : 'border-slate-200 hover:border-blue-300'}`}>
-      {/* Barra decorativa lateral */}
       <div className={`absolute top-0 left-0 w-1 h-full opacity-0 group-hover:opacity-100 transition-opacity ${doc.Tomo_Faltante ? 'bg-red-500' : 'bg-blue-600'}`}></div>
       
       <div>
         <div className="flex justify-between items-start mb-3 pl-2">
           <div className="flex-1 pr-2">
-            <div className="font-mono text-xs font-bold text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded mb-1.5">
-              {doc.id || 'S/C'}
+            <div className="flex items-center gap-2 mb-1.5">
+               <div className="font-mono text-xs font-bold text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded">
+                  {doc.id || 'S/C'}
+               </div>
+               {/* Badge de Estado en la tarjeta */}
+               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                   doc.Estado_Documento === 'DISPONIBLE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+               }`}>
+                  {doc.Estado_Documento}
+               </span>
             </div>
             <h3 className="font-bold text-slate-800 text-sm line-clamp-2 group-hover:text-blue-800 transition-colors" title={doc.Descripcion}>
               {doc.Descripcion}
             </h3>
           </div>
           
-          {/* Contenedor de Acciones (Ver y Editar) */}
           <div className="flex gap-1 shrink-0 bg-white/80 backdrop-blur-sm p-1 rounded-lg border border-transparent group-hover:border-slate-100 transition-all">
             <button
               onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: true }))}
@@ -633,6 +687,13 @@ export default function InventarioDocumental() {
               title="Ver Detalle (Solo lectura)"
             >
               <Eye size={18} />
+            </button>
+            <button
+              onClick={() => setState(s => ({ ...s, selectedDoc: doc, viewOnly: false }))}
+              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+              title="Editar documento"
+            >
+              <Edit size={18} />
             </button>
           </div>
         </div>
@@ -676,7 +737,6 @@ export default function InventarioDocumental() {
               {doc.Frecuencia_Consulta}
             </span>
           )}
-          {/* Tag visual en Card si falta tomo */}
           {doc.Tomo_Faltante && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 border border-red-200" title="Tomo Reportado Faltante">
                <AlertTriangle size={8} className="mr-1"/> Faltante
@@ -696,9 +756,9 @@ export default function InventarioDocumental() {
   return (
     <>
       <CrudLayout 
-        title="Busqueda General" 
+        title="Inventario del Fondo Documental" 
         icon={BookOpen}
-        description="Busqueda en el Patrimonio Documental"
+        description="Gestión centralizada de expedientes, ubicación topográfica y control de acervo."
       >
         {/* Toast de notificaciones */}
         {state.mensaje && (
@@ -708,7 +768,9 @@ export default function InventarioDocumental() {
           />
         )}
 
-        {/* Filtros avanzados */}
+        {/* Encabezado de estadísticas */}
+        {/* Panel de estadísticas */}
+
         <AdvancedFilters 
           filters={filters}
           onFiltersChange={setFilters}
@@ -716,10 +778,8 @@ export default function InventarioDocumental() {
           loading={state.loading}
         />
 
-        {/* Panel de controles principales y Lista */}
         <div ref={tableTopRef} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
           <div className="flex flex-col lg:flex-row gap-5 items-center justify-between mb-4">
-            {/* Lado izquierdo - Vista y Contadores */}
             <div className="flex items-center gap-5 flex-1 w-full lg:w-auto">
               <ViewToggle view={viewMode} onViewChange={setViewMode} />
               
@@ -732,9 +792,26 @@ export default function InventarioDocumental() {
               </div>
             </div>
 
-            {/* Lado derecho - Acciones */}
             <div className="flex items-center gap-3 flex-wrap w-full lg:w-auto justify-end">
-              {/* Actualizar */}
+              <label className="px-4 py-2.5 bg-white border border-slate-300 hover:border-emerald-500 hover:text-emerald-600 text-slate-600 rounded-lg transition-all cursor-pointer flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group">
+                <Upload className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Importar
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={importFromExcel}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                onClick={exportToExcel}
+                className="px-4 py-2.5 bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-lg transition-all flex items-center gap-2 text-sm font-bold shadow-sm hover:shadow group"
+              >
+                <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Exportar
+              </button>
+
               <button
                 onClick={() => {
                   fetchDocuments(state.page);
@@ -746,10 +823,17 @@ export default function InventarioDocumental() {
               >
                 <RefreshCw className={`w-4 h-4 ${state.loading ? 'animate-spin' : ''}`} />
               </button>
+
+              <button
+                onClick={() => setState(s => ({ ...s, selectedDoc: {} }))}
+                className="px-5 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-all flex items-center gap-2 text-sm font-bold shadow-md hover:shadow-lg transform active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Registro
+              </button>
             </div>
           </div>
 
-          {/* Contenido principal */}
           {state.loading ? (
             <SparkleLoader />
           ) : data.documentos.length === 0 ? (
@@ -766,7 +850,6 @@ export default function InventarioDocumental() {
             />
           ) : (
             <>
-              {/* Vista de tabla */}
               {viewMode === "table" && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                   <DataTable
@@ -778,7 +861,6 @@ export default function InventarioDocumental() {
                 </div>
               )}
 
-              {/* Vista de tarjetas */}
               {viewMode === "cards" && (
                 <DataCardGrid
                   data={data.documentos}
@@ -789,7 +871,6 @@ export default function InventarioDocumental() {
             </>
           )}
 
-          {/* Paginación */}
           {data.documentos.length > 0 && (
             <div>
               <Pagination
@@ -813,7 +894,6 @@ export default function InventarioDocumental() {
 
       </CrudLayout>
 
-      {/* Modal de documento */}
       {state.selectedDoc && (
         <ModalDetalleDocumento
           doc={state.selectedDoc}

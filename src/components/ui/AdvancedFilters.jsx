@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Filter, RefreshCw, Scan, Search } from "lucide-react";
 import QRScanner from "./QRScanner"; 
 import { SearchBar } from "../controls/SearchBar";
+import {ESTADOS_DOCUMENTO, ESTADOS_GESTION} from "../data/Shared";
 
 export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -133,6 +134,52 @@ export const AdvancedFilters = ({ filters, onFiltersChange, filterOptions, loadi
         {/* --- Filtros Expandibles --- */}
         {isExpanded && (
         <>      
+          {/* NUEVO: Estado Documento */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+              Estado Documento
+            </label>
+            <select
+              value={filters.estadoDocumento || ""}
+              onChange={(e) => updateFilter('estadoDocumento', e.target.value)}
+              className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.estados_documento?.map(value => {
+                const opt = ESTADOS_DOCUMENTO.find(x => x.value === value);
+                return (
+                  <option key={value} value={value}>
+                    {opt?.label || value}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* NUEVO: Estado Gestión */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+              Estado Gestión
+            </label>
+            <select
+              value={filters.estadoGestion || ""}
+              onChange={(e) => updateFilter('estadoGestion', e.target.value)}
+              className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+              disabled={loading}
+            >
+              <option value="">Todos</option>
+              {filterOptions?.estados_gestion?.map(value => {
+                const opt = ESTADOS_GESTION.find(x => x.value === value);
+                return (
+                  <option key={value} value={value}>
+                    {opt?.label || value}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
           {/* Frecuencia */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">

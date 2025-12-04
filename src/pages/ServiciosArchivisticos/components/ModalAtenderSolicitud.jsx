@@ -9,7 +9,7 @@ import QRScanner from "../../../components/ui/QRScanner";
 import Busqueda from "../../Busqueda/Busqueda";
 import { DigitalSignature } from "../../../components/ui/DigitalSignature";
 import { TextareaField } from "../../../components/ui/TextareaField";
-import { MODALIDADES} from "./Shared";
+import { MODALIDADES} from "../../../components/data/Shared";
 
 // --- SUB-COMPONENTES (Internos para modularidad) ---
 const DocumentSearchPanel = ({ busquedaDoc, setBusquedaDoc, buscandoDocs, resultadosBusqueda, agregarDocumento, agregarTodoEnBloque, setShowScanner, setShowBusqueda }) => (

@@ -12,7 +12,7 @@ import { SearchBar } from "../../components/controls/SearchBar";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
 
 // --- 2. MODULES & ICONS ---
-import { EstadoBadge } from "./components/Shared";
+import { EstadoBadge } from "../../components/data/Shared";
 import CargoPrestamoPDF from './components/CargoPrestamoPDF';
 import NuevaSolicitud from "./components/ModalNuevaSolicitud";
 import ModalDetalleSolicitud from "./components/ModalDetalleSolicitud";

@@ -4,7 +4,7 @@ import {
   AlertTriangle, LayoutList, ChevronUp, ChevronDown, 
   Loader2 
 } from "lucide-react";
-import { MODALIDADES, InfoBlock } from "./Shared"; 
+import { MODALIDADES, InfoBlock } from "../../../components/data/Shared"; 
 
 // Componente interno para secciones colapsables
 const CollapsibleSection = ({ title, icon: Icon, count, children, defaultOpen = false }) => {

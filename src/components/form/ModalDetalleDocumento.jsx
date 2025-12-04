@@ -3,10 +3,11 @@ import {
   AlertTriangle, X, Info, Loader2, Save, Trash2, 
   Box, FileText, Calendar, User, Building2, MapPin, 
   Hash, Layers, Archive, Shield, ChevronDown, ChevronUp,
-  CheckCircle2, Clock, HelpCircle, Eye 
+  CheckCircle2, Clock, HelpCircle, Eye, Activity, Flag 
 } from "lucide-react";
 import { InputField } from "../ui/InputField";
 import { TextareaField } from "../ui/TextareaField";
+import { ESTADOS_DOCUMENTO, ESTADOS_GESTION } from "../data/Shared";
 
 // --- Subcomponente: Sección Colapsable ---
 const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = false, error = false }) => {
@@ -90,6 +91,9 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
       Contratista: "",
       Numero_Entregable: "",
       Ambiente: "",
+      // Nuevos Campos con valores por defecto
+      Estado_Documento: "DISPONIBLE",
+      Estado_Gestion: "VIGENTE",
       ...docData
     };
   });
@@ -162,6 +166,40 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
     </div>
   );
 
+  // Nuevo Helper para Selects
+  const renderSelect = (label, field, Icon, options) => (
+    <div className="w-full">
+      <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">
+        {label}
+      </label>
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+          <Icon size={18} />
+        </div>
+        <select
+          value={formData[field] || ""}
+          onChange={(e) => handleChange(field, e.target.value)}
+          disabled={saving || readOnly}
+          className={`
+            w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm 
+            text-slate-700 font-medium placeholder-slate-400 outline-none transition-all
+            focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 hover:border-slate-400
+            disabled:bg-slate-50 disabled:text-slate-400 appearance-none
+          `}
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+           <ChevronDown size={16} />
+        </div>
+      </div>
+    </div>
+  );
+
   const tabErrors = useMemo(() => {
     const keys = Object.keys(errors);
     return {
@@ -222,7 +260,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
             {activeTab === "general" && (
               <div className="space-y-5 animate-in slide-in-from-right-4 duration-200">
                 
-                {/* 1. Clasificación: 1 col móvil, 2 col tablet */}
+                {/* 1. Clasificación */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                    {renderInput("Unidad Orgánica *", "Unidad_Organica", Building2)}
                    {renderInput("Serie Documental *", "Serie_Documental", Layers)}
@@ -241,7 +279,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                    />
                 </div>
 
-                {/* 3. Datos Temporales: 1 col móvil, 2 col tablet, 4 col desktop */}
+                {/* 3. Datos Temporales */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
                    {renderInput("Fecha Inicial", "Fecha_Inicial", Calendar, "date")}
                    {renderInput("Fecha Final", "Fecha_Final", Calendar, "date")}
@@ -249,7 +287,13 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                    {renderInput("Frecuencia", "Frecuencia_Consulta", Clock)}
                 </div>
 
-                {/* 4. Características */}
+                {/* 4. Estados del Documento (NUEVO SECCIÓN) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                   {renderSelect("Estado Documento", "Estado_Documento", Activity, ESTADOS_DOCUMENTO)}
+                   {renderSelect("Estado Gestión", "Estado_Gestion", Flag, ESTADOS_GESTION)}
+                </div>
+
+                {/* 5. Características */}
                 <div className={`p-3 sm:p-4 rounded-xl border transition-all duration-300 ${formData.Tomo_Faltante ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-100 pb-2 gap-2">
                         <div className="flex items-center gap-2">
@@ -278,7 +322,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                     </div>
 
                     <div className="space-y-4">
-                        {/* Grilla flexible: 1 col móvil -> 2 col tablet -> 4 col desktop */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                             {renderInput("Tipo Unidad", "Tipo_Unidad_Conservacion", Archive)}
                             {renderInput("Soporte", "Soporte", FileText)}
@@ -295,7 +338,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                     </div>
                 </div>
 
-                {/* 5. Observaciones */}
+                {/* 6. Observaciones */}
                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 shadow-sm">
                    <TextareaField
                       label="Notas del Registro"
@@ -317,13 +360,11 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                     <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <MapPin size={16} className="text-blue-600"/> Coordenadas de Archivo
                     </h3>
-                    {/* Grilla Location: 2 col móvil (pequeños inputs), 3 col tablet, 5 col desktop */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                         {renderInput("Ambiente", "Ambiente", null, "text", "")}
                         {renderInput("Estante", "Estante", null, "text", "")}
                         {renderInput("Cuerpo", "Cuerpo", null, "text", "")}
                         {renderInput("Balda", "Balda", null, "text", "")}
-                        {/* Caja full width en móvil si es necesario, o mantener 2 cols */}
                         <div className="col-span-2 sm:col-span-1">
                           {renderInput("N° Caja", "Numero_Caja", Box, "text", "")}
                         </div>
@@ -343,7 +384,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                      <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <User size={16} className="text-blue-600"/> Responsables
                      </h3>
-                     {/* 1 col móvil, 2 col tablet */}
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         {renderInput("Analista Responsable", "Analista", User)}
                         {renderInput("Empresa Responsable", "Contratista", Building2)}
@@ -354,7 +394,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                      <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                         <CheckCircle2 size={16} className="text-blue-600"/> Datos de Entrega
                      </h3>
-                     {/* 1 col móvil, 2 col tablet */}
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         {renderInput("N° Entregable", "Numero_Entregable", Hash)}
                         {renderInput("Fecha Inventario", "Fecha_Inventario", Calendar, "date")}
@@ -369,7 +408,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
         {/* --- Footer (Flexible en móvil) --- */}
         <div className="px-4 sm:px-6 py-4 border-t border-slate-200 bg-white flex flex-col-reverse sm:flex-row justify-between items-center z-10 gap-3">
           <div className="w-full sm:w-auto">
-            {/* Botón eliminar ocupa ancho completo en móvil si se desea, o auto */}
             {!readOnly && doc?.id && (
               <button type="button" onClick={() => onDelete(doc.id)} className="w-full sm:w-auto text-slate-400 hover:text-red-600 text-sm font-medium flex items-center justify-center sm:justify-start gap-2 transition-colors py-2 sm:py-0">
                 <Trash2 size={16} /> <span>Eliminar</span>

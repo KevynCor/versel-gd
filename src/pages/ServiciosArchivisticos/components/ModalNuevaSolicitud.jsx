@@ -6,7 +6,7 @@ import {
 import { InputField } from "../../../components/ui/InputField";
 import { TextareaField } from "../../../components/ui/TextareaField";
 import UserModal from '../../GestionAcceso/components/ModalUser';
-import { MODALIDADES} from "./Shared";
+import { MODALIDADES} from "../../../components/data/Shared";;
 
 export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, onMensaje }) {
     const isAdmin = ['Admin', 'Supervisor'].includes(currentUser?.rol);
