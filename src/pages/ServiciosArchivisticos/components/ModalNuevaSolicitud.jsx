@@ -97,15 +97,12 @@ export default function NuevaSolicitudTab({ currentUser, usuarios, onGuardar, on
         }
 
         onGuardar({
-            formData: {
-                ...finalData,
-                solicitante_id: solicitanteId
-            }
+            ...finalData,
+            solicitante_id: solicitanteId
         });
     };
 
     // --- COMPONENTES INTERNOS (Para limpieza visual) ---
-
     // Tarjeta colapsable de información de usuario
     const ApplicantCard = () => (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">

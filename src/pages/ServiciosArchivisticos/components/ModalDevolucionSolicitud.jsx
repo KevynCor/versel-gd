@@ -1,21 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from "../../../utils/supabaseClient"; 
-import { 
-    X, Check, Loader2, Box, CheckCircle, AlertCircle, 
-    Archive, FileText, MapPin, Hash, Book, MessageSquare 
-} from "lucide-react";
+import { X, Check, Loader2, Box, CheckCircle, AlertCircle, Archive, FileText, MapPin, Hash, Book, MessageSquare } from "lucide-react";
 import { DigitalSignature } from "../../../components/ui/DigitalSignature";
 import { TextareaField } from "../../../components/ui/TextareaField";
-// Importación de Shared.jsx para estilos y etiquetas estandarizados
 import { ESTADO_DOC_STYLE, getEstadoDocumentoLabel } from "../../../components/data/Shared";
-
-// --- SUB-COMPONENTES INTERNOS ---
 
 const ItemsReturnPanel = ({ docsDevolucion, setDocsDevolucion, toggleAll, loading }) => {
     const itemsPendientes = docsDevolucion.filter(d => !d.ya_devuelto);
     const allSelected = itemsPendientes.length > 0 && itemsPendientes.every(d => d.selected_return);
 
-    // Función para actualizar observación individual sin afectar la selección
     const handleIndividualObservation = (id, value) => {
         setDocsDevolucion(prev => prev.map(d => d.id === id ? { ...d, observacion_individual: value } : d));
     };
@@ -46,8 +39,6 @@ const ItemsReturnPanel = ({ docsDevolucion, setDocsDevolucion, toggleAll, loadin
                     docsDevolucion.map((doc) => {
                           const isActionable = !doc.ya_devuelto;
                           const isSelected = doc.selected_return;
-                          
-                          // Lógica de estilos usando Shared.jsx
                           const estadoDoc = doc.idoc?.Estado_Documento;
                           const estadoStyle = ESTADO_DOC_STYLE[estadoDoc] || ESTADO_DOC_STYLE.DEFAULT;
                           const estadoLabel = getEstadoDocumentoLabel(estadoDoc);
@@ -65,8 +56,6 @@ const ItemsReturnPanel = ({ docsDevolucion, setDocsDevolucion, toggleAll, loadin
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start">
                                             <p className={`font-bold text-xs line-clamp-2 mb-1 ${!isActionable ? 'text-slate-500 line-through' : 'text-slate-700'}`}>{doc.idoc?.Descripcion || "Sin descripción"}</p>
-                                            
-                                            {/* Badge de Estado Estandarizado */}
                                             {isActionable && estadoDoc && (
                                                 <span className={`text-[9px] px-1.5 py-0.5 rounded border font-extrabold uppercase ml-2 shrink-0 tracking-wider ${estadoStyle}`}>
                                                     {estadoLabel}
@@ -83,7 +72,6 @@ const ItemsReturnPanel = ({ docsDevolucion, setDocsDevolucion, toggleAll, loadin
                                     </div>
                                 </div>
                                 
-                                {/* CAMPO DE OBSERVACIÓN INDIVIDUAL */}
                                 {isSelected && isActionable && (
                                     <div className="w-full pl-8 animate-in slide-in-from-top-1 fade-in duration-200">
                                         <div className="relative">
@@ -190,8 +178,7 @@ const DevolucionConfigPanel = ({
     );
 };
 
-// --- COMPONENTE PRINCIPAL DEL MODAL ---
-
+// --- COMPONENTE PRINCIPAL ---
 export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUser, onSuccess, onMensaje }) {
     const [docsDevolucion, setDocsDevolucion] = useState([]);
     const [loadingData, setLoadingData] = useState(false);
@@ -199,12 +186,8 @@ export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUse
     const [obsGeneral, setObsGeneral] = useState("");
     const [processing, setProcessing] = useState(false);
 
-    // Determinar si es préstamo original
-    const isPrestamoOriginal = useMemo(() => {
-        return solicitud?.modalidad_servicio === 'PRESTAMO_ORIGINAL';
-    }, [solicitud]);
+    const isPrestamoOriginal = useMemo(() => solicitud?.modalidad_servicio === 'PRESTAMO_ORIGINAL', [solicitud]);
 
-    // Cargar items cuando se abre el modal
     useEffect(() => {
         if (isOpen && solicitud) {
             const fetchDocs = async () => {
@@ -212,23 +195,27 @@ export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUse
                 try {
                     const { data, error } = await supabase
                         .from("solicitudes_documentos")
-                        .select(`*, devoluciones:devoluciones_documentos(*), idoc:Inventario_documental!documento_id (Descripcion, Ambiente, Numero_Caja, Estado_Documento)`)
+                        .select(`*, devoluciones:devoluciones_documentos(id, observaciones), idoc:Inventario_documental!documento_id (Descripcion, Ambiente, Numero_Caja, Estado_Documento)`)
                         .eq("solicitud_id", solicitud.id);
-                    
+
                     if (error) throw error;
 
-                    const docsPrep = data.map(d => ({
-                        ...d,
-                        ya_devuelto: d.devoluciones && d.devoluciones.length > 0,
-                        selected_return: false,
-                        observacion_individual: ""
-                    }));
-                    
+                    const docsPrep = data.map(d => {
+                        const { devoluciones, idoc, ...rest } = d; 
+                        return {
+                            ...rest,
+                            idoc,
+                            ya_devuelto: devoluciones && devoluciones.length > 0,
+                            selected_return: false,
+                            observacion_individual: ""
+                        };
+                    });
+
                     setDocsDevolucion(docsPrep);
                     setFirmaReceptor(null);
                     setObsGeneral("");
                 } catch (e) {
-                    onMensaje("Error cargando documentos: " + e.message, "error");
+                    onMensaje("Error cargando documentos: " + (e.message || e), "error");
                     onClose();
                 } finally {
                     setLoadingData(false);
@@ -245,65 +232,48 @@ export default function ModalDevolucion({ isOpen, onClose, solicitud, currentUse
     }, [docsDevolucion]);
 
     const procesarDevolucion = async () => {
-        const itemsPendientes = docsDevolucion.filter(d => !d.ya_devuelto);
-        const itemsAProcesar = docsDevolucion.filter(d => d.selected_return && !d.ya_devuelto);
-        
-        if (itemsAProcesar.length === 0) return onMensaje("Seleccione al menos un documento para devolver.", "error");
-        
-        if (isPrestamoOriginal && !firmaReceptor) {
-            return onMensaje("La firma del archivero es obligatoria para Préstamos Originales.", "error");
-        }
+        const itemsAProcesar = docsDevolucion
+            .filter(d => d.selected_return && !d.ya_devuelto)
+            .map(d => ({
+                documento_id: d.documento_id,
+                solicitud_documento_id: d.id,
+                observaciones: d.observacion_individual || ""
+            }));
+
+        console.log("PAYLOAD ENVIADO A RPC:", {
+            p_solicitud_id: solicitud.id,
+            p_usuario_id: currentUser.id,
+            p_firma_receptor: firmaReceptor || null,
+            p_observaciones_generales: obsGeneral || null,
+            p_items: itemsAProcesar
+        });
+
+        if (itemsAProcesar.length === 0)
+            return onMensaje("Seleccione documentos para devolver.", "error");
+
+        if (isPrestamoOriginal && !firmaReceptor)
+            return onMensaje("La firma del archivero es obligatoria.", "error");
 
         setProcessing(true);
-        try {
-            // 1. Insertar en tabla de devoluciones
-            const insertData = itemsAProcesar.map(doc => {
-                const obsIndividual = doc.observacion_individual && doc.observacion_individual.trim() !== "" 
-                    ? doc.observacion_individual.trim() 
-                    : "Sin observaciones.";
 
-                return {
-                    solicitud_id: solicitud.id,
-                    documento_id: doc.documento_id,
-                    solicitud_documento_id: doc.id,
-                    observaciones: obsIndividual,
-                    firma_receptor: isPrestamoOriginal ? firmaReceptor : null,
-                    usuario_receptor_id: currentUser.id,
-                    estado_fisico_documento: "Bueno"
-                };
-            });
-            
-            const { error: insertError } = await supabase.from("devoluciones_documentos").insert(insertData);
-            if (insertError) throw insertError;
+        const { error } = await supabase.rpc("procesar_devolucion_transaction", {
+            p_solicitud_id: solicitud.id,
+            p_usuario_id: currentUser.id,
+            p_firma_receptor: firmaReceptor || null,
+            p_observaciones_generales: obsGeneral || null,
+            p_items: itemsAProcesar
+        });
 
-            // 2. Liberar documentos en el Inventario
-            const documentIdsToUpdate = itemsAProcesar.map(d => d.documento_id);
-            if (documentIdsToUpdate.length > 0) {
-                const { error: updateError } = await supabase
-                    .from("Inventario_documental")
-                    .update({ 
-                        Estado_Documento: 'DISPONIBLE',
-                        updated_at: new Date().toISOString()
-                    })
-                    .in('id', documentIdsToUpdate);
-                
-                if (updateError) throw updateError;
-            }
+        setProcessing(false);
 
-            // 3. Actualizar estado de la solicitud
-            if (itemsPendientes.length === itemsAProcesar.length) {
-                 await supabase.from("solicitudes_archivisticas").update({ estado: 'ATENTIDO', updated_at: new Date().toISOString() }).eq("id", solicitud.id);
-            }
-            
-            onMensaje("Devolución registrada correctamente.", "success");
-            onSuccess();
-            onClose();
-        } catch (e) { 
-            console.error(e);
-            onMensaje(e.message || "Error al procesar devolución", "error"); 
-        } finally { 
-            setProcessing(false); 
+        if (error) {
+            console.error(error);
+            return onMensaje(error.message, "error");
         }
+
+        onMensaje("Devolución procesada correctamente.", "success");
+        onSuccess();
+        onClose();
     };
 
     if (!isOpen) return null;

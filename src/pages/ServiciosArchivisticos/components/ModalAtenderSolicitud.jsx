@@ -304,7 +304,7 @@ export default function ModalAtenderSolicitud({ isOpen, onClose, solicitud, curr
         }));
 
         const nuevoEstadoSolicitud = isPrestamo ? 'EN_PRESTAMO' : 'EN_PROCESO';
-        const nuevoEstadoDocumento = isPrestamo ? 'EN_PRESTAMO' : 'EN_SERVICIO_ARCHIVISTICO';
+        const nuevoEstadoDocumento = isPrestamo ? 'PRESTADO' : 'EN_SERVICIO_ARCHIVISTICO';
         const firmaData = isPrestamo ? firma : null;
         
         try {
