@@ -167,6 +167,7 @@ const TimelineStep = ({ title, date, user, isLast = false, statusColor = "slate"
         blue: { dot: "bg-blue-500", line: "border-blue-200", text: "text-blue-600" },
         emerald: { dot: "bg-emerald-500", line: "border-emerald-200", text: "text-emerald-600" },
         amber: { dot: "bg-amber-500", line: "border-amber-200", text: "text-amber-600" },
+        red:     { dot: "bg-red-500", line: "border-red-200", text: "text-red-600" },
     };
     const current = colors[statusColor] || colors.slate;
 
@@ -274,7 +275,7 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                                     title={isPrestamoOriginal ? "Atención / Préstamo" : "Atención / Ejecución"}
                                     date={formatDate(solicitud?.fecha_atencion)} 
                                     user={solicitud?.usuario_atencion?.nombre_completo}
-                                    statusColor={solicitud?.fecha_atencion ? "emerald" : "slate"}
+                                    statusColor={solicitud?.fecha_atencion ? "red" : "slate"}
                                     isLast={!isPrestamoOriginal} 
                                 />
 
