@@ -8,7 +8,7 @@ import { DataTable } from "../../components/data/DataTable";
 import { Pagination } from "../../components/data/Pagination";
 import { SearchBar } from "../../components/controls/SearchBar";
 import { SparkleLoader } from "../../components/ui/SparkleLoader";
-import { EstadoBadge } from "../../components/data/Shared";
+import { EstadoBadge, formatFechaHora, ESTADOS_SOLICITUD } from "../../components/data/Shared"; // Asumiendo que tienes ESTADOS_SOLICITUD en Shared
 
 // --- MODALES ---
 import CargoPrestamoPDF from './components/CargoPrestamoPDF';
@@ -22,14 +22,14 @@ import ModalDevolucionSolicitud from "./components/ModalDevolucionSolicitud";
 import { 
   Plus, Check, Ban, RotateCcw, Eye, Printer, 
   FileText, Clock, AlertCircle, X, LayoutList,
-  UserCheck, Calendar, ArrowRightLeft, CheckCircle2
+  UserCheck, Calendar, ArrowRightLeft, CheckCircle2,
+  Building2, RefreshCw, Filter // Iconos necesarios
 } from "lucide-react";
 
 // -----------------------------------------------------------------------------
-// 1. SUB-COMPONENTES UI (Minimalistas & Reutilizables)
+// 1. SUB-COMPONENTES UI
 // -----------------------------------------------------------------------------
 
-// Wrapper de Modal Genérico
 const ModalManager = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
@@ -47,13 +47,14 @@ const ModalManager = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-// Tarjeta de Métrica Interactiva
-const MetricCard = ({ label, value, icon: Icon, active, onClick, colorClass }) => (
+const MetricCard = ({ label, value, icon: Icon, active, onClick, colorClass, disabled = false }) => (
   <button 
     onClick={onClick}
+    disabled={disabled || !onClick}
     className={`
       flex items-center gap-4 p-4 rounded-xl border transition-all text-left w-full
       ${active ? 'bg-white border-blue-300 ring-2 ring-blue-100 shadow-md transform scale-[1.02]' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'}
+      ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
     `}
   >
     <div className={`p-3 rounded-full ${colorClass} bg-opacity-10`}>
@@ -71,18 +72,18 @@ const MetricCard = ({ label, value, icon: Icon, active, onClick, colorClass }) =
 // -----------------------------------------------------------------------------
 
 export default function ServiciosArchivisticos() {
-  // --- STATE ---
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // Estado para el botón de refrescar
   const [data, setData] = useState({ solicitudes: [], currentUser: null });
   const [mensaje, setMensaje] = useState(null);
   
   // UX Filters
-  const [filterStatus, setFilterStatus] = useState("TODOS"); // 'PENDIENTE', 'ACTIVOS', 'TODOS'
+  const [quickFilter, setQuickFilter] = useState("TODOS"); // Filtro rápido de tarjetas: 'PENDIENTE', 'ACTIVOS', 'TODOS'
+  const [statusFilter, setStatusFilter] = useState("TODOS"); // Nuevo filtro por estado específico
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize] = useState(8);
 
-  // Modals & Actions
   const [activeModal, setActiveModal] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [detailDocs, setDetailDocs] = useState([]);
@@ -90,9 +91,11 @@ export default function ServiciosArchivisticos() {
   const [printData, setPrintData] = useState(null);
 
   // --- DATA LOADING ---
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No autenticado");
 
@@ -118,6 +121,7 @@ export default function ServiciosArchivisticos() {
       setMensaje({ mensaje: "Error cargando datos", tipo: "error" });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -132,23 +136,36 @@ export default function ServiciosArchivisticos() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // --- FILTERS & METRICS ---
+  // --- PERMISOS Y FILTROS ---
   const permissions = useMemo(() => {
     const role = data.currentUser?.rol || '';
-    return { canManage: ['Admin', 'Supervisor', 'Archivero'].includes(role) };
+    const canManage = ['Admin', 'Supervisor', 'Archivero'].includes(role);
+    return { canManage, role };
   }, [data.currentUser]);
 
+  // Lógica de filtrado combinada
   const filteredData = useMemo(() => {
     let list = data.solicitudes;
 
+    // 1. Filtro de Seguridad por Rol
     if (!permissions.canManage) {
       list = list.filter(s => s.solicitante_id === data.currentUser?.id);
     }
 
-    if (filterStatus === 'PENDIENTE') list = list.filter(s => s.estado === 'PENDIENTE');
-    else if (filterStatus === 'ACTIVOS') list = list.filter(s => ['EN_PRESTAMO', 'EN_PROCESO'].includes(s.estado));
-    // 'TODOS' incluye historial y cancelados
+    // 2. Filtro Rápido (Tarjetas)
+    if (quickFilter === 'PENDIENTE') {
+        list = list.filter(s => s.estado === 'PENDIENTE');
+    } else if (quickFilter === 'ACTIVOS') {
+        list = list.filter(s => ['EN_PRESTAMO', 'EN_PROCESO'].includes(s.estado));
+    }
+    // 'TODOS' en quickFilter no aplica filtro adicional aquí, pasa al siguiente nivel
 
+    // 3. Filtro Específico por Estado (Dropdown) - Solo aplica si quickFilter es 'TODOS' o para refinar
+    if (statusFilter !== 'TODOS') {
+        list = list.filter(s => s.estado === statusFilter);
+    }
+
+    // 4. Búsqueda de Texto
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(s => 
@@ -157,8 +174,9 @@ export default function ServiciosArchivisticos() {
       );
     }
     return list;
-  }, [data.solicitudes, permissions.canManage, data.currentUser, filterStatus, searchTerm]);
+  }, [data.solicitudes, permissions.canManage, data.currentUser, quickFilter, statusFilter, searchTerm]);
 
+  // Métricas
   const metrics = useMemo(() => {
     const baseList = permissions.canManage ? data.solicitudes : data.solicitudes.filter(s => s.solicitante_id === data.currentUser?.id);
     return {
@@ -170,6 +188,8 @@ export default function ServiciosArchivisticos() {
   }, [data.solicitudes, permissions.canManage, data.currentUser]);
 
   // --- HANDLERS ---
+  const handleReload = () => loadData(true);
+
   const openModal = async (type, item = null) => {
     setSelectedItem(item);
     setActiveModal(type);
@@ -199,11 +219,21 @@ export default function ServiciosArchivisticos() {
                 #{s.numero_solicitud || s.codigo_solicitud || 'S/N'}
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Clock size={10}/> {new Date(s.fecha_solicitud).toLocaleDateString()}
+                <Clock size={10}/> {formatFechaHora(s.fecha_solicitud)}
             </span>
           </div>
           <div className="font-bold text-slate-700 text-sm mt-1">{s.nombre_solicitante}</div>
           <div className="text-[10px] text-slate-500 uppercase tracking-wide truncate max-w-[150px]">{s.sub_gerencia}</div>
+        </div>
+      )
+    },
+    {
+      label: "Modalidad", key: "modalidad",
+      render: (s) => (
+        <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-md uppercase tracking-tight">
+                {s.modalidad_servicio ? s.modalidad_servicio.replace(/_/g, " ") : "N/A"}
+            </span>
         </div>
       )
     },
@@ -221,7 +251,7 @@ export default function ServiciosArchivisticos() {
                     <Calendar size={12} className={s.fecha_atencion ? "text-blue-500" : "text-slate-300"} />
                     <span>
                         {s.fecha_atencion 
-                            ? new Date(s.fecha_atencion).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) 
+                            ? formatFechaHora(s.fecha_atencion)
                             : "--/--"}
                     </span>
                 </div>
@@ -233,7 +263,6 @@ export default function ServiciosArchivisticos() {
 
   const renderActions = useCallback((s) => (
     <div className="flex justify-end gap-1">
-      {/* Botones de acción condicionales */}
       {s.estado === 'PENDIENTE' && permissions.canManage && (
         <>
           <button onClick={() => openModal('ATTEND', s)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors tooltip" title="Atender">
@@ -275,9 +304,40 @@ export default function ServiciosArchivisticos() {
             <p className="text-sm text-slate-500">Administra los requerimientos documentales.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+            {/* Buscador */}
             <div className="flex-1 sm:w-64">
                 <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar solicitud..." />
             </div>
+            
+            {/* Filtro por Estado (Dropdown) */}
+            <div className="relative">
+                <select 
+                    value={statusFilter} 
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="appearance-none bg-white border border-slate-300 text-slate-700 py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-medium shadow-sm hover:border-slate-400 transition-colors cursor-pointer"
+                >
+                    <option value="TODOS">Todos los Estados</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="EN_PRESTAMO">En Préstamo</option>
+                    <option value="EN_PROCESO">En Proceso</option>
+                    <option value="ATENTIDO">Atendido</option>
+                    <option value="RECHAZADO">Rechazado</option>
+                    <option value="DEVUELTO">Devuelto</option>
+                </select>
+                <Filter size={14} className="absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Botón Refrescar */}
+            <button 
+                onClick={handleReload} 
+                disabled={refreshing}
+                className="p-2 bg-white border border-slate-300 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
+                title="Actualizar tabla"
+            >
+                <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
+            </button>
+
+            {/* Botón Nueva Solicitud */}
             <button 
                 onClick={() => openModal('NEW')} 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95"
@@ -287,40 +347,55 @@ export default function ServiciosArchivisticos() {
         </div>
       </div>
 
-      {/* 2. Metrics Grid (Funcionan como Filtros Rápidos) */}
+      {/* 2. Metrics Grid (Filtros Rápidos) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* KPI: Total Histórico (Usuario ve solo suyo, Admin ve todo) */}
+        <MetricCard 
+            label="Total Histórico" 
+            value={metrics.total} 
+            icon={LayoutList} 
+            active={quickFilter === 'TODOS'} 
+            onClick={() => { setQuickFilter('TODOS'); setStatusFilter('TODOS'); setPage(0); }}
+            colorClass="bg-slate-100 text-slate-600"
+        />
+
+        {/* KPI: Pendientes (Usuario ve solo suyos, Admin ve todos) */}
         <MetricCard 
             label="Pendientes" 
             value={metrics.pendientes} 
             icon={Clock} 
-            active={filterStatus === 'PENDIENTE'} 
-            onClick={() => { setFilterStatus('PENDIENTE'); setPage(0); }}
+            active={quickFilter === 'PENDIENTE'} 
+            onClick={() => { setQuickFilter('PENDIENTE'); setStatusFilter('TODOS'); setPage(0); }}
             colorClass="bg-amber-100 text-amber-600"
         />
-        <MetricCard 
-            label="En Préstamo" 
-            value={metrics.activos} 
-            icon={ArrowRightLeft} 
-            active={filterStatus === 'ACTIVOS'} 
-            onClick={() => { setFilterStatus('ACTIVOS'); setPage(0); }}
-            colorClass="bg-blue-100 text-blue-600"
-        />
-        <MetricCard 
-            label="Vencidos" 
-            value={metrics.vencidos} 
-            icon={AlertCircle} 
-            active={false}
-            onClick={() => {}} // Informativo
-            colorClass="bg-red-100 text-red-600"
-        />
-        <MetricCard 
-            label="Total Histórico" 
-            value={metrics.total} 
-            icon={CheckCircle2} 
-            active={filterStatus === 'TODOS'} 
-            onClick={() => { setFilterStatus('TODOS'); setPage(0); }}
-            colorClass="bg-slate-100 text-slate-600"
-        />
+        
+        {/* KPI: En Préstamo (Visible solo para Admin/Supervisor) */}
+        {permissions.canManage ? (
+            <MetricCard 
+                label="En Préstamo" 
+                value={metrics.activos} 
+                icon={ArrowRightLeft} 
+                active={quickFilter === 'ACTIVOS'} 
+                onClick={() => { setQuickFilter('ACTIVOS'); setStatusFilter('TODOS'); setPage(0); }}
+                colorClass="bg-blue-100 text-blue-600"
+            />
+        ) : (
+             // Placeholder o KPI alternativo para usuarios normales si se desea, o null
+             <div className="hidden md:block"></div> 
+        )}
+        
+        {/* KPI: Vencidos (Informativo) */}
+        {permissions.canManage && (
+             <MetricCard 
+                label="Vencidos" 
+                value={metrics.vencidos} 
+                icon={AlertCircle} 
+                active={false}
+                onClick={() => {}} 
+                colorClass="bg-red-100 text-red-600"
+            />
+        )}        
+        
       </div>
 
       {/* 3. Main Content: Table */}
@@ -328,7 +403,7 @@ export default function ServiciosArchivisticos() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col min-h-[400px]">
             <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center text-xs text-slate-500">
                 <span className="font-medium">
-                    {filterStatus === 'TODOS' ? 'Todas las solicitudes' : filterStatus === 'PENDIENTE' ? 'Solicitudes Pendientes' : 'Solicitudes Activas'}
+                    {quickFilter === 'TODOS' ? 'Todas las solicitudes' : quickFilter === 'PENDIENTE' ? 'Solicitudes Pendientes' : 'Solicitudes Activas'}
                 </span>
                 <span className="font-mono">Total: {filteredData.length}</span>
             </div>
@@ -355,8 +430,7 @@ export default function ServiciosArchivisticos() {
         </div>
       )}
 
-      {/* --- MODALES --- */}
-      
+      {/* --- MODALES --- */}      
       {activeModal === 'NEW' && (
         <ModalManager isOpen={true} onClose={() => setActiveModal(null)} title="Registrar Solicitud">
             <div className="p-6">

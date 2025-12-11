@@ -77,7 +77,7 @@ const SystemMetadata = ({ id, createdAt, updatedAt }) => {
 
 const Profile = ({ user }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('professional'); // 'professional', 'contact', 'security'
+  const [activeTab, setActiveTab] = useState('security'); // 'professional', 'contact', 'security'
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
   
@@ -189,9 +189,9 @@ const Profile = ({ user }) => {
             {/* Navegación */}
             <div className="flex border-b border-slate-100 overflow-x-auto">
                 {[
-                    { id: 'professional', label: 'Datos Profesionales', icon: Briefcase },
+                    { id: 'security', label: 'Seguridad', icon: Shield },
                     { id: 'contact', label: 'Contacto & Cuenta', icon: User },
-                    { id: 'security', label: 'Seguridad', icon: Shield }
+                    { id: 'professional', label: 'Datos Profesionales', icon: Briefcase }
                 ].map((tab) => (
                     <button 
                         key={tab.id}

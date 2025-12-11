@@ -5,7 +5,7 @@ import {
   ArrowRightLeft, History, RefreshCw, ScanLine, Copy, 
   Hash, ChevronDown, ChevronUp 
 } from "lucide-react";
-import { MODALIDADES, EstadoBadge } from "../../../components/data/Shared"; 
+import { MODALIDADES, EstadoBadge, formatFechaHora } from "../../../components/data/Shared"; 
 
 // -----------------------------------------------------------------------------
 // 1. SUB-COMPONENTES UI (Locales para este Modal)
@@ -145,12 +145,12 @@ const DocumentRow = ({ doc, isPrestamoOriginal }) => {
                         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 mt-3 text-xs pl-1">
                             {doc.fecha_entrega && (
                                 <span className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded w-fit">
-                                    <Clock size={12} className="text-blue-500"/> Entregado: <span className="font-mono font-medium">{new Date(doc.fecha_entrega).toLocaleDateString()}</span>
+                                    <Clock size={12} className="text-blue-500"/> Entregado: <span className="font-mono font-medium">{formatFechaHora(doc.fecha_entrega)}</span>
                                 </span>
                             )}
                             {doc.fecha_devolucion && (
                                 <span className="flex items-center gap-1.5 text-slate-600 bg-emerald-50 px-2 py-1 rounded w-fit">
-                                    <CheckCircle2 size={12} className="text-emerald-500"/> Devuelto: <span className="font-mono font-medium">{new Date(doc.fecha_devolucion).toLocaleDateString()}</span>
+                                    <CheckCircle2 size={12} className="text-emerald-500"/> Devuelto: <span className="font-mono font-medium">{formatFechaHora(doc.fecha_devolucion)}</span>
                                 </span>
                             )}
                         </div>
@@ -204,11 +204,6 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
     const modalidadLabel = MODALIDADES.find(m => m.value === solicitud?.modalidad_servicio)?.label || solicitud?.modalidad_servicio;
     const isPrestamoOriginal = solicitud?.modalidad_servicio === 'PRESTAMO_ORIGINAL';
     
-    const formatDate = (dateStr) => {
-        if (!dateStr) return "-";
-        return new Date(dateStr).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-    };
-
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
             
@@ -222,7 +217,7 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                             <EstadoBadge estado={solicitud?.estado} />
                             
                             <span className="text-xs text-slate-400 flex items-center gap-1 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                                <Clock size={10}/> {formatDate(solicitud?.created_at)}
+                                <Clock size={10}/> {formatFechaHora(solicitud?.created_at)}
                             </span>
                         </div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight leading-none truncate">
@@ -267,13 +262,13 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                             <div className="max-w-lg mx-auto py-2">
                                 <TimelineStep 
                                     title="Solicitud Creada" 
-                                    date={formatDate(solicitud?.fecha_solicitud)} 
+                                    date={formatFechaHora(solicitud?.fecha_solicitud)} 
                                     statusColor="blue"
                                 />
                                 
                                 <TimelineStep 
                                     title={isPrestamoOriginal ? "Atención / Préstamo" : "Atención / Ejecución"}
-                                    date={formatDate(solicitud?.fecha_atencion)} 
+                                    date={formatFechaHora(solicitud?.fecha_atencion)} 
                                     user={solicitud?.usuario_atencion?.nombre_completo}
                                     statusColor={solicitud?.fecha_atencion ? "red" : "slate"}
                                     isLast={!isPrestamoOriginal} 
@@ -283,12 +278,12 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                                     <>
                                         <TimelineStep 
                                             title="Devolución Prevista" 
-                                            date={formatDate(solicitud?.fecha_devolucion_prevista)} 
+                                            date={formatFechaHora(solicitud?.fecha_devolucion_prevista)} 
                                             statusColor="amber"
                                         />
                                         <TimelineStep 
                                             title="Devolución Real" 
-                                            date={formatDate(solicitud?.fecha_devolucion_real)} 
+                                            date={formatFechaHora(solicitud?.fecha_devolucion_real)} 
                                             statusColor={solicitud?.fecha_devolucion_real ? "emerald" : "slate"}
                                             isLast={true}
                                         />
@@ -359,7 +354,7 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                 
                 {/* 3. Footer */}
                 <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 shrink-0">
-                    <span>Última actualización: {formatDate(solicitud?.updated_at)}</span>
+                    <span>Última actualización: {formatFechaHora(solicitud?.updated_at)}</span>
                     <span className="flex items-center gap-1"><RefreshCw size={10} className="animate-spin-slow"/> Sincronizado</span>
                 </div>
 

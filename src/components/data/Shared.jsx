@@ -117,3 +117,17 @@ export const EstadoBadge = ({ estado }) => {
     </span>
   );
 };
+
+// ==========================================
+// FORMATEO DE FECHAS
+// ==========================================
+export const formatFechaHora = (fecha) => {
+  if (!fecha) return "";
+  return new Date(fecha).toLocaleString("es-ES", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
