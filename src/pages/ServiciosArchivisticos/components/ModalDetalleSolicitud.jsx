@@ -93,7 +93,7 @@ const DocumentRow = ({ doc, isPrestamoOriginal }) => {
                 <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 items-center">
                     {/* ID e Info Principal */}
                     <div className="sm:col-span-10 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                         <span className="font-mono text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded flex items-center w-fit shadow-sm">
+                         <span className="select-text font-mono text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded flex items-center w-fit shadow-sm">
                             <Hash size={10} className="mr-1 opacity-50"/> {doc.documento_id}
                         </span>
                         <p className="text-sm font-bold text-slate-800 truncate" title={doc.descripcion}>
@@ -137,7 +137,7 @@ const DocumentRow = ({ doc, isPrestamoOriginal }) => {
                         </div>
                         <div className="min-w-0">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Volumen</p>
-                            <p className="text-xs text-slate-700 font-medium truncate">{doc.numero_folios ? `${doc.numero_folios} Fols` : '-'}</p>
+                            <p className="text-xs text-slate-700 font-medium truncate">{doc.numero_folios ? `${doc.numero_folios} Fols` : '-'} {doc.numero_tomo ? `| ${doc.numero_tomo} T` : ''}</p>
                         </div>
                     </div>
                     
@@ -270,7 +270,7 @@ export default function DetalleSolicitudModal({ isOpen, onClose, solicitud, docu
                                     title={isPrestamoOriginal ? "Atención / Préstamo" : "Atención / Ejecución"}
                                     date={formatFechaHora(solicitud?.fecha_atencion)} 
                                     user={solicitud?.usuario_atencion?.nombre_completo}
-                                    statusColor={solicitud?.fecha_atencion ? "red" : "slate"}
+                                    statusColor={solicitud?.fecha_atencion ? "emerald" : "slate"}
                                     isLast={!isPrestamoOriginal} 
                                 />
 

@@ -24,7 +24,7 @@ import {
 import { FrequencyBar } from "./components/FrequencyBar";
 import { SimpleBarChart } from "./components/SimpleBarChart";
 import { ModalDetalleDocumento } from "../../components/form/ModalDetalleDocumento";
-import { ESTADO_DOC_STYLE, getEstadoDocumentoLabel, getEstadoGestionLabel  } from "../../components/data/Shared";
+import { ESTADO_DOC_STYLE, ESTADO_GES_STYLE, getEstadoDocumentoLabel, getEstadoGestionLabel  } from "../../components/data/Shared";
 
 export default function InventarioDocumental() {
   // Estados principales
@@ -632,7 +632,7 @@ export default function InventarioDocumental() {
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${ESTADO_DOC_STYLE[doc.Estado_Documento] || ESTADO_DOC_STYLE.DEFAULT}`}>
             {getEstadoDocumentoLabel(doc.Estado_Documento)}
           </span>
-          <span className={`text-[10px] font-medium uppercase ${doc.Estado_Gestion === 'VIGENTE' ? 'text-slate-500' : 'text-red-500'}`}>
+          <span className={`px-2 py-0.5 rounded text-[10px] uppercase border ${ESTADO_GES_STYLE[doc.Estado_Gestion] || ESTADO_DOC_STYLE.DEFAULT}`}>
             {getEstadoGestionLabel(doc.Estado_Gestion)}
           </span>
         </div>

@@ -1,3 +1,14 @@
+import { 
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Activity,
+  FileText,
+  Shield,
+  Ban,
+  Layers
+} from "lucide-react";
+
 // ==========================================
 // CONSTANTES
 // ==========================================
@@ -31,9 +42,23 @@ export const ESTADOS_GESTION = [
   { value: "PENDIENTE_EVALUACION", label: "Pendiente Evaluación" },
   { value: "PROPUESTO_ELIMINACION", label: "Propuesto Eliminación" },
   { value: "APROBADO_ELIMINACION", label: "Aprobado Eliminación" },
-  { value: "ELIMINADO", label: "Eliminado" }
+  { value: "ELIMINADO", label: "Eliminado" },
+  { value: "RETIRADO_DEL_ARCHIVO", label: "Retirado del Archivo" }
 ];
 
+// ==========================================
+// ESTILOS POR ESTADO DE GESTIÓN
+// ==========================================
+
+export const ESTADO_GES_STYLE = {
+  VIGENTE:                  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  PROPUESTO_ELIMINACION:    "bg-blue-50 text-blue-700 border-blue-200",
+  PROPUESTO_ELIMINACION:    "bg-orange-50 text-orange-700 border-orange-300  ",
+  PROBADO_ELIMINACION:      "bg-amber-50 text-amber-700 border-amber-200",
+  ELIMINADO:                "bg-indigo-50 text-indigo-700 border-indigo-200",
+  RETIRADO_DEL_ARCHIVO:     "bg-red-50 text-red-700 border-red-300 font-bold",
+  DEFAULT:                  "bg-cyan-50 text-cyan-700 border-cyan-200"
+};
 
 // ==========================================
 // ESTILOS POR ESTADO DE DOCUMENTO
@@ -41,16 +66,58 @@ export const ESTADOS_GESTION = [
 
 export const ESTADO_DOC_STYLE = {
   DISPONIBLE:       "bg-emerald-50 text-emerald-700 border-emerald-200",
-  PRESTADO:         "bg-amber-50 text-amber-700 border-amber-200",
-  NO_LOCALIZADO:    "bg-red-50 text-red-700 border-red-200",
-  EN_RESTAURACION:  "bg-blue-50 text-blue-700 border-blue-200",
+  PRESTADO:         "bg-blue-50 text-blue-700 border-blue-200",
+  NO_LOCALIZADO:    "bg-orange-50 text-orange-700 border-orange-300 font-bold",
+  EN_RESTAURACION:  "bg-amber-50 text-amber-700 border-amber-200",
   EN_DIGITALIZACION:"bg-indigo-50 text-indigo-700 border-indigo-200",
   RESERVADO:        "bg-purple-50 text-purple-700 border-purple-200",
-  RESTRINGIDO:      "bg-gray-200 text-gray-700 border-gray-300",
-  EN_SERVICIO_ARCHIVISTICO: "bg-blue-100 text-blue-700 border-blue-300",
-  DEFAULT:          "bg-slate-50 text-slate-600 border-slate-200"
+  RESTRINGIDO:      "bg-red-50 text-red-700 border-red-300 font-bold",
+  EN_SERVICIO_ARCHIVISTICO: "bg-cyan-50 text-blue-700 border-blue-300",
+  DEFAULT:          "bg-cyan-50 text-cyan-700 border-cyan-200"
 };
 
+export const ESTADO_INFO = {
+  DISPONIBLE: { 
+    text: "El documento se encuentra en archivo y habilitado para préstamo o consulta.", 
+    style: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: CheckCircle2 
+  },
+  PRESTADO: { 
+    text: "El documento ha sido entregado a un usuario. Verifique la fecha de devolución.", 
+    style: "bg-blue-50 text-blue-700 border-blue-200",
+    icon: Clock 
+  },
+  NO_LOCALIZADO: { 
+    text: "Atención: Este documento está marcado como NO LOCALIZADO. Verifique en Observaciones de Estado.", 
+    style: "bg-orange-50 text-orange-700 border-orange-300 font-bold",
+    icon: AlertTriangle 
+  },
+  EN_RESTAURACION: { 
+    text: "El documento está en proceso de conservación o restauración física.", 
+    style: "bg-amber-50 text-amber-700 border-amber-200",
+    icon: Activity 
+  },
+  EN_DIGITALIZACION: { 
+    text: "El documento se encuentra en el área de digitalización.", 
+    style: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    icon: FileText 
+  },
+  RESERVADO: { 
+    text: "Acceso limitado. Requiere autorización especial para su consulta.", 
+    style: "bg-purple-50 text-purple-700 border-purple-200",
+    icon: Shield 
+  },
+  RESTRINGIDO: { 
+    text: "Acceso denegado temporalmente por normativa legal o administrativa.", 
+    style: "bg-red-50 text-red-700 border-red-300 font-bold",
+    icon: Ban 
+  },
+  EN_SERVICIO_ARCHIVISTICO: { 
+    text: "En proceso técnico (clasificación, ordenación o descripción).", 
+    style: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    icon: Layers 
+  }
+};
 
 // ==========================================
 // HELPERS

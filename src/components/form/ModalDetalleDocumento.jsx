@@ -3,11 +3,12 @@ import {
   AlertTriangle, X, Info, Loader2, Save, Trash2, 
   Box, FileText, Calendar, User, Building2, MapPin, 
   Hash, Layers, Archive, Shield, ChevronDown, ChevronUp,
-  CheckCircle2, Clock, HelpCircle, Eye, Activity, Flag 
+  CheckCircle2, Clock, HelpCircle, Eye, Activity, Flag, FileWarning,
+  AlertCircle, Ban 
 } from "lucide-react";
 import { InputField } from "../ui/InputField";
 import { TextareaField } from "../ui/TextareaField";
-import { ESTADOS_DOCUMENTO, ESTADOS_GESTION } from "../data/Shared";
+import { ESTADOS_DOCUMENTO, ESTADOS_GESTION, ESTADO_INFO } from "../data/Shared";
 
 // --- Subcomponente: Sección Colapsable ---
 const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = false, error = false }) => {
@@ -60,7 +61,6 @@ const TabButton = ({ active, onClick, icon: Icon, label, hasError }) => (
 );
 
 export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly = false }) => {
-  // 1. Estados
   const [activeTab, setActiveTab] = useState("general");
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -91,14 +91,32 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
       Contratista: "",
       Numero_Entregable: "",
       Ambiente: "",
-      // Nuevos Campos con valores por defecto
       Estado_Documento: "DISPONIBLE",
       Estado_Gestion: "VIGENTE",
+      Estado_Documento_Obs: "",
+      Estado_Gestion_Obs: "",
       ...docData
     };
   });
 
-  // 2. Lógica de Validación
+  // --- SOLUCIÓN AL ERROR DE UNDEFINED VALUE ---
+  const handleSafeChange = (field, eventOrValue) => {
+    if (readOnly) return;
+
+    let value = eventOrValue;
+    if (eventOrValue && typeof eventOrValue === 'object' && eventOrValue.target) {
+        value = eventOrValue.target.type === 'checkbox' ? eventOrValue.target.checked : eventOrValue.target.value;
+    }
+    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    if (errors[field]) {
+      const updated = { ...errors };
+      delete updated[field];
+      setErrors(updated);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.Descripcion?.trim()) newErrors.Descripcion = "Requerido";
@@ -113,18 +131,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  // 3. Manejadores de Eventos
-  const handleChange = (field, value) => {
-    if (readOnly) return;
-
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      const updated = { ...errors };
-      delete updated[field];
-      setErrors(updated);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -145,7 +151,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
     }
   };
 
-  // 4. Helpers de Renderizado
   const renderInput = (label, field, icon, type = "text", placeholder = "", widthClass = "w-full") => (
     <div className={widthClass}>
       <InputField
@@ -153,7 +158,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
         icon={icon}
         type={type}
         value={formData[field] || ""}
-        onChange={(e) => handleChange(field, e.target.value)}
+        onChange={(e) => handleSafeChange(field, e)}
         placeholder={placeholder}
         disabled={saving || readOnly}
         className={errors[field] ? "border-red-500 bg-red-50" : ""}
@@ -166,7 +171,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
     </div>
   );
 
-  // Nuevo Helper para Selects
   const renderSelect = (label, field, Icon, options) => (
     <div className="w-full">
       <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">
@@ -178,7 +182,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
         </div>
         <select
           value={formData[field] || ""}
-          onChange={(e) => handleChange(field, e.target.value)}
+          onChange={(e) => handleSafeChange(field, e)}
           disabled={saving || readOnly}
           className={`
             w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm 
@@ -203,15 +207,19 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
   const tabErrors = useMemo(() => {
     const keys = Object.keys(errors);
     return {
-      general: keys.some(k => ["Unidad_Organica", "Serie_Documental", "Descripcion", "Numero_Tomo", "Numero_Folios"].includes(k)),
+      general: keys.some(k => ["Unidad_Organica", "Serie_Documental", "Descripcion", "Numero_Tomo", "Numero_Folios", "Estado_Documento", "Estado_Gestion"].includes(k)),
       location: keys.some(k => ["Estante", "Cuerpo", "Balda", "Numero_Caja"].includes(k)),
       control: keys.some(k => ["Analista", "Contratista"].includes(k))
     };
   }, [errors]);
 
-  // 5. Renderizado del Componente
+  // Obtener info del estado actual
+  const currentStateInfo = ESTADO_INFO[formData.Estado_Documento] || ESTADO_INFO.DISPONIBLE;
+  const StateIcon = currentStateInfo.icon;
+  // Booleano para saber si es No Localizado (para usar en otras alertas si se requiere)
+  const isNoLocalizado = formData.Estado_Documento === "NO_LOCALIZADO";
+
   return (
-    // RESPONSIVE: p-2 en móvil, p-4 en escritorio. Backdrop blur.
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-200"
           onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
@@ -235,16 +243,35 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
           </button>
         </div>
 
-        {/* --- KPI Bar Contextual (Scrollable en móvil) --- */}
-        {(formData.Serie_Documental || formData.Numero_Caja) && (
-            <div className="bg-slate-50 px-4 sm:px-6 py-2 border-b border-slate-100 flex gap-4 sm:gap-6 text-xs font-medium text-slate-600 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-hide">
-                {doc?.id && <div className="flex items-center gap-1"><Hash size={12} className="text-blue-500"/> ID: <span className="text-slate-900">{doc.id}</span></div>}
-                {formData.Numero_Caja && <div className="flex items-center gap-1"><Box size={12} className="text-blue-500"/> Caja: <span className="text-slate-900">{formData.Numero_Caja}</span></div>}
-                {formData.Tomo_Faltante && <div className="flex items-center gap-1 text-red-600"><HelpCircle size={12}/> Tomo Faltante</div>}
-            </div>
-        )}
+        {/* --- KPI Bar Contextual (ENCABEZADO CON ESTADO) --- */}
+        <div className="bg-slate-50 px-4 sm:px-6 py-2 border-b border-slate-100 flex gap-4 sm:gap-6 text-xs font-medium text-slate-600 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-hide items-center h-10">
+            
+            {/* ID */}
+            {doc?.id && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-slate-200/50 transition-colors">
+                    <Hash size={13} className="text-blue-500"/> 
+                    ID: <span className="text-slate-900 font-mono">{doc.id}</span>
+                </div>
+            )}
+            
+            {/* Caja */}
+            {formData.Numero_Caja && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-slate-200/50 transition-colors">
+                    <Box size={13} className="text-blue-500"/> 
+                    Caja: <span className="text-slate-900 font-mono">{formData.Numero_Caja}</span>
+                </div>
+            )}
 
-        {/* --- Tabs (Scroll horizontal en móvil) --- */}
+            {/* ESTADO EN EL HEADER (AQUÍ ESTÁ EL CAMBIO SOLICITADO) */}
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${currentStateInfo.style} bg-opacity-30`}>
+                <StateIcon size={12} strokeWidth={2.5}/>
+                <span className="uppercase font-bold text-[10px]">
+                    {ESTADOS_DOCUMENTO.find(e => e.value === formData.Estado_Documento)?.label || formData.Estado_Documento}
+                </span>
+            </div>
+        </div>
+
+        {/* --- Tabs --- */}
         <div className="flex px-2 border-b border-slate-200 bg-white overflow-x-auto shrink-0 no-scrollbar">
           <TabButton active={activeTab === "general"} onClick={() => setActiveTab("general")} icon={Shield} label="General" hasError={tabErrors.general} />
           <TabButton active={activeTab === "location"} onClick={() => setActiveTab("location")} icon={MapPin} label="Ubicación" hasError={tabErrors.location} />
@@ -252,7 +279,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
         </div>
 
         {/* --- Content --- */}
-        {/* RESPONSIVE: p-4 en móvil, p-6 en tablet+ */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-slate-50/50">
           <form id="docForm" onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
             
@@ -271,7 +297,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                    <TextareaField
                       label="Descripción del Expediente *"
                       value={formData.Descripcion || ""}
-                      onChange={(e) => handleChange("Descripcion", e.target.value)}
+                      onChange={(e) => handleSafeChange("Descripcion", e)}
                       placeholder="Describa el asunto..."
                       rows={3}
                       disabled={saving || readOnly}
@@ -287,25 +313,63 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                    {renderInput("Frecuencia", "Frecuencia_Consulta", Clock)}
                 </div>
 
-                {/* 4. Estados del Documento (NUEVO SECCIÓN) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                   {renderSelect("Estado Documento", "Estado_Documento", Activity, ESTADOS_DOCUMENTO)}
-                   {renderSelect("Estado Gestión", "Estado_Gestion", Flag, ESTADOS_GESTION)}
-                </div>
+                {/* 4. Estados del Documento */}
+                <CollapsibleSection title="Estado y Disponibilidad" icon={Activity} defaultOpen={true}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Columna Izquierda: Estado Documento */}
+                            <div className="space-y-3">
+                                {renderSelect("Estado Documento", "Estado_Documento", Activity, ESTADOS_DOCUMENTO)}
+                                
+                                {/* Mensaje Dinámico por Estado */}
+                                <div className={`flex items-start gap-3 p-3 rounded-lg border text-xs leading-relaxed transition-all duration-300 ${currentStateInfo.style}`}>
+                                    <StateIcon size={18} className="shrink-0 mt-0.5" />
+                                    <span>{currentStateInfo.text}</span>
+                                </div>
 
-                {/* 5. Características */}
-                <div className={`p-3 sm:p-4 rounded-xl border transition-all duration-300 ${formData.Tomo_Faltante ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200 shadow-sm'}`}>
+                                <TextareaField
+                                    label="Observación Estado Doc."
+                                    value={formData.Estado_Documento_Obs || ""}
+                                    onChange={(e) => handleSafeChange("Estado_Documento_Obs", e)}
+                                    placeholder="Detalles adicionales sobre el estado..."
+                                    rows={2}
+                                    disabled={saving || readOnly}
+                                />
+                            </div>
+
+                            {/* Columna Derecha: Estado Gestión */}
+                            <div className="space-y-3">
+                                {renderSelect("Estado Gestión", "Estado_Gestion", Flag, ESTADOS_GESTION)}
+                                <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 text-xs">
+                                    Define el ciclo de vida administrativo del expediente (Vigente, Eliminado, etc).
+                                </div>
+                                <TextareaField
+                                    label="Observación Gestión"
+                                    value={formData.Estado_Gestion_Obs || ""}
+                                    onChange={(e) => handleSafeChange("Estado_Gestion_Obs", e)}
+                                    placeholder="Motivo de cambio de gestión..."
+                                    rows={2}
+                                    disabled={saving || readOnly}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </CollapsibleSection>
+
+                {/* 5. Características Físicas (Neutro) */}
+                <div className="p-3 sm:p-4 rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-100 pb-2 gap-2">
                         <div className="flex items-center gap-2">
-                            <Archive size={16} className={formData.Tomo_Faltante ? "text-red-500" : "text-slate-500"}/>
-                            <h3 className={`text-sm font-bold uppercase tracking-wide ${formData.Tomo_Faltante ? "text-red-700" : "text-slate-700"}`}>
-                                Características
+                            <Archive size={16} className="text-slate-500"/>
+                            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                                Características Físicas
                             </h3>
                         </div>
                         
+                        {/* Se mantiene el control visual pero sin etiquetas de alerta roja */}
                         <label className={`flex items-center gap-2 ${readOnly ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} select-none`}>
-                            <span className={`text-xs font-bold uppercase ${formData.Tomo_Faltante ? 'text-red-600' : 'text-slate-400'}`}>
-                                {formData.Tomo_Faltante ? "¿Unidad Ubicada?" : "¿Unidad No Ubicada?"}
+                            <span className="text-xs font-bold text-slate-500 uppercase">
+                                {formData.Tomo_Faltante ? "Unidad NO Localizada" : "Unidad Localizada"}
                             </span>
                             <div className="relative">
                                 <input 
@@ -313,38 +377,29 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                                     className="sr-only peer"
                                     checked={!!formData.Tomo_Faltante}
                                     disabled={readOnly}
-                                    onChange={(e) => handleChange("Tomo_Faltante", e.target.checked)}
+                                    onChange={(e) => handleSafeChange("Tomo_Faltante", e)}
                                 />
-                                <div className={`w-9 h-5 rounded-full peer peer-focus:ring-2 peer-focus:ring-offset-1 transition-colors ${formData.Tomo_Faltante ? 'bg-red-500 peer-focus:ring-red-300' : 'bg-slate-200 hover:bg-slate-300'}`}></div>
+                                <div className={`w-9 h-5 rounded-full peer peer-focus:ring-2 peer-focus:ring-offset-1 transition-colors ${formData.Tomo_Faltante ? 'bg-slate-600 peer-focus:ring-slate-300' : 'bg-slate-200 hover:bg-slate-300'}`}></div>
                                 <div className={`absolute top-1 left-1 bg-white border border-gray-300 w-3 h-3 rounded-full transition-transform ${formData.Tomo_Faltante ? 'translate-x-full border-white' : ''}`}></div>
                             </div>
                         </label>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-                            {renderInput("Tipo Unidad", "Tipo_Unidad_Conservacion", Archive)}
-                            {renderInput("Soporte", "Soporte", FileText)}
-                            {renderInput("Tomo N°", "Numero_Tomo", Layers, "text", "")}
-                            {renderInput("N° Folios", "Numero_Folios", Hash, "number")}
-                        </div>
-
-                        {formData.Tomo_Faltante && (
-                             <div className="flex gap-2 text-xs text-red-700 bg-red-100/50 p-2 rounded border border-red-100">
-                                 <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-                                 <span className="font-medium">Atención: Documento marcado como no localizado.</span>
-                             </div>
-                        )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                        {renderInput("Tipo Unidad", "Tipo_Unidad_Conservacion", Archive)}
+                        {renderInput("Soporte", "Soporte", FileText)}
+                        {renderInput("Tomo N°", "Numero_Tomo", Layers, "text", "")}
+                        {renderInput("N° Folios", "Numero_Folios", Hash, "number")}
                     </div>
                 </div>
 
-                {/* 6. Observaciones */}
+                {/* 6. Observaciones Generales */}
                  <div className="bg-white p-3 sm:p-4 rounded-lg border border-slate-200 shadow-sm">
                    <TextareaField
-                      label="Notas del Registro"
+                      label="Notas Generales del Registro"
                         value={formData.Observaciones || ""}
-                        onChange={(e) => handleChange("Observaciones", e.target.value)}
-                        placeholder="Notas adicionales..."
+                        onChange={(e) => handleSafeChange("Observaciones", e)}
+                        placeholder="Cualquier otra observación relevante..."
                         rows={3}
                         disabled={saving || readOnly}
                    />
@@ -369,10 +424,6 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
                           {renderInput("N° Caja", "Numero_Caja", Box, "text", "")}
                         </div>
                     </div>
-                </div>
-                <div className="flex gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
-                    <Info size={18} className="shrink-0 mt-0.5" />
-                    <p>Verifique que la ubicación física coincida con la etiqueta topográfica.</p>
                 </div>
               </div>
             )}
@@ -405,7 +456,7 @@ export const ModalDetalleDocumento = ({ doc, onClose, onSave, onDelete, readOnly
           </form>
         </div>
 
-        {/* --- Footer (Flexible en móvil) --- */}
+        {/* --- Footer --- */}
         <div className="px-4 sm:px-6 py-4 border-t border-slate-200 bg-white flex flex-col-reverse sm:flex-row justify-between items-center z-10 gap-3">
           <div className="w-full sm:w-auto">
             {!readOnly && doc?.id && (

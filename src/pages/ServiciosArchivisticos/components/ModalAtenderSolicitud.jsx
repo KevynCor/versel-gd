@@ -105,7 +105,7 @@ const AtencionConfigPanel = ({
                                 <p className="text-sm text-emerald-800 font-medium flex items-center gap-2"><CheckCircle size={18} className="shrink-0"/> Esta modalidad no requiere firma digital.</p>
                             </div>
                         )}
-                        <TextareaField label="Observaciones de Entrega" placeholder="Añada notas..." value={observacionesAtencion} onChange={setObservacionesAtencion} rows={3} />
+                        <TextareaField label="Observaciones de Atención" placeholder="Añada notas..." value={observacionesAtencion} onChange={setObservacionesAtencion} rows={3} />
                     </div>
                 )}
                 
@@ -187,7 +187,7 @@ const AtencionConfigPanel = ({
             {/* BOTONES DE ACCIÓN */}
             <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 mt-auto flex-shrink-0">
                 <button onClick={finalizarAtencion} disabled={processing || documentosSeleccionados.length === 0 || (requiresSignature && !firma)} className="w-full py-3.5 bg-blue-700 hover:bg-blue-800 disabled:bg-slate-300 text-white font-bold rounded-xl shadow-lg shadow-blue-700/20 transition-all flex items-center justify-center gap-2">
-                    {processing ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} {processing ? "Procesando..." : `Finalizar Entrega`}
+                    {processing ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} {processing ? "Procesando..." : `Atender`}
                 </button>
                 <button onClick={guardarBorrador} disabled={guardandoBorrador || (!documentosSeleccionados.length && !firma && !observacionesAtencion)} className="w-full py-2.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     {guardandoBorrador ? <RefreshCw size={16} className="animate-spin"/> : <Save size={16} />} Guardar Borrador
@@ -369,7 +369,7 @@ export default function ModalAtenderSolicitud({ isOpen, onClose, solicitud, curr
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white w-full max-w-7xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex-shrink-0">
-                    <h3 className="font-bold text-slate-800 text-lg">Workspace: Despacho de Documentos</h3>
+                    <h3 className="font-bold text-slate-800 text-lg">Workspace: Búsqueda de Documentos</h3>
                     <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full text-slate-400"><X size={20} /></button>
                 </div>
                 <div className="p-0 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/30">
